@@ -1,0 +1,84 @@
+---
+// Footer.astro
+---
+
+<footer class="border-t border-hairline bg-canvas mt-auto">
+  <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-5">
+      <!-- Brand column -->
+      <div class="col-span-2 lg:col-span-2">
+        <div class="flex items-center gap-2">
+          <span class="flex h-6 w-6 items-center justify-center rounded-md bg-ink text-white">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 2L2 12l10 10 10-10L12 2z"></path>
+              <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
+            </svg>
+          </span>
+          <span class="text-sm font-semibold tracking-tight text-ink">RouteNex</span>
+        </div>
+        <p class="mt-3 text-sm text-mute max-w-sm leading-relaxed">
+          The deterministic, open-source AI routing gateway. Zero vendor lock-in, automated failover, and true BYOK observability.
+        </p>
+        <div class="mt-4 flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-elevated px-2.5 py-0.5 text-[11px] font-mono text-mute">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+            v0.1.0-alpha
+          </span>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-elevated px-2.5 py-0.5 text-[11px] font-mono text-mute">
+            MIT License
+          </span>
+        </div>
+      </div>
+
+      <!-- Product -->
+      <div>
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-ink font-mono">Product</h3>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a href="/#features" class="text-mute transition hover:text-ink">Features</a></li>
+          <li><a href="/#how-it-works" class="text-mute transition hover:text-ink">Architecture</a></li>
+          <li><a href="/#pricing" class="text-mute transition hover:text-ink">Pricing</a></li>
+          <li><a href="/dashboard" class="text-mute transition hover:text-ink">Dashboard</a></li>
+          <li><a href="/docs" class="text-mute transition hover:text-ink">Quickstart</a></li>
+        </ul>
+      </div>
+
+      <!-- Resources -->
+      <div>
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-ink font-mono">Resources</h3>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li>
+            <a href="https://github.com/routenex/routenex" target="_blank" rel="noreferrer" class="text-mute transition hover:text-ink inline-flex items-center gap-1">
+              GitHub
+              <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          </li>
+          <li><a href="/docs" class="text-mute transition hover:text-ink">API Reference</a></li>
+          <li><a href="/dashboard" class="text-mute transition hover:text-ink">System Status</a></li>
+          <li><a href="https://github.com/routenex/routenex/releases" target="_blank" rel="noreferrer" class="text-mute transition hover:text-ink">Release Notes</a></li>
+        </ul>
+      </div>
+
+      <!-- Legal -->
+      <div>
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-ink font-mono">Legal</h3>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a href="https://github.com/routenex/routenex/blob/main/LICENSE" target="_blank" rel="noreferrer" class="text-mute transition hover:text-ink">MIT License</a></li>
+          <li><span class="text-faint cursor-not-allowed">Privacy Policy</span></li>
+          <li><span class="text-faint cursor-not-allowed">Terms of Service</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Bottom row -->
+    <div class="mt-12 flex flex-col items-center justify-between gap-4 border-t border-hairline pt-8 sm:flex-row text-xs text-mute">
+      <p>© 2026 RouteNex. Open source AI routing gateway.</p>
+      <div class="flex items-center gap-4">
+        <span>Designed with Geist Principles</span>
+        <span class="h-3 w-px bg-hairline"></span>
+        <span>Deterministic Routing</span>
+      </div>
+    </div>
+  </div>
+</footer>

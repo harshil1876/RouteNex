@@ -1,0 +1,135 @@
+---
+// Pricing.astro
+
+const tiers = [
+  {
+    name: "Open Source",
+    price: "$0",
+    frequency: "forever",
+    description: "Self-host on your own infrastructure with complete source code control.",
+    featured: true,
+    badge: "Community Edition",
+    features: [
+      "All provider integrations (Groq, OpenAI, Gemini, Ollama)",
+      "Deterministic smart routing engine",
+      "Automatic failover & circuit breakers",
+      "Local request log & token tracking",
+      "Self-hosted Docker container",
+      "MIT License — no proprietary lock-in"
+    ],
+    cta: "Get Started",
+    ctaLink: "/docs",
+    ctaVariant: "primary"
+  },
+  {
+    name: "Pro",
+    price: "$49",
+    frequency: "per month",
+    description: "For teams scaling high-throughput multi-provider deployments.",
+    featured: false,
+    badge: "Coming Soon",
+    features: [
+      "Everything in Open Source",
+      "Centralized analytics & cost forecasting",
+      "Team API key management with rate limits",
+      "Slack / Webhook alert integrations",
+      "Multi-instance Redis state sync",
+      "Priority GitHub issue response"
+    ],
+    cta: "Join Waitlist",
+    ctaLink: "https://github.com/routenex/routenex",
+    ctaVariant: "secondary"
+  },
+  {
+    name: "Enterprise",
+    price: "Custom",
+    frequency: "annual contract",
+    description: "For mission-critical production clusters needing bespoke SLA.",
+    featured: false,
+    badge: "Coming Soon",
+    features: [
+      "Everything in Pro",
+      "SAML 2.0 / Okta SSO integration",
+      "SOC2 compliance audit logging",
+      "Custom routing plugins & pipelines",
+      "Dedicated 99.99% uptime SLA",
+      "24/7 engineering escalations"
+    ],
+    cta: "Contact Us",
+    ctaLink: "https://github.com/routenex/routenex",
+    ctaVariant: "secondary"
+  }
+];
+---
+
+<section id="pricing" class="py-20 sm:py-28 bg-canvas border-t border-hairline scroll-mt-16">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-2xl text-center">
+      <span class="font-mono text-xs font-semibold uppercase tracking-wider text-mute">Predictable & Open</span>
+      <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] text-ink sm:text-4xl">
+        Free to Run, Forever
+      </h2>
+      <p class="mt-4 text-base text-body">
+        RouteNex is and will always be open source. No token markups, no hidden proxy fees.
+      </p>
+    </div>
+
+    <div class="mt-14 grid grid-cols-1 gap-8 lg:grid-cols-3 items-stretch">
+      {tiers.map((tier) => (
+        <div class={`relative flex flex-col justify-between rounded-lg border p-8 shadow-xs ${
+          tier.featured 
+            ? 'border-ink bg-elevated ring-1 ring-ink' 
+            : 'border-hairline bg-elevated'
+        }`}>
+          <div>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-ink">{tier.name}</h3>
+              <span class={`rounded px-2.5 py-0.5 font-mono text-xs ${
+                tier.featured 
+                  ? 'bg-ink text-white' 
+                  : 'bg-canvas text-mute border border-hairline-soft'
+              }`}>
+                {tier.badge}
+              </span>
+            </div>
+
+            <div class="mt-4 flex items-baseline gap-1">
+              <span class="text-4xl font-semibold tracking-tight text-ink">{tier.price}</span>
+              <span class="text-sm text-mute">/{tier.frequency}</span>
+            </div>
+
+            <p class="mt-3 text-sm text-body leading-relaxed">
+              {tier.description}
+            </p>
+
+            <div class="my-6 border-t border-hairline"></div>
+
+            <ul class="space-y-3 text-sm">
+              {tier.features.map((feature) => (
+                <li class="flex items-start gap-2.5">
+                  <svg class="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span class="text-body">{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div class="mt-8 pt-4">
+            <a
+              href={tier.ctaLink}
+              class={`w-full inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium transition ${
+                tier.ctaVariant === 'primary'
+                  ? 'bg-ink text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-ink'
+                  : 'border border-hairline bg-elevated text-ink hover:bg-hairline-soft focus:outline-none focus:ring-2 focus:ring-neutral-400'
+              }`}
+            >
+              {tier.cta}
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

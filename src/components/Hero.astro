@@ -1,0 +1,84 @@
+---
+// Hero.astro
+---
+
+<section class="relative overflow-hidden py-20 sm:py-28 md:py-36">
+  <!-- Subtle Geist Gradient Mesh Background -->
+  <div class="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center opacity-40">
+    <div class="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-gradient-to-tr from-[#007cf0]/20 to-[#00dfd8]/20 blur-3xl"></div>
+    <div class="absolute -top-32 right-1/4 h-96 w-96 rounded-full bg-gradient-to-bl from-[#7928ca]/20 to-[#ff0080]/20 blur-3xl"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-full max-w-5xl bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white via-transparent to-transparent opacity-60"></div>
+  </div>
+
+  <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
+    <!-- Eyebrow Badge -->
+    <div class="inline-flex items-center gap-2 rounded-full border border-hairline bg-elevated/80 px-3.5 py-1 text-xs font-mono font-medium text-body shadow-xs mb-8">
+      <span class="inline-block h-2 w-2 rounded-full bg-[#0070f3] animate-pulse"></span>
+      <span>Open Source Gateway</span>
+      <span class="text-hairline">|</span>
+      <span class="text-mute">Apache / MIT</span>
+    </div>
+
+    <!-- Main Heading -->
+    <h1 class="text-5xl sm:text-6xl md:text-7xl font-semibold tracking-[-0.04em] text-ink leading-[1.08] sm:leading-[1.05]">
+      The Intelligent<br class="hidden sm:inline" />
+      <span class="bg-gradient-to-r from-ink via-ink to-body bg-clip-text text-transparent">AI Router</span>
+    </h1>
+
+    <!-- Subheading -->
+    <p class="mx-auto mt-6 max-w-2xl text-base sm:text-lg md:text-xl text-body leading-relaxed">
+      One endpoint for every AI model. Deterministic routing, automatic fallback, and full cost visibility — without vendor lock-in.
+    </p>
+
+    <!-- CTAs -->
+    <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+      <a
+        href="/docs"
+        class="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
+      >
+        Get Started
+      </a>
+      <a
+        href="https://github.com/routenex/routenex"
+        target="_blank"
+        rel="noreferrer"
+        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-hairline bg-elevated px-6 py-2.5 text-sm font-medium text-ink transition hover:bg-hairline-soft focus:outline-none focus:ring-2 focus:ring-ink"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+        </svg>
+        View on GitHub
+      </a>
+      <a
+        href="/dashboard"
+        class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-medium text-mute hover:text-ink transition"
+      >
+        Live Dashboard
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+
+    <!-- Code Preview Card -->
+    <div class="mx-auto mt-12 max-w-2xl text-left">
+      <div class="overflow-hidden rounded-lg border border-neutral-800 bg-[#171717] shadow-xl">
+        <!-- Window title bar -->
+        <div class="flex items-center justify-between border-b border-neutral-800/80 px-4 py-2.5 bg-neutral-900/60">
+          <div class="flex items-center gap-2">
+            <span class="h-2.5 w-2.5 rounded-full bg-neutral-700"></span>
+            <span class="h-2.5 w-2.5 rounded-full bg-neutral-700"></span>
+            <span class="h-2.5 w-2.5 rounded-full bg-neutral-700"></span>
+            <span class="ml-2 font-mono text-[11px] text-neutral-400">cURL Example</span>
+          </div>
+          <span class="rounded bg-neutral-800 px-2 py-0.5 font-mono text-[10px] text-neutral-400">OpenAI compatible</span>
+        </div>
+
+        <!-- Terminal content -->
+        <div class="p-4 sm:p-5 overflow-x-auto font-mono text-xs sm:text-[13px] leading-relaxed">
+          <pre class="text-neutral-300"><code><span class="text-neutral-500">$ </span><span class="text-blue-400">curl</span> http://localhost:3001/v1/chat/completions \
+  -H <span class="text-emerald-400">'Content-Type: application/json'</span> \
+  -d <span class="text-emerald-400">'&#123;"model":"auto","messages":[&#123;"role":"user","content":"Hello!"&#125;]&#125;'</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

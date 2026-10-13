@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # ─── RouteNex Gateway API ───────────────────────────────────────────
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    ports:
+      - "${ROUTENEX_PORT:-3001}:3001"
+    environment:
+      - ROUTENEX_PORT=3001
+      - ROUTENEX_HOST=0.0.0.0
+      - ROUTENEX_MOCK_MODE=${ROUTENEX_MOCK_MODE:-true}
+      - ROUTENEX_API_KEY=${ROUTENEX_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ROUTENEX_DEFAULT_STRATEGY=${ROUTENEX_DEFAULT_STRATEGY:-balanced}
+      - ROUTENEX_MAX_RETRIES=${ROUTENEX_MAX_RETRIES:-2}
+      - ROUTENEX_TIMEOUT_MS=${ROUTENEX_TIMEOUT_MS:-60000}
+      - ROUTENEX_PERSISTENCE=true
+      - ROUTENEX_DB_PATH=/data/requests.json
+      - ROUTENEX_LOG_PROMPTS=false
+    volumes:
+      - gateway-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ─── RouteNex Frontend ──────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${FRONTEND_PORT:-4321}:4321"
+    environment:
+      - PUBLIC_GATEWAY_URL=http://gateway:3001
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  gateway-data:

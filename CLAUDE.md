@@ -20,3 +20,11 @@ Consult these guides before working on related tasks:
 - [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+
+## Design System & Styling
+- Follow the Vercel-inspired design guidelines defined in [`DESIGN.md`](file:///c:/Users/Harshil/Projects/RouteNex/DESIGN.md).
+- Use the installed skills in `.agents/skills/`:
+  - `web-design-guidelines`: Guidelines for accessible, high-converting, clean web design.
+  - `tailwind-4-docs`: Tailwind CSS documentation and workflow guidance.
+- Adhere strictly to the black-on-white / near-white aesthetic, clean Geist typography, crisp borders, and subtle hero gradients.
+

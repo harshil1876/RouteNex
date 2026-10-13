@@ -1,0 +1,393 @@
+import fs from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { createApp } from './server.js';
+import { MockProviderAdapter } from './providers/mock.js';
+import { CircuitBreaker } from './router/circuit-breaker.js';
+import { ProviderRegistry } from './providers/registry.js';
+import { RoutingEngine } from './router/engine.js';
+import { RequestStore } from './storage/sqlite.js';
+import { PromptCompressor } from './router/compression.js';
+import { AnthropicProviderAdapter } from './providers/anthropic.js';
+import { GeminiProviderAdapter } from './providers/gemini.js';
+import { OllamaProviderAdapter } from './providers/ollama.js';
+import type { AppConfig } from './config.js';
+
+const testConfig: AppConfig = {
+  port: 3001,
+  host: '127.0.0.1',
+  apiKey: undefined,
+  mockMode: true,
+  groqApiKey: undefined,
+  openaiApiKey: undefined,
+  logPrompts: false,
+  dbPath: './test_routenex.json',
+  maxRetries: 2,
+  timeoutMs: 5000,
+  defaultStrategy: 'balanced',
+  rateLimitRpm: 100,
+  persistenceEnabled: false,
+};
+
+describe('MockProviderAdapter', () => {
+  it('generates deterministic chat completion', async () => {
+    const mock = new MockProviderAdapter(10);
+    const res = await mock.chat({
+      model: 'mock/gpt-4',
+      messages: [{ role: 'user', content: 'Hello world' }],
+      stream: false,
+      n: 1,
+    });
+
+    expect(res.id).toMatch(/^chatcmpl-/);
+    expect(res.choices[0].message.content).toContain('Received: "Hello world"');
+    expect(res.usage?.total_tokens).toBeGreaterThan(0);
+  });
+
+  it('streams chunks correctly', async () => {
+    const mock = new MockProviderAdapter(5);
+    const stream = mock.chatStream({
+      model: 'mock/fast',
+      messages: [{ role: 'user', content: 'Ping' }],
+      stream: true,
+      n: 1,
+    });
+
+    const chunks = [];
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks[0].choices[0].delta.role).toBe('assistant');
+    const lastChunk = chunks[chunks.length - 1];
+    expect(lastChunk.choices[0].finish_reason).toBe('stop');
+  });
+
+  it('throws on simulated error model', async () => {
+    const mock = new MockProviderAdapter(5);
+    await expect(
+      mock.chat({
+        model: 'mock/error',
+        messages: [{ role: 'user', content: 'Fail' }],
+        stream: false,
+        n: 1,
+      })
+    ).rejects.toThrow('Simulated mock provider failure');
+  });
+});
+
+describe('CircuitBreaker', () => {
+  it('transitions from CLOSED to OPEN after 3 failures, and HALF_OPEN after cooldown', () => {
+    const cb = new CircuitBreaker({ failureThreshold: 3, cooldownMs: 50, halfOpenSuccessThreshold: 2 });
+    expect(cb.canExecute('groq')).toBe(true);
+
+    cb.recordFailure('groq');
+    cb.recordFailure('groq');
+    expect(cb.getState('groq')).toBe('CLOSED');
+
+    cb.recordFailure('groq');
+    expect(cb.getState('groq')).toBe('OPEN');
+    expect(cb.canExecute('groq')).toBe(false);
+  });
+
+  it('recovers from HALF_OPEN to CLOSED after consecutive successes', async () => {
+    const cb = new CircuitBreaker({ failureThreshold: 2, cooldownMs: 20, halfOpenSuccessThreshold: 2 });
+    cb.recordFailure('mock');
+    cb.recordFailure('mock');
+    expect(cb.getState('mock')).toBe('OPEN');
+
+    // Wait for cooldown
+    await new Promise((r) => setTimeout(r, 30));
+    expect(cb.getState('mock')).toBe('HALF_OPEN');
+    expect(cb.canExecute('mock')).toBe(true);
+
+    cb.recordSuccess('mock');
+    expect(cb.getState('mock')).toBe('HALF_OPEN');
+    cb.recordSuccess('mock');
+    expect(cb.getState('mock')).toBe('CLOSED');
+  });
+});
+
+describe('RoutingEngine', () => {
+  it('routes explicit models directly', () => {
+    const reg = new ProviderRegistry(testConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(reg, cb, testConfig);
+
+    const selection = engine.resolveRoute({
+      model: 'mock/fast',
+      messages: [{ role: 'user', content: 'test' }],
+      stream: false,
+      n: 1,
+    });
+
+    expect(selection.primary.id).toBe('mock/fast');
+    expect(selection.reasonCode).toBe('EXPLICIT_MODEL');
+  });
+
+  it('evaluates and scores auto routing candidates', () => {
+    const reg = new ProviderRegistry(testConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(reg, cb, testConfig);
+
+    const explanation = engine.explain(
+      {
+        model: 'auto',
+        messages: [{ role: 'user', content: 'explain' }],
+        stream: false,
+        n: 1,
+      },
+      'req_exp'
+    );
+
+    expect(explanation.model_selected).toBeTruthy();
+    expect(explanation.candidates_evaluated.length).toBeGreaterThan(0);
+  });
+});
+
+describe('RequestStore', () => {
+  it('aggregates usage stats correctly', () => {
+    const store = new RequestStore('./test_mem.json', true);
+    store.logRequest({
+      request_id: 'r1',
+      timestamp: new Date().toISOString(),
+      model_requested: 'mock/fast',
+      model_used: 'mock/fast',
+      provider: 'mock',
+      latency_ms: 50,
+      status: 'success',
+      token_usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
+      cost_estimate: { total_usd: 0.001, provenance: 'MEASURED', price_timestamp: null },
+      routing_reason: 'test',
+    });
+
+    const stats = store.getUsageStats();
+    expect(stats.total_requests).toBe(1);
+    expect(stats.success_rate).toBe(1);
+    expect(stats.tokens.total_tokens).toBe(30);
+    expect(stats.estimated_cost_usd).toBe(0.001);
+    store.close();
+    try {
+      if (fs.existsSync('./test_mem.json')) fs.unlinkSync('./test_mem.json');
+    } catch {}
+  });
+});
+
+describe('End-to-End Gateway API Routes', () => {
+  const { app } = createApp(testConfig);
+
+  it('GET /health/live returns ok and configured providers', async () => {
+    const res = await app.request('/health/live');
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.status).toBe('ok');
+    expect(body.providers.mock).toBe(true);
+  });
+
+  it('GET /v1/models returns model catalog', async () => {
+    const res = await app.request('/v1/models');
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.object).toBe('list');
+    expect(body.data.some((m: any) => m.id === 'mock/gpt-4')).toBe(true);
+  });
+
+  it('POST /v1/router/explain returns dry-run routing decision', async () => {
+    const res = await app.request('/v1/router/explain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'auto',
+        messages: [{ role: 'user', content: 'What is RouteNex?' }],
+      }),
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.request_id).toMatch(/^exp_/);
+    expect(body.candidates_evaluated.length).toBeGreaterThan(0);
+  });
+
+  it('POST /v1/chat/completions non-streaming returns completion with routenex metadata', async () => {
+    const res = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mock/gpt-4',
+        messages: [{ role: 'user', content: 'Integration test message' }],
+      }),
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.choices[0].message.content).toContain('Integration test message');
+    expect(body.routenex).toBeDefined();
+    expect(body.routenex.provider).toBe('mock');
+    expect(body.routenex.cost_estimate.provenance).toBeDefined();
+  });
+
+  it('POST /v1/chat/completions streaming returns SSE stream with [DONE]', async () => {
+    const res = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mock/fast',
+        messages: [{ role: 'user', content: 'Stream test' }],
+        stream: true,
+      }),
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('text/event-stream');
+    const text = await res.text();
+    expect(text).toContain('data: ');
+    expect(text).toContain('data: [DONE]');
+  });
+
+  it('GET /v1/usage returns aggregated statistics', async () => {
+    const res = await app.request('/v1/usage');
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.total_requests).toBeDefined();
+    expect(body.success_rate).toBeDefined();
+  });
+});
+
+describe('Middleware Tests', () => {
+  it('enforces API key authentication when configured', async () => {
+    const { app: authedApp } = createApp({ ...testConfig, apiKey: 'secret-key-123' });
+
+    // Request without key fails
+    const unauthedRes = await authedApp.request('/v1/models');
+    expect(unauthedRes.status).toBe(401);
+
+    // Request with invalid key fails
+    const wrongKeyRes = await authedApp.request('/v1/models', {
+      headers: { Authorization: 'Bearer wrong-key' },
+    });
+    expect(wrongKeyRes.status).toBe(401);
+
+    // Request with valid key succeeds
+    const validRes = await authedApp.request('/v1/models', {
+      headers: { Authorization: 'Bearer secret-key-123' },
+    });
+    expect(validRes.status).toBe(200);
+
+    // Health endpoint is exempted from auth
+    const healthRes = await authedApp.request('/health/live');
+    expect(healthRes.status).toBe(200);
+  });
+
+  it('enforces rate limits when threshold is exceeded', async () => {
+    const { app: rateLimitedApp } = createApp({ ...testConfig, rateLimitRpm: 2 });
+
+    const res1 = await rateLimitedApp.request('/v1/models');
+    expect(res1.status).toBe(200);
+
+    const res2 = await rateLimitedApp.request('/v1/models');
+    expect(res2.status).toBe(200);
+
+    const res3 = await rateLimitedApp.request('/v1/models');
+    expect(res3.status).toBe(429);
+    expect(res3.headers.get('retry-after')).toBeDefined();
+    const body = await res3.json();
+    expect(body.error.code).toBe('rate_limit_exceeded');
+  });
+});
+
+describe('PromptCompressor', () => {
+  it('compresses repetitive newlines and whitespace while preserving code blocks', () => {
+    const rawText = `Line 1
+
+
+Line 2    with    spaces
+
+<!-- Hidden comment -->
+
+\`\`\`python
+def hello():
+    # Keep 4-space indent
+    return True
+\`\`\`
+`;
+
+    const compressed = PromptCompressor.compressText(rawText);
+    expect(compressed).not.toContain('<!-- Hidden comment -->');
+    expect(compressed).not.toContain('\n\n\n');
+    expect(compressed).toContain('Line 2 with spaces');
+    expect(compressed).toContain('    # Keep 4-space indent');
+
+    const result = PromptCompressor.compressMessages([
+      { role: 'user', content: rawText },
+    ]);
+    expect(result.savedPercent).toBeGreaterThan(0);
+    expect(result.estimatedTokensSaved).toBeGreaterThan(0);
+  });
+});
+
+describe('New Provider Adapters', () => {
+  it('Anthropic adapter registers models and handles unconfigured key safely', async () => {
+    const adapter = new AnthropicProviderAdapter(undefined);
+    expect(adapter.id).toBe('anthropic');
+    expect(adapter.isConfigured()).toBe(false);
+    expect(adapter.models.length).toBeGreaterThanOrEqual(3);
+    expect(adapter.models.some((m) => m.id.includes('claude-3-5-sonnet'))).toBe(true);
+
+    await expect(
+      adapter.chat({
+        model: 'anthropic/claude-3-5-haiku-20241022',
+        messages: [{ role: 'user', content: 'Hi' }],
+        stream: false,
+        n: 1,
+      })
+    ).rejects.toThrow('Anthropic API key is not configured');
+  });
+
+  it('Gemini adapter registers models and handles unconfigured key safely', async () => {
+    const adapter = new GeminiProviderAdapter(undefined);
+    expect(adapter.id).toBe('gemini');
+    expect(adapter.isConfigured()).toBe(false);
+    expect(adapter.models.some((m) => m.id.includes('gemini-2.5-flash'))).toBe(true);
+  });
+
+  it('Ollama adapter registers local models and points to default endpoint', async () => {
+    const adapter = new OllamaProviderAdapter();
+    expect(adapter.id).toBe('ollama');
+    expect(adapter.models.some((m) => m.id.includes('llama3.2'))).toBe(true);
+  });
+});
+
+describe('Secret Redaction & Privacy Guardrails (PRD Sec 52, 89)', () => {
+  it('never leaks secret keys in error messages, health responses, or model catalogs', async () => {
+    const sentinelSecret = 'sk-canary-secret-sentinel-never-leak-999';
+    const { app: sentinelApp } = createApp({
+      ...testConfig,
+      apiKey: sentinelSecret,
+      groqApiKey: sentinelSecret,
+      openaiApiKey: sentinelSecret,
+      anthropicApiKey: sentinelSecret,
+      geminiApiKey: sentinelSecret,
+    });
+
+    // 1. Health endpoint test: provider keys must never be revealed
+    const healthRes = await sentinelApp.request('/health/live');
+    const healthText = await healthRes.text();
+    expect(healthText).not.toContain(sentinelSecret);
+
+    // 2. Models catalog: provider keys must never be revealed
+    const modelsRes = await sentinelApp.request('/v1/models', {
+      headers: { Authorization: `Bearer ${sentinelSecret}` },
+    });
+    const modelsText = await modelsRes.text();
+    expect(modelsText).not.toContain(sentinelSecret);
+
+    // 3. Error response: invalid route or bad JSON must never echo server secrets
+    const errorRes = await sentinelApp.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sentinelSecret}`,
+      },
+      body: JSON.stringify({ invalid_field: true }),
+    });
+    const errorText = await errorRes.text();
+    expect(errorText).not.toContain(sentinelSecret);
+  });
+});

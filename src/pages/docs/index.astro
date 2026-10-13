@@ -1,0 +1,190 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+---
+
+<Layout title="Documentation — RouteNex Quickstart Guide">
+  <Header />
+
+  <main id="main-content" class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div class="lg:grid lg:grid-cols-12 lg:gap-12">
+      <!-- Sidebar Navigation -->
+      <aside class="hidden lg:block lg:col-span-3">
+        <nav class="sticky top-24 space-y-6 text-sm" aria-label="Documentation navigation">
+          <div>
+            <h3 class="font-mono text-xs font-semibold uppercase tracking-wider text-ink">Getting Started</h3>
+            <ul class="mt-3 space-y-2 text-body">
+              <li><a href="#introduction" class="block rounded px-2 py-1 text-ink font-medium bg-hairline/60">Introduction</a></li>
+              <li><a href="#installation" class="block rounded px-2 py-1 hover:text-ink hover:bg-hairline/40">1. Installation</a></li>
+              <li><a href="#configuration" class="block rounded px-2 py-1 hover:text-ink hover:bg-hairline/40">2. Configuration</a></li>
+              <li><a href="#starting-gateway" class="block rounded px-2 py-1 hover:text-ink hover:bg-hairline/40">3. Start the Server</a></li>
+              <li><a href="#first-request" class="block rounded px-2 py-1 hover:text-ink hover:bg-hairline/40">4. First Request</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="font-mono text-xs font-semibold uppercase tracking-wider text-ink">Core Concepts</h3>
+            <ul class="mt-3 space-y-2 text-body">
+              <li><a href="#routing-modes" class="block rounded px-2 py-1 hover:text-ink hover:bg-hairline/40">Routing Modes</a></li>
+              <li><a href="#failover" class="block rounded px-2 py-1 hover:text-ink hover:bg-hairline/40">Circuit Breakers & Fallback</a></li>
+              <li><a href="/dashboard" class="block rounded px-2 py-1 text-blue-600 hover:underline">Observability Dashboard →</a></li>
+            </ul>
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Main Doc Content -->
+      <article class="lg:col-span-9 max-w-3xl">
+        <!-- Eyebrow -->
+        <div class="mb-4 flex items-center gap-2">
+          <span class="rounded bg-canvas px-2.5 py-0.5 font-mono text-xs text-mute border border-hairline">Docs / Quick Start</span>
+          <span class="text-xs text-mute">• 5 min read</span>
+        </div>
+
+        <h1 class="text-4xl font-semibold tracking-[-0.03em] text-ink sm:text-5xl">
+          Quick Start Guide
+        </h1>
+        <p class="mt-4 text-lg text-body leading-relaxed">
+          Get RouteNex up and running locally in less than two minutes. RouteNex operates as a transparent proxy adhering to the standard OpenAI API specification.
+        </p>
+
+        <hr class="my-8 border-hairline" />
+
+        <!-- Introduction -->
+        <section id="introduction" class="scroll-mt-24 space-y-4">
+          <h2 class="text-2xl font-semibold tracking-tight text-ink">Introduction</h2>
+          <p class="text-body leading-relaxed">
+            RouteNex gives developers one stable URL to point existing OpenAI SDKs at. It evaluates incoming requests against health checks, latency records, and cost metrics to dynamically route payloads to the best active upstream provider.
+          </p>
+        </section>
+
+        <!-- Step 1: Installation -->
+        <section id="installation" class="mt-12 scroll-mt-24 space-y-4">
+          <h2 class="text-2xl font-semibold tracking-tight text-ink">1. Installation</h2>
+          <p class="text-body leading-relaxed">
+            You can clone and run RouteNex locally via Node.js, or spin it up immediately with Docker.
+          </p>
+
+          <div class="overflow-hidden rounded-lg border border-neutral-800 bg-[#171717] p-4 text-xs font-mono text-neutral-200">
+            <div class="flex items-center justify-between pb-2 border-b border-neutral-800 mb-3 text-neutral-400">
+              <span>Terminal (Docker)</span>
+            </div>
+            <code>docker run -d -p 3001:3001 --name routenex ghcr.io/routenex/routenex:latest</code>
+          </div>
+
+          <p class="text-sm text-mute">Alternatively, clone the repository for local development:</p>
+          <div class="overflow-hidden rounded-lg border border-neutral-800 bg-[#171717] p-4 text-xs font-mono text-neutral-200">
+            <code>git clone https://github.com/routenex/routenex.git<br />cd routenex<br />npm install</code>
+          </div>
+        </section>
+
+        <!-- Step 2: Configuration -->
+        <section id="configuration" class="mt-12 scroll-mt-24 space-y-4">
+          <h2 class="text-2xl font-semibold tracking-tight text-ink">2. Configure API Keys</h2>
+          <p class="text-body leading-relaxed">
+            Create an environment configuration file or set variables directly. RouteNex operates on a <strong class="text-ink">BYOK (Bring Your Own Key)</strong> principle. Keys are stored locally on your machine and never relayed to third parties.
+          </p>
+
+          <div class="overflow-hidden rounded-lg border border-neutral-800 bg-[#171717] p-4 text-xs font-mono text-neutral-200">
+            <div class="flex items-center justify-between pb-2 border-b border-neutral-800 mb-3 text-neutral-400">
+              <span>.env</span>
+            </div>
+            <pre><code>PORT=3001
+HOST=0.0.0.0
+
+# Upstream Provider Keys (provide at least one)
+GROQ_API_KEY=gsk_your_groq_key_here
+OPENAI_API_KEY=sk-proj-your_openai_key_here
+GEMINI_API_KEY=AIzaSy_your_gemini_key_here
+OLLAMA_BASE_URL=http://localhost:11434</code></pre>
+          </div>
+        </section>
+
+        <!-- Step 3: Start Server -->
+        <section id="starting-gateway" class="mt-12 scroll-mt-24 space-y-4">
+          <h2 class="text-2xl font-semibold tracking-tight text-ink">3. Start the Router</h2>
+          <p class="text-body leading-relaxed">
+            Launch the gateway process. The router performs an immediate health handshake with configured providers and binds to port 3001.
+          </p>
+
+          <div class="overflow-hidden rounded-lg border border-neutral-800 bg-[#171717] p-4 text-xs font-mono text-neutral-200">
+            <code>npm run dev</code>
+          </div>
+
+          <div class="rounded-lg border border-hairline bg-elevated p-4 text-sm">
+            <div class="flex items-center gap-2 text-ink font-semibold">
+              <svg class="h-4 w-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+              Router Healthy
+            </div>
+            <p class="mt-1 text-xs text-body">
+              Gateway endpoint ready at <code class="bg-canvas px-1 py-0.5 rounded border border-hairline text-ink font-mono">http://localhost:3001/v1</code>.
+            </p>
+          </div>
+        </section>
+
+        <!-- Step 4: First Request -->
+        <section id="first-request" class="mt-12 scroll-mt-24 space-y-4">
+          <h2 class="text-2xl font-semibold tracking-tight text-ink">4. Send Your First Request</h2>
+          <p class="text-body leading-relaxed">
+            Issue a completion request specifying <code class="bg-canvas px-1.5 py-0.5 rounded border border-hairline font-mono text-ink text-sm">"model": "auto"</code> to allow RouteNex to pick the lowest latency healthy model, or pass an explicit model name.
+          </p>
+
+          <div class="overflow-hidden rounded-lg border border-neutral-800 bg-[#171717] p-4 text-xs font-mono text-neutral-200">
+            <div class="flex items-center justify-between pb-2 border-b border-neutral-800 mb-3 text-neutral-400">
+              <span>cURL</span>
+            </div>
+            <pre><code>curl http://localhost:3001/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '&#123;
+    "model": "auto",
+    "messages": [
+      &#123;"role": "system", "content": "You are a concise engineering assistant."&#125;,
+      &#123;"role": "user", "content": "How does Raft consensus work in 3 bullets?"&#125;
+    ]
+  &#125;'</code></pre>
+          </div>
+        </section>
+
+        <!-- Routing Modes -->
+        <section id="routing-modes" class="mt-12 scroll-mt-24 space-y-4">
+          <h2 class="text-2xl font-semibold tracking-tight text-ink">Routing Strategies</h2>
+          <p class="text-body leading-relaxed">
+            Configure how RouteNex selects downstream targets by passing an optional routing header or setting defaults in config:
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            <div class="rounded-lg border border-hairline bg-elevated p-4">
+              <span class="font-mono text-xs font-semibold text-ink">lowest-latency</span>
+              <p class="mt-1 text-xs text-body">Targets providers with lowest exponential moving average TTFT.</p>
+            </div>
+            <div class="rounded-lg border border-hairline bg-elevated p-4">
+              <span class="font-mono text-xs font-semibold text-ink">lowest-cost</span>
+              <p class="mt-1 text-xs text-body">Targets model tiers with cheapest blended prompt and output token pricing.</p>
+            </div>
+            <div class="rounded-lg border border-hairline bg-elevated p-4">
+              <span class="font-mono text-xs font-semibold text-ink">fallback-chain</span>
+              <p class="mt-1 text-xs text-body">Tries preferred provider first; falls back immediately on 429 or 5xx errors.</p>
+            </div>
+          </div>
+        </section>
+
+        <div class="mt-16 rounded-lg border border-hairline bg-canvas p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 class="text-base font-semibold text-ink">View Live Metrics in the Dashboard</h3>
+            <p class="text-xs text-mute mt-1">Track latency sparklines, circuit states, and token consumption.</p>
+          </div>
+          <a
+            href="/dashboard"
+            class="inline-flex items-center rounded-full bg-ink px-5 py-2 text-xs font-medium text-white hover:bg-neutral-800 transition"
+          >
+            Open Dashboard
+          </a>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

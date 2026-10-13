@@ -1,0 +1,75 @@
+---
+// Features.astro
+
+const features = [
+  {
+    title: "Unified API",
+    description: "One OpenAI-compatible endpoint for OpenAI, Groq, Gemini, Anthropic, Ollama, and more.",
+    icon: `<svg class="h-5 w-5 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M12 18v4"/><path d="M4.93 4.93l4.24 4.24"/><path d="M14.83 14.83l4.24 4.24"/><path d="M2 12h6"/><path d="M18 12h4"/><path d="M4.93 19.07l4.24-4.24"/><path d="M14.83 9.17l4.24-4.24"/></svg>`,
+    badge: "Drop-in Replacement"
+  },
+  {
+    title: "Smart Routing",
+    description: "Deterministic routing by cost, latency, or capability. Every decision is explainable and testable.",
+    icon: `<svg class="h-5 w-5 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a4.5 4.5 0 0 0 0-9H5"/><circle cx="18" cy="5" r="3"/><path d="M12 19V9.5a4.5 4.5 0 0 1 4.5-4.5"/></svg>`,
+    badge: "Deterministic"
+  },
+  {
+    title: "Auto Fallback",
+    description: "Circuit breakers and bounded retry chains. When a provider fails, traffic flows to the next healthy target.",
+    icon: `<svg class="h-5 w-5 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>`,
+    badge: "99.99% Target"
+  },
+  {
+    title: "BYOK First",
+    description: "Bring your own API keys. No middleman, no markup, no vendor lock-in. Your keys, your providers.",
+    icon: `<svg class="h-5 w-5 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>`,
+    badge: "Zero Markup"
+  },
+  {
+    title: "Full Observability",
+    description: "Request logs, latency tracking, token accounting, and honest cost estimates with provenance timestamps.",
+    icon: `<svg class="h-5 w-5 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+    badge: "Built-in Metrics"
+  },
+  {
+    title: "Self-Hosted",
+    description: "Run locally, in Docker, or on your own infrastructure. One command to start. Zero cloud dependencies.",
+    icon: `<svg class="h-5 w-5 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>`,
+    badge: "Docker Ready"
+  }
+];
+---
+
+<section id="features" class="py-20 sm:py-28 bg-canvas border-t border-hairline scroll-mt-16">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-2xl text-center">
+      <span class="font-mono text-xs font-semibold uppercase tracking-wider text-mute">Core Capabilities</span>
+      <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] text-ink sm:text-4xl">
+        Built for Production AI Workloads
+      </h2>
+      <p class="mt-4 text-base text-body">
+        Everything you need to orchestrate model providers with reliability, speed, and complete architectural transparency.
+      </p>
+    </div>
+
+    <div class="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map((feature) => (
+        <div class="group relative rounded-lg border border-hairline bg-elevated p-6 shadow-xs transition hover:border-neutral-300 hover:shadow-sm">
+          <div class="flex items-center justify-between">
+            <div class="flex h-10 w-10 items-center justify-center rounded-md border border-hairline-soft bg-canvas" set:html={feature.icon} />
+            <span class="rounded bg-canvas px-2 py-0.5 font-mono text-[11px] text-mute border border-hairline-soft">
+              {feature.badge}
+            </span>
+          </div>
+          <h3 class="mt-5 text-base font-semibold tracking-tight text-ink">
+            {feature.title}
+          </h3>
+          <p class="mt-2 text-sm text-body leading-relaxed">
+            {feature.description}
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

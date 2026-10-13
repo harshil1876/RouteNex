@@ -7,11 +7,24 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "dev:web": "astro dev",
+    "dev:api": "npm --prefix gateway run dev",
+    "build:api": "npm --prefix gateway run build",
+    "test:api": "npm --prefix gateway test",
+    "doctor": "npm --prefix gateway run doctor",
+    "test:live": "npm --prefix gateway run test:live",
+    "build": "astro build && npm --prefix gateway run build",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^7.3.8"
+    "@astrojs/react": "^7.0.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "astro": "^7.3.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3"
   }
 }

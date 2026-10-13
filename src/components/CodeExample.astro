@@ -1,0 +1,173 @@
+---
+// CodeExample.astro
+---
+
+<section class="py-20 sm:py-28 bg-canvas border-t border-hairline">
+  <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-2xl text-center">
+      <span class="font-mono text-xs font-semibold uppercase tracking-wider text-mute">Simple Integration</span>
+      <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] text-ink sm:text-4xl">
+        Start in Seconds
+      </h2>
+      <p class="mt-4 text-base text-body">
+        Drop RouteNex into your existing stack by changing only the base URL. Works with any OpenAI-compatible SDK.
+      </p>
+    </div>
+
+    <!-- Code card container with tabs -->
+    <div class="mt-12 rounded-lg border border-neutral-800 bg-[#171717] shadow-xl overflow-hidden" id="code-snippet-box">
+      <!-- Tab Header Bar -->
+      <div class="flex items-center justify-between border-b border-neutral-800 px-4 py-2.5 bg-neutral-900/80">
+        <div class="flex items-center gap-1 sm:gap-2" role="tablist" aria-label="Code language examples">
+          <button
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-curl"
+            id="tab-curl"
+            class="code-tab-btn rounded px-3 py-1 text-xs font-mono font-medium transition text-white bg-neutral-800"
+            data-target="panel-curl"
+          >
+            cURL
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-python"
+            id="tab-python"
+            class="code-tab-btn rounded px-3 py-1 text-xs font-mono font-medium transition text-neutral-400 hover:text-white"
+            data-target="panel-python"
+          >
+            Python
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-js"
+            id="tab-js"
+            class="code-tab-btn rounded px-3 py-1 text-xs font-mono font-medium transition text-neutral-400 hover:text-white"
+            data-target="panel-js"
+          >
+            JavaScript
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            id="copy-code-btn"
+            class="inline-flex items-center gap-1 rounded border border-neutral-700 bg-neutral-800/80 px-2.5 py-1 text-xs font-mono text-neutral-300 transition hover:bg-neutral-700 hover:text-white focus:outline-none"
+            title="Copy snippet"
+          >
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="copy-btn-text">Copy</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Panels -->
+      <div class="p-4 sm:p-6 overflow-x-auto font-mono text-xs sm:text-[13px] leading-relaxed">
+        <!-- cURL Panel -->
+        <div id="panel-curl" class="code-panel" role="tabpanel" aria-labelledby="tab-curl">
+          <pre class="text-neutral-200"><code><span class="text-blue-400">curl</span> http://localhost:3001/v1/chat/completions \
+  -H <span class="text-emerald-400">"Content-Type: application/json"</span> \
+  -d <span class="text-emerald-400">&#39;&#123;
+    "model": "auto",
+    "messages": [&#123;"role": "user", "content": "Explain quantum computing"&#125;]
+  &#125;&#39;</span></code></pre>
+        </div>
+
+        <!-- Python Panel -->
+        <div id="panel-python" class="code-panel hidden" role="tabpanel" aria-labelledby="tab-python">
+          <pre class="text-neutral-200"><code><span class="text-purple-400">from</span> openai <span class="text-purple-400">import</span> OpenAI
+
+client = OpenAI(
+    base_url=<span class="text-emerald-400">"http://localhost:3001/v1"</span>,
+    api_key=<span class="text-emerald-400">"not-needed"</span>  <span class="text-neutral-500"># optional for localhost</span>
+)
+
+response = client.chat.completions.create(
+    model=<span class="text-emerald-400">"auto"</span>,
+    messages=[&#123;<span class="text-emerald-400">"role"</span>: <span class="text-emerald-400">"user"</span>, <span class="text-emerald-400">"content"</span>: <span class="text-emerald-400">"Explain quantum computing"</span>&#125;]
+)
+<span class="text-blue-400">print</span>(response.choices[<span class="text-amber-400">0</span>].message.content)</code></pre>
+        </div>
+
+        <!-- JS Panel -->
+        <div id="panel-js" class="code-panel hidden" role="tabpanel" aria-labelledby="tab-js">
+          <pre class="text-neutral-200"><code><span class="text-purple-400">const</span> response = <span class="text-purple-400">await</span> <span class="text-blue-400">fetch</span>(<span class="text-emerald-400">&#39;http://localhost:3001/v1/chat/completions&#39;</span>, &#123;
+  method: <span class="text-emerald-400">&#39;POST&#39;</span>,
+  headers: &#123; <span class="text-emerald-400">&#39;Content-Type&#39;</span>: <span class="text-emerald-400">&#39;application/json&#39;</span> &#125;,
+  body: JSON.<span class="text-blue-400">stringify</span>(&#123;
+    model: <span class="text-emerald-400">&#39;auto&#39;</span>,
+    messages: [&#123; role: <span class="text-emerald-400">&#39;user&#39;</span>, content: <span class="text-emerald-400">&#39;Explain quantum computing&#39;</span> &#125;]
+  &#125;)
+&#125;);
+<span class="text-purple-400">const</span> data = <span class="text-purple-400">await</span> response.<span class="text-blue-400">json</span>();
+console.<span class="text-blue-400">log</span>(data.choices[<span class="text-amber-400">0</span>].message.content);</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Clean tab switcher for code examples
+  function setupCodeTabs() {
+    const tabs = document.querySelectorAll<HTMLButtonElement>('.code-tab-btn');
+    const panels = document.querySelectorAll<HTMLElement>('.code-panel');
+    const copyBtn = document.getElementById('copy-code-btn');
+    const copyText = document.getElementById('copy-btn-text');
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const targetId = tab.getAttribute('data-target');
+        
+        tabs.forEach((t) => {
+          t.setAttribute('aria-selected', 'false');
+          t.classList.remove('text-white', 'bg-neutral-800');
+          t.classList.add('text-neutral-400');
+        });
+
+        tab.setAttribute('aria-selected', 'true');
+        tab.classList.remove('text-neutral-400');
+        tab.classList.add('text-white', 'bg-neutral-800');
+
+        panels.forEach((panel) => {
+          if (panel.id === targetId) {
+            panel.classList.remove('hidden');
+          } else {
+            panel.classList.add('hidden');
+          }
+        });
+      });
+    });
+
+    if (copyBtn && copyText) {
+      copyBtn.addEventListener('click', async () => {
+        const activePanel = document.querySelector<HTMLElement>('.code-panel:not(.hidden)');
+        if (activePanel) {
+          const textToCopy = activePanel.innerText;
+          try {
+            await navigator.clipboard.writeText(textToCopy);
+            copyText.textContent = 'Copied!';
+            setTimeout(() => {
+              copyText.textContent = 'Copy';
+            }, 2000);
+          } catch (err) {
+            console.error('Failed to copy', err);
+          }
+        }
+      });
+    }
+  }
+
+  // Support initial load and client transitions
+  setupCodeTabs();
+  document.addEventListener('astro:page-load', setupCodeTabs);
+</script>
