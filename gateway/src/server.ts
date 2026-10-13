@@ -29,7 +29,13 @@ export function createApp(appConfig: AppConfig = config) {
   const registry = new ProviderRegistry(appConfig);
   const circuitBreaker = new CircuitBreaker();
   const store = new RequestStore(appConfig.dbPath, appConfig.persistenceEnabled);
-  const engine = new RoutingEngine(registry, circuitBreaker, appConfig, (m) => adminStore.resolveAlias(m));
+  const engine = new RoutingEngine(
+    registry,
+    circuitBreaker,
+    appConfig,
+    (m) => adminStore.resolveAlias(m),
+    (m) => adminStore.findCombo(m)
+  );
 
   // 2. Global Middleware
   app.use(
@@ -48,7 +54,7 @@ export function createApp(appConfig: AppConfig = config) {
   // 3. Mount Route Handlers
   const healthRoute = createHealthRoute(registry, startTime);
   const chatRoute = createChatRoute(engine, store, appConfig);
-  const modelsRoute = createModelsRoute(registry);
+  const modelsRoute = createModelsRoute(registry, adminStore);
   const explainRoute = createExplainRoute(engine);
   const usageRoute = createUsageRoute(store);
   const adminRoute = createAdminRoutes(adminStore, registry, appConfig);

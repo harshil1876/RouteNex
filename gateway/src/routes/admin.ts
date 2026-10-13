@@ -18,6 +18,8 @@ import { OpenAIProviderAdapter } from '../providers/openai.js';
 import { GeminiProviderAdapter } from '../providers/gemini.js';
 import { AnthropicProviderAdapter } from '../providers/anthropic.js';
 import { OllamaProviderAdapter } from '../providers/ollama.js';
+import { CerebrasProviderAdapter } from '../providers/cerebras.js';
+import { DeepSeekProviderAdapter } from '../providers/deepseek.js';
 
 export function createAdminRoutes(
   adminStore: AdminStore,
@@ -44,6 +46,7 @@ export function createAdminRoutes(
       compressionEnabled: settings.compressionEnabled,
       defaultStrategy: settings.defaultStrategy,
       aliases: settings.aliases,
+      combos: adminStore.getCombos(),
       virtualKeys: settings.virtualKeys.map((vk) => ({
         id: vk.id,
         name: vk.name,
@@ -78,6 +81,12 @@ export function createAdminRoutes(
       } else if (provider === 'anthropic') {
         adminStore.setProviderKey('anthropic', apiKey);
         registry.register(new AnthropicProviderAdapter(apiKey));
+      } else if (provider === 'cerebras') {
+        adminStore.setProviderKey('cerebras', apiKey);
+        registry.register(new CerebrasProviderAdapter(apiKey));
+      } else if (provider === 'deepseek') {
+        adminStore.setProviderKey('deepseek', apiKey);
+        registry.register(new DeepSeekProviderAdapter(apiKey));
       } else if (provider === 'ollama') {
         adminStore.setProviderKey('ollamaBaseUrl', baseUrl || 'http://localhost:11434/v1');
         registry.register(new OllamaProviderAdapter(baseUrl));
@@ -173,6 +182,34 @@ export function createAdminRoutes(
       success: true,
       settings: adminStore.getSettings(),
     });
+  });
+
+  // 9. Combos Management Endpoints (OmniRoute / OpenRouter Fallback Groups)
+  router.get('/combos', (c) => {
+    return c.json({ combos: adminStore.getCombos() });
+  });
+
+  router.post('/combos', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const { name, slug, description, targets, strategy } = body;
+    if (!name || !slug || !targets || !Array.isArray(targets) || targets.length === 0) {
+      return c.json({ error: 'Missing required combo fields: name, slug, targets (non-empty array)' }, 400);
+    }
+    const cleanSlug = slug.startsWith('combo/') ? slug : `combo/${slug}`;
+    const combo = adminStore.createCombo({
+      name,
+      slug: cleanSlug,
+      description: description || `Custom fallback combo: ${name}`,
+      targets,
+      strategy: strategy || 'priority',
+    });
+    return c.json({ success: true, combo });
+  });
+
+  router.delete('/combos/:id', (c) => {
+    const id = c.req.param('id');
+    const deleted = adminStore.deleteCombo(id);
+    return c.json({ success: deleted });
   });
 
   // 9. GET /v1/admin/doctor - In-browser diagnostic checks

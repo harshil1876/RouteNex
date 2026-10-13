@@ -7,9 +7,11 @@ import VirtualKeys from './VirtualKeys';
 import ModelAliases from './ModelAliases';
 import DoctorPanel from './DoctorPanel';
 import CloudEditionShowcase from './CloudEditionShowcase';
+import Combos from './Combos';
+import AgentSetupHub from './AgentSetupHub';
 
 type EditionMode = 'oss' | 'cloud';
-type ActiveTab = 'overview' | 'playground' | 'requests' | 'providers' | 'keys' | 'aliases' | 'doctor';
+type ActiveTab = 'overview' | 'playground' | 'requests' | 'providers' | 'combos' | 'agents' | 'keys' | 'aliases' | 'doctor';
 
 interface LiveTelemetry {
   isConnected: boolean;
@@ -145,6 +147,8 @@ export default function DashboardOverview() {
                 { id: 'playground', label: 'Playground' },
                 { id: 'requests', label: 'Requests Log' },
                 { id: 'providers', label: 'BYOK Credentials' },
+                { id: 'combos', label: 'Combos & Clusters' },
+                { id: 'agents', label: 'Agent Setup' },
                 { id: 'keys', label: 'Virtual Keys' },
                 { id: 'aliases', label: 'Model Aliases' },
                 { id: 'doctor', label: 'Doctor Diagnostics' },
@@ -235,7 +239,13 @@ export default function DashboardOverview() {
           {/* Tab 4: BYOK Provider Credentials */}
           {activeTab === 'providers' && <ProviderCredentials />}
 
-          {/* Tab 5: Local Virtual Keys */}
+          {/* Tab 5: Combos & Fallback Clusters */}
+          {activeTab === 'combos' && <Combos />}
+
+          {/* Tab 6: Coding Agent Integration Hub */}
+          {activeTab === 'agents' && <AgentSetupHub />}
+
+          {/* Tab 7: Local Virtual Keys */}
           {activeTab === 'keys' && <VirtualKeys />}
 
           {/* Tab 6: Model Aliases & Routing Policy */}

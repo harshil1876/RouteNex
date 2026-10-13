@@ -457,5 +457,50 @@ describe('Open Source Admin API & Virtual Keys (OmniRoute Pattern)', () => {
     expect(docBody.diagnostics.length).toBeGreaterThanOrEqual(4);
     expect(docBody.diagnostics.every((d: any) => d.status === 'PASS' || d.status === 'WARN')).toBe(true);
   });
+
+  it('manages Combos (grouped fallback clusters) and routes through them', async () => {
+    // 1. GET /v1/admin/combos returns default combos
+    const combosRes = await app.request('/v1/admin/combos');
+    expect(combosRes.status).toBe(200);
+    const combosBody = await combosRes.json();
+    expect(combosBody.combos.length).toBeGreaterThanOrEqual(2);
+    expect(combosBody.combos.some((c: any) => c.slug === 'combo/free-unlimited')).toBe(true);
+
+    // 2. Create custom combo
+    const createRes = await app.request('/v1/admin/combos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Unit Test Combo',
+        slug: 'combo/test-cluster',
+        description: 'Test failover cluster',
+        targets: ['mock/fast', 'mock/gpt-4'],
+      }),
+    });
+    expect(createRes.status).toBe(200);
+
+    // 3. GET /v1/models includes the combo model
+    const modelsRes = await app.request('/v1/models');
+    expect(modelsRes.status).toBe(200);
+    const modelsBody = await modelsRes.json();
+    const foundCombo = modelsBody.data.find((m: any) => m.id === 'combo/test-cluster');
+    expect(foundCombo).toBeDefined();
+    expect(foundCombo.owned_by).toBe('routenex-combo');
+
+    // 4. POST /v1/chat/completions using combo model routes successfully
+    const chatRes = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'combo/test-cluster',
+        messages: [{ role: 'user', content: 'Testing combo routing' }],
+      }),
+    });
+    expect(chatRes.status).toBe(200);
+    const chatBody = await chatRes.json();
+    expect(chatBody.model).toBe('mock/fast');
+    expect(chatBody.routenex.routing_reason).toContain('combo/test-cluster');
+  });
 });
+
 

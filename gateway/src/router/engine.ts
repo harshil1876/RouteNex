@@ -8,6 +8,7 @@ import type {
 import type { ProviderRegistry } from '../providers/registry.js';
 import { type ModelEntry, ProviderError } from '../providers/types.js';
 import type { CircuitBreaker } from './circuit-breaker.js';
+import type { ComboDefinition } from '../storage/admin-store.js';
 
 export interface RouteCandidate {
   model: ModelEntry;
@@ -41,7 +42,8 @@ export class RoutingEngine {
     private readonly registry: ProviderRegistry,
     private readonly circuitBreaker: CircuitBreaker,
     private readonly config: AppConfig,
-    private readonly aliasResolver?: (model: string) => string
+    private readonly aliasResolver?: (model: string) => string,
+    private readonly comboResolver?: (model: string) => ComboDefinition | undefined
   ) {}
 
   /**
@@ -54,6 +56,53 @@ export class RoutingEngine {
     const targetModelName = (this.aliasResolver && request.model)
       ? this.aliasResolver(request.model)
       : request.model;
+
+    // 0.1 Check for Combo match (OmniRoute / OpenRouter fallback cluster)
+    if (this.comboResolver && targetModelName) {
+      const combo = this.comboResolver(targetModelName);
+      if (combo) {
+        const chain: ModelEntry[] = [];
+        const candidates: RouteCandidate[] = [];
+        for (const targetId of combo.targets) {
+          const m = this.registry.getModel(targetId);
+          if (m) {
+            const canRun = this.circuitBreaker.canExecute(m.provider);
+            candidates.push({
+              model: m,
+              eligible: canRun,
+              rejectionReason: canRun ? undefined : `Circuit breaker OPEN for '${m.provider}'`,
+            });
+            if (canRun) {
+              chain.push(m);
+            }
+          } else {
+            candidates.push({
+              model: { id: targetId, provider: 'unknown', capabilities: {} as any },
+              eligible: false,
+              rejectionReason: `Target model '${targetId}' not found or provider unconfigured`,
+            });
+          }
+        }
+
+        if (chain.length > 0) {
+          return {
+            primary: chain[0],
+            fallbackChain: chain.slice(1),
+            reason: `Routed via Combo '${combo.name}' (${combo.slug}) with ${chain.length} active target(s).`,
+            reasonCode: 'FALLBACK_CHAIN',
+            candidates,
+          };
+        } else {
+          return {
+            primary: null as any,
+            fallbackChain: [],
+            reason: `All target providers in Combo '${combo.name}' (${combo.slug}) are currently unconfigured or circuit-broken.`,
+            reasonCode: 'CIRCUIT_OPEN',
+            candidates,
+          };
+        }
+      }
+    }
 
     // 1. Explicit model requested
     if (targetModelName && targetModelName !== 'auto') {

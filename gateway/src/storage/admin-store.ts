@@ -20,9 +20,20 @@ export interface VirtualKey {
   rateLimitRpm: number;
 }
 
+export interface ComboDefinition {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  targets: string[];
+  strategy: 'priority' | 'round-robin' | 'fastest';
+  createdAt: string;
+}
+
 export interface AdminSettings {
   virtualKeys: VirtualKey[];
   aliases: Record<string, string>;
+  combos: ComboDefinition[];
   compressionEnabled: boolean;
   defaultStrategy: 'cost' | 'latency' | 'balanced' | 'explicit';
   providerKeys: {
@@ -30,6 +41,8 @@ export interface AdminSettings {
     openai?: string;
     gemini?: string;
     anthropic?: string;
+    cerebras?: string;
+    deepseek?: string;
     ollamaBaseUrl?: string;
   };
 }
@@ -61,6 +74,36 @@ export class AdminStore {
         'smart': 'openai/gpt-4o-mini',
         'reason': 'gemini/gemini-2.5-flash',
       },
+      combos: [
+        {
+          id: 'combo_free_unlimited',
+          name: 'Free Tier Unlimited Pool',
+          slug: 'combo/free-unlimited',
+          description: 'Zero-cost high-throughput pool chaining Groq, Cerebras, and Pollinations with automatic failover.',
+          targets: [
+            'groq/llama-3.3-70b-versatile',
+            'cerebras/llama-3.3-70b',
+            'pollinations/openai',
+            'pollinations/qwen',
+          ],
+          strategy: 'priority',
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'combo_coding_power',
+          name: 'Coding Tier Pro',
+          slug: 'combo/coding-power',
+          description: 'Premier code generation and refactoring combo routing across DeepSeek, Groq, and GPT-4o-mini.',
+          targets: [
+            'deepseek/deepseek-chat',
+            'groq/llama-3.3-70b-versatile',
+            'openai/gpt-4o-mini',
+            'pollinations/mistral',
+          ],
+          strategy: 'priority',
+          createdAt: new Date().toISOString(),
+        },
+      ],
       compressionEnabled: true,
       defaultStrategy: 'balanced',
       providerKeys: {},
@@ -77,6 +120,7 @@ export class AdminStore {
           ...parsed,
           aliases: { ...defaultSettings.aliases, ...(parsed.aliases || {}) },
           virtualKeys: parsed.virtualKeys || defaultSettings.virtualKeys,
+          combos: parsed.combos || defaultSettings.combos,
         };
       }
     } catch {
@@ -145,7 +189,10 @@ export class AdminStore {
     return this.settings.aliases[modelName] || modelName;
   }
 
-  public setProviderKey(provider: 'groq' | 'openai' | 'gemini' | 'anthropic' | 'ollamaBaseUrl', key: string): void {
+  public setProviderKey(
+    provider: 'groq' | 'openai' | 'gemini' | 'anthropic' | 'cerebras' | 'deepseek' | 'ollamaBaseUrl',
+    key: string
+  ): void {
     this.settings.providerKeys[provider] = key;
     this.save();
   }
@@ -159,4 +206,40 @@ export class AdminStore {
     this.settings.defaultStrategy = strategy;
     this.save();
   }
+
+  public getCombos(): ComboDefinition[] {
+    return this.settings.combos || [];
+  }
+
+  public findCombo(slugOrId: string): ComboDefinition | undefined {
+    return this.settings.combos?.find(
+      (c) => c.slug.toLowerCase() === slugOrId.toLowerCase() || c.id === slugOrId
+    );
+  }
+
+  public createCombo(
+    combo: Omit<ComboDefinition, 'id' | 'createdAt'>
+  ): ComboDefinition {
+    const newCombo: ComboDefinition = {
+      ...combo,
+      id: `combo_${nanoid(8)}`,
+      createdAt: new Date().toISOString(),
+    };
+    if (!this.settings.combos) this.settings.combos = [];
+    this.settings.combos.push(newCombo);
+    this.save();
+    return newCombo;
+  }
+
+  public deleteCombo(idOrSlug: string): boolean {
+    if (!this.settings.combos) return false;
+    const initialLen = this.settings.combos.length;
+    this.settings.combos = this.settings.combos.filter(
+      (c) => c.id !== idOrSlug && c.slug !== idOrSlug
+    );
+    const changed = this.settings.combos.length !== initialLen;
+    if (changed) this.save();
+    return changed;
+  }
 }
+

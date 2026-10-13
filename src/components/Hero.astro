@@ -13,10 +13,12 @@
   <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
     <!-- Eyebrow Badge -->
     <div class="inline-flex items-center gap-2 rounded-full border border-hairline bg-elevated/80 px-3.5 py-1 text-xs font-mono font-medium text-body shadow-xs mb-8">
-      <span class="inline-block h-2 w-2 rounded-full bg-[#0070f3] animate-pulse"></span>
+      <span class="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
       <span>Open Source Gateway</span>
       <span class="text-hairline">|</span>
-      <span class="text-mute">Apache / MIT</span>
+      <span class="text-mute">MIT Licensed</span>
+      <span class="text-hairline">|</span>
+      <span class="text-emerald-600 dark:text-emerald-400 font-semibold">1.6B Free Tokens/Mo</span>
     </div>
 
     <!-- Main Heading -->
@@ -74,9 +76,13 @@
 
         <!-- Terminal content -->
         <div class="p-4 sm:p-5 overflow-x-auto font-mono text-xs sm:text-[13px] leading-relaxed">
-          <pre class="text-neutral-300"><code><span class="text-neutral-500">$ </span><span class="text-blue-400">curl</span> http://localhost:3001/v1/chat/completions \
+          <pre class="text-neutral-300"><code><span class="text-neutral-500"># 1. Start gateway instantly (free tier pool ready)</span>
+<span class="text-neutral-500">$ </span><span class="text-yellow-400">npx routenex</span>
+
+<span class="text-neutral-500"># 2. Point any OpenAI SDK or coding agent</span>
+<span class="text-neutral-500">$ </span><span class="text-blue-400">curl</span> http://localhost:3001/v1/chat/completions \
   -H <span class="text-emerald-400">'Content-Type: application/json'</span> \
-  -d <span class="text-emerald-400">'&#123;"model":"auto","messages":[&#123;"role":"user","content":"Hello!"&#125;]&#125;'</span></code></pre>
+  -d <span class="text-emerald-400">'&#123;"model":"combo/free-unlimited","messages":[&#123;"role":"user","content":"Hello RouteNex!"&#125;]&#125;'</span></code></pre>
         </div>
       </div>
     </div>
