@@ -8,6 +8,10 @@ import { OllamaProviderAdapter } from './ollama.js';
 import { OpenAIProviderAdapter } from './openai.js';
 import type { IProviderAdapter, ModelEntry } from './types.js';
 
+import { PollinationsProviderAdapter } from './pollinations.js';
+import { CerebrasProviderAdapter } from './cerebras.js';
+import { DeepSeekProviderAdapter } from './deepseek.js';
+
 /**
  * Registry managing provider adapters and available models.
  */
@@ -18,6 +22,10 @@ export class ProviderRegistry {
     // Always include mock provider
     const mock = new MockProviderAdapter(200);
     this.adapters.set(mock.id, mock);
+
+    // Free-Tier Zero-Key Provider: Pollinations AI
+    const pollinations = new PollinationsProviderAdapter();
+    this.adapters.set(pollinations.id, pollinations);
 
     // Initialize Groq adapter
     const groq = new GroqProviderAdapter(appConfig.groqApiKey, appConfig.timeoutMs);
@@ -38,6 +46,14 @@ export class ProviderRegistry {
     // Initialize Ollama adapter
     const ollama = new OllamaProviderAdapter(appConfig.ollamaBaseUrl, appConfig.timeoutMs);
     this.adapters.set(ollama.id, ollama);
+
+    // Initialize Cerebras adapter (Free tier)
+    const cerebras = new CerebrasProviderAdapter(process.env.CEREBRAS_API_KEY, appConfig.timeoutMs);
+    this.adapters.set(cerebras.id, cerebras);
+
+    // Initialize DeepSeek adapter
+    const deepseek = new DeepSeekProviderAdapter(process.env.DEEPSEEK_API_KEY, appConfig.timeoutMs);
+    this.adapters.set(deepseek.id, deepseek);
   }
 
   /**

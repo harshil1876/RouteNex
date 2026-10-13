@@ -2,6 +2,7 @@
   "name": "routenex-gateway",
   "version": "0.1.0",
   "description": "RouteNex AI Router Gateway — lightweight, self-hosted AI routing proxy",
+  "license": "MIT",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
