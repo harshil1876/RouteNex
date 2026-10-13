@@ -46,6 +46,19 @@ import '../styles/global.css';
       type="font/woff2"
       crossorigin="anonymous"
     />
+
+    <!-- Theme initialization script (prevents FOUC) -->
+    <script is:inline>
+      (function() {
+        const storedTheme = localStorage.getItem('theme');
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (storedTheme === 'dark' || (!storedTheme && systemDark)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
   </head>
   <body class="min-h-screen bg-canvas text-body font-sans antialiased selection:bg-ink selection:text-white flex flex-col">
     <!-- Accessible Skip Link -->

@@ -391,3 +391,71 @@ describe('Secret Redaction & Privacy Guardrails (PRD Sec 52, 89)', () => {
     expect(errorText).not.toContain(sentinelSecret);
   });
 });
+
+describe('Open Source Admin API & Virtual Keys (OmniRoute Pattern)', () => {
+  const { app, adminStore } = createApp(testConfig);
+
+  it('GET /v1/admin/config returns open source edition details and virtual keys', async () => {
+    const res = await app.request('/v1/admin/config');
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.edition).toBe('RouteNex Open Source');
+    expect(body.virtualKeys.length).toBeGreaterThan(0);
+    expect(body.aliases).toBeDefined();
+    expect(body.providers.length).toBeGreaterThan(0);
+  });
+
+  it('generates virtual keys and authenticates requests with them', async () => {
+    // 1. Create a new local virtual key
+    const createRes = await app.request('/v1/admin/keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Cursor IDE', rateLimitRpm: 120 }),
+    });
+    expect(createRes.status).toBe(200);
+    const created = await createRes.json();
+    expect(created.key.key).toMatch(/^rn-local-/);
+
+    // 2. Create app with auth enabled and verify the virtual key is accepted
+    const { app: authedApp, adminStore: authedAdminStore } = createApp({ ...testConfig, apiKey: 'master-secret' });
+    const localVk = authedAdminStore.createVirtualKey('Cline Agent', 60);
+
+    const authTestRes = await authedApp.request('/v1/models', {
+      headers: { Authorization: `Bearer ${localVk.key}` },
+    });
+    expect(authTestRes.status).toBe(200);
+  });
+
+  it('manages model aliases and resolves them during routing', async () => {
+    // Set alias "my-alias" -> "mock/fast"
+    const aliasRes = await app.request('/v1/admin/aliases', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alias: 'my-alias', targetModel: 'mock/fast' }),
+    });
+    expect(aliasRes.status).toBe(200);
+
+    // Call chat completions using "my-alias"
+    const chatRes = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'my-alias',
+        messages: [{ role: 'user', content: 'Testing alias' }],
+      }),
+    });
+    expect(chatRes.status).toBe(200);
+    const chatBody = await chatRes.json();
+    expect(chatBody.model).toBe('mock/fast');
+    expect(chatBody.routenex.provider).toBe('mock');
+  });
+
+  it('GET /v1/admin/doctor returns full diagnostic report', async () => {
+    const docRes = await app.request('/v1/admin/doctor');
+    expect(docRes.status).toBe(200);
+    const docBody = await docRes.json();
+    expect(docBody.diagnostics.length).toBeGreaterThanOrEqual(4);
+    expect(docBody.diagnostics.every((d: any) => d.status === 'PASS' || d.status === 'WARN')).toBe(true);
+  });
+});
+

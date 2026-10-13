@@ -125,4 +125,25 @@ export class ProviderRegistry {
   getModelCatalog(): ModelInfo[] {
     return this.getAllModels().map((m) => ProviderRegistry.toModelInfo(m));
   }
+
+  /**
+   * Returns all provider adapters in the registry.
+   */
+  getAllProviders(): IProviderAdapter[] {
+    return Array.from(this.adapters.values());
+  }
+
+  /**
+   * Retrieves a provider by id.
+   */
+  getProvider(providerId: string): IProviderAdapter | undefined {
+    return this.adapters.get(providerId);
+  }
+
+  /**
+   * Dynamically registers or updates an adapter.
+   */
+  register(adapter: IProviderAdapter): void {
+    this.adapters.set(adapter.id, adapter);
+  }
 }

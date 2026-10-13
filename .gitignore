@@ -21,6 +21,7 @@ pnpm-debug.log*
 
 # runtime data & local databases
 routenex.json
+routenex_admin.json
 test_routenex.json
 *.db
 *.sqlite

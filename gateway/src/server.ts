@@ -17,15 +17,19 @@ import { RequestStore } from './storage/sqlite.js';
 /**
  * Creates and configures the Hono application with all middleware and routes.
  */
+import { AdminStore } from './storage/admin-store.js';
+import { createAdminRoutes } from './routes/admin.js';
+
 export function createApp(appConfig: AppConfig = config) {
   const app = new Hono();
   const startTime = Date.now();
 
   // 1. Initialize core subsystems
+  const adminStore = new AdminStore('./routenex_admin.json', !appConfig.persistenceEnabled);
   const registry = new ProviderRegistry(appConfig);
   const circuitBreaker = new CircuitBreaker();
   const store = new RequestStore(appConfig.dbPath, appConfig.persistenceEnabled);
-  const engine = new RoutingEngine(registry, circuitBreaker, appConfig);
+  const engine = new RoutingEngine(registry, circuitBreaker, appConfig, (m) => adminStore.resolveAlias(m));
 
   // 2. Global Middleware
   app.use(
@@ -33,13 +37,13 @@ export function createApp(appConfig: AppConfig = config) {
     cors({
       origin: '*',
       allowHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
-      allowMethods: ['GET', 'POST', 'OPTIONS'],
+      allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
       exposeHeaders: ['Retry-After'],
     })
   );
 
   app.use('*', createRateLimitMiddleware(appConfig.rateLimitRpm));
-  app.use('*', createAuthMiddleware(appConfig.apiKey));
+  app.use('*', createAuthMiddleware(appConfig.apiKey, adminStore));
 
   // 3. Mount Route Handlers
   const healthRoute = createHealthRoute(registry, startTime);
@@ -47,9 +51,13 @@ export function createApp(appConfig: AppConfig = config) {
   const modelsRoute = createModelsRoute(registry);
   const explainRoute = createExplainRoute(engine);
   const usageRoute = createUsageRoute(store);
+  const adminRoute = createAdminRoutes(adminStore, registry, appConfig);
 
   // Health routes
   app.route('/', healthRoute);
+
+  // Admin routes (for self-hosted Open Source Web Console)
+  app.route('/v1/admin', adminRoute);
 
   // OpenAI-compatible v1 prefix
   app.route('/v1', chatRoute);
@@ -63,7 +71,7 @@ export function createApp(appConfig: AppConfig = config) {
   app.route('/', explainRoute);
   app.route('/', usageRoute);
 
-  return { app, registry, circuitBreaker, store, engine };
+  return { app, registry, circuitBreaker, store, engine, adminStore };
 }
 
 /**

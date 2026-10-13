@@ -40,7 +40,8 @@ export class RoutingEngine {
   constructor(
     private readonly registry: ProviderRegistry,
     private readonly circuitBreaker: CircuitBreaker,
-    private readonly config: AppConfig
+    private readonly config: AppConfig,
+    private readonly aliasResolver?: (model: string) => string
   ) {}
 
   /**
@@ -49,18 +50,23 @@ export class RoutingEngine {
   resolveRoute(request: ChatCompletionRequest): RouteSelection {
     const allModels = this.registry.getAllModels();
 
+    // 0. Resolve model alias if configured
+    const targetModelName = (this.aliasResolver && request.model)
+      ? this.aliasResolver(request.model)
+      : request.model;
+
     // 1. Explicit model requested
-    if (request.model && request.model !== 'auto') {
-      const explicit = this.registry.getModel(request.model);
+    if (targetModelName && targetModelName !== 'auto') {
+      const explicit = this.registry.getModel(targetModelName);
       const candidates: RouteCandidate[] = [];
 
       if (!explicit) {
         return {
           primary: null as any,
           fallbackChain: [],
-          reason: `Requested model '${request.model}' is not available or provider not configured.`,
+          reason: `Requested model '${request.model}' (resolved to '${targetModelName}') is not available or provider not configured.`,
           reasonCode: 'NO_ELIGIBLE_MODEL',
-          candidates: [{ model: { id: request.model, provider: 'unknown', capabilities: {} as any }, eligible: false, rejectionReason: 'Provider not configured or model unknown' }],
+          candidates: [{ model: { id: targetModelName, provider: 'unknown', capabilities: {} as any }, eligible: false, rejectionReason: 'Provider not configured or model unknown' }],
         };
       }
 

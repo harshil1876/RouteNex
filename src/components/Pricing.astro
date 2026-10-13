@@ -1,82 +1,107 @@
 ---
-// Pricing.astro
+// Pricing.astro — Product Editions & Feature Matrix
 
 const tiers = [
   {
-    name: "Open Source",
+    name: "RouteNex Open Source",
     price: "$0",
     frequency: "forever",
-    description: "Self-host on your own infrastructure with complete source code control.",
+    description: "Self-host on your own infrastructure or run locally. Full control, zero cloud dependencies, MIT licensed.",
     featured: true,
     badge: "Community Edition",
     features: [
-      "All provider integrations (Groq, OpenAI, Gemini, Ollama)",
-      "Deterministic smart routing engine",
-      "Automatic failover & circuit breakers",
-      "Local request log & token tracking",
-      "Self-hosted Docker container",
-      "MIT License — no proprietary lock-in"
+      "All provider integrations (Groq, OpenAI, Gemini, Anthropic, Ollama, Mock)",
+      "Deterministic routing engine (cost, latency, balanced)",
+      "OpenRouter-style fallback arrays & 3-state circuit breakers",
+      "Prompt token compression (10-30% token reduction)",
+      "Local Web Admin Console with BYOK key management",
+      "Local virtual keys & custom model aliases",
+      "Privacy-first embedded telemetry & request inspector",
+      "One-command Docker Compose deployment"
     ],
-    cta: "Get Started",
+    cta: "Deploy Open Source",
     ctaLink: "/docs",
     ctaVariant: "primary"
   },
   {
-    name: "Pro",
-    price: "$49",
-    frequency: "per month",
-    description: "For teams scaling high-throughput multi-provider deployments.",
+    name: "RouteNex Cloud",
+    price: "$29",
+    frequency: "per seat / mo",
+    description: "Fully hosted managed AI routing edge with multi-tenant workspaces, team key vaults, and zero server maintenance.",
     featured: false,
-    badge: "Coming Soon",
+    badge: "Managed Service",
     features: [
       "Everything in Open Source",
-      "Centralized analytics & cost forecasting",
-      "Team API key management with rate limits",
-      "Slack / Webhook alert integrations",
-      "Multi-instance Redis state sync",
-      "Priority GitHub issue response"
+      "Hosted edge endpoints (https://api.routenex.com)",
+      "Multi-tenant team workspaces & RBAC",
+      "Centralized organization virtual keys & spend limits",
+      "Encrypted cloud credential vaults with automatic sync",
+      "Aggregated billing & cost forecasting",
+      "Hosted request logs with 90-day retention",
+      "99.9% uptime SLA guarantee"
     ],
-    cta: "Join Waitlist",
-    ctaLink: "https://github.com/routenex/routenex",
+    cta: "Join Cloud Waitlist",
+    ctaLink: "/dashboard",
     ctaVariant: "secondary"
   },
   {
-    name: "Enterprise",
+    name: "RouteNex Enterprise",
     price: "Custom",
     frequency: "annual contract",
-    description: "For mission-critical production clusters needing bespoke SLA.",
+    description: "For security-conscious enterprises requiring air-gapped private VPC clusters, custom compliance, and 24/7 SLA.",
     featured: false,
-    badge: "Coming Soon",
+    badge: "Dedicated & VPC",
     features: [
-      "Everything in Pro",
-      "SAML 2.0 / Okta SSO integration",
-      "SOC2 compliance audit logging",
-      "Custom routing plugins & pipelines",
-      "Dedicated 99.99% uptime SLA",
-      "24/7 engineering escalations"
+      "Everything in RouteNex Cloud",
+      "Air-gapped self-hosted deployment options",
+      "Dedicated Kubernetes Helm charts & Terraform modules",
+      "SAML 2.0 / Okta / Azure AD SSO",
+      "SOC2 Type II & HIPAA audit logging",
+      "Custom routing plugins & proprietary provider adapters",
+      "99.99% uptime SLA with 15-min response guarantee",
+      "Dedicated solutions architect"
     ],
-    cta: "Contact Us",
-    ctaLink: "https://github.com/routenex/routenex",
+    cta: "Contact Enterprise",
+    ctaLink: "https://github.com/harshil1876/RouteNex",
     ctaVariant: "secondary"
   }
+];
+
+const matrixRows = [
+  { feature: "OpenAI Protocol Compatibility (/v1/chat/completions)", oss: "Included", cloud: "Included", ent: "Included" },
+  { feature: "Multi-Provider BYOK (Groq, OpenAI, Gemini, Anthropic, Ollama)", oss: "Included", cloud: "Included", ent: "Included" },
+  { feature: "Deterministic Auto Routing (Cost / Latency / Balanced)", oss: "Included", cloud: "Included", ent: "Included" },
+  { feature: "OpenRouter-style Fallback Chains (models: [...])", oss: "Included", cloud: "Included", ent: "Included" },
+  { feature: "3-State Circuit Breakers (Closed / Open / Half-Open)", oss: "Included", cloud: "Included", ent: "Included" },
+  { feature: "Prompt Token Compressor (Whitespace & comment stripping)", oss: "Included", cloud: "Included", ent: "Included" },
+  { feature: "Local Web Admin Console & Test Playground", oss: "Included", cloud: "Included", ent: "Included" },
+  { feature: "Local Virtual Access Keys (rn-local-...)", oss: "Included", cloud: "Included", ent: "Included" },
+  { feature: "Custom Model Aliases (e.g. fast-model -> groq)", oss: "Included", cloud: "Included", ent: "Included" },
+  { feature: "Hosted Global Edge Gateways (api.routenex.com)", oss: "Self-Hosted", cloud: "Managed Edge", ent: "Custom VPC" },
+  { feature: "Team Workspaces & Role-Based Access Control", oss: "Single Admin", cloud: "Included", ent: "Advanced RBAC" },
+  { feature: "Centralized Billing & Upstream Invoicing", oss: "Direct BYOK", cloud: "Planned", ent: "Custom PO" },
+  { feature: "SAML 2.0 / Okta Enterprise SSO", oss: "N/A", cloud: "Add-on", ent: "Included" },
+  { feature: "SOC2 Compliance & Long-Term Audit Trails", oss: "N/A", cloud: "30-Day Logs", ent: "Indefinite & Export" },
+  { feature: "Uptime SLA Guarantee", oss: "Community Support", cloud: "99.9%", ent: "99.99% Dedicated" },
 ];
 ---
 
 <section id="pricing" class="py-20 sm:py-28 bg-canvas border-t border-hairline scroll-mt-16">
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  <div id="editions" class="scroll-mt-24 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <div class="mx-auto max-w-2xl text-center">
-      <span class="font-mono text-xs font-semibold uppercase tracking-wider text-mute">Predictable & Open</span>
+      <span class="font-mono text-xs font-semibold uppercase tracking-wider text-mute">Two Product Offerings</span>
       <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] text-ink sm:text-4xl">
-        Free to Run, Forever
+        RouteNex Product Editions
       </h2>
       <p class="mt-4 text-base text-body">
-        RouteNex is and will always be open source. No token markups, no hidden proxy fees.
+        Deploy RouteNex Open Source on your own servers for free, or leverage RouteNex Cloud for zero-maintenance hosted edge infrastructure.
       </p>
     </div>
 
+    <!-- Edition Cards Grid -->
     <div class="mt-14 grid grid-cols-1 gap-8 lg:grid-cols-3 items-stretch">
       {tiers.map((tier) => (
-        <div class={`relative flex flex-col justify-between rounded-lg border p-8 shadow-xs ${
+        <div class={`relative flex flex-col justify-between rounded-lg border p-8 shadow-xs transition-colors ${
           tier.featured 
             ? 'border-ink bg-elevated ring-1 ring-ink' 
             : 'border-hairline bg-elevated'
@@ -86,7 +111,7 @@ const tiers = [
               <h3 class="text-lg font-semibold text-ink">{tier.name}</h3>
               <span class={`rounded px-2.5 py-0.5 font-mono text-xs ${
                 tier.featured 
-                  ? 'bg-ink text-white' 
+                  ? 'bg-ink text-white dark:bg-white dark:text-black font-medium' 
                   : 'bg-canvas text-mute border border-hairline-soft'
               }`}>
                 {tier.badge}
@@ -107,7 +132,7 @@ const tiers = [
             <ul class="space-y-3 text-sm">
               {tier.features.map((feature) => (
                 <li class="flex items-start gap-2.5">
-                  <svg class="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <svg class="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                   <span class="text-body">{feature}</span>
@@ -121,8 +146,8 @@ const tiers = [
               href={tier.ctaLink}
               class={`w-full inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium transition ${
                 tier.ctaVariant === 'primary'
-                  ? 'bg-ink text-white hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-ink'
-                  : 'border border-hairline bg-elevated text-ink hover:bg-hairline-soft focus:outline-none focus:ring-2 focus:ring-neutral-400'
+                  ? 'bg-ink text-white dark:bg-white dark:text-black hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ink'
+                  : 'border border-hairline bg-elevated text-ink hover:bg-hairline focus:outline-none focus:ring-2 focus:ring-neutral-400'
               }`}
             >
               {tier.cta}
@@ -130,6 +155,61 @@ const tiers = [
           </div>
         </div>
       ))}
+    </div>
+
+    <!-- Product Editions Feature Matrix Table -->
+    <div class="mt-20">
+      <div class="text-center max-w-xl mx-auto mb-8">
+        <h3 class="text-xl font-semibold text-ink tracking-tight">Detailed Feature Matrix</h3>
+        <p class="mt-2 text-sm text-mute">A transparent comparison between RouteNex Open Source and hosted cloud editions.</p>
+      </div>
+
+      <div class="overflow-x-auto rounded-lg border border-hairline bg-elevated">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-hairline bg-canvas text-xs uppercase font-mono text-mute">
+            <tr>
+              <th scope="col" class="py-3.5 px-6 font-semibold">Capability</th>
+              <th scope="col" class="py-3.5 px-6 font-semibold text-center text-ink">RouteNex Open Source</th>
+              <th scope="col" class="py-3.5 px-6 font-semibold text-center text-ink">RouteNex Cloud</th>
+              <th scope="col" class="py-3.5 px-6 font-semibold text-center text-ink">Enterprise</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-hairline">
+            {matrixRows.map((row) => (
+              <tr class="hover:bg-canvas/50 transition-colors">
+                <td class="py-3 px-6 font-medium text-ink">{row.feature}</td>
+                <td class="py-3 px-6 text-center text-body font-mono text-xs">
+                  {row.oss === 'Included' ? (
+                    <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                      ✓ Included
+                    </span>
+                  ) : (
+                    <span class="text-mute">{row.oss}</span>
+                  )}
+                </td>
+                <td class="py-3 px-6 text-center text-body font-mono text-xs">
+                  {row.cloud === 'Included' ? (
+                    <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                      ✓ Included
+                    </span>
+                  ) : (
+                    <span class="text-mute">{row.cloud}</span>
+                  )}
+                </td>
+                <td class="py-3 px-6 text-center text-body font-mono text-xs">
+                  {row.ent === 'Included' ? (
+                    <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                      ✓ Included
+                    </span>
+                  ) : (
+                    <span class="text-mute">{row.ent}</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </section>

@@ -1,5 +1,6 @@
 ---
 // Header.astro
+import ThemeToggle from './ThemeToggle.astro';
 ---
 
 <header class="sticky top-0 z-50 w-full border-b border-hairline bg-elevated/85 backdrop-blur-md transition-colors">
@@ -7,7 +8,7 @@
     <!-- Left: Brand / Logo -->
     <div class="flex items-center gap-8">
       <a href="/" class="flex items-center gap-2.5 text-ink font-semibold tracking-tight transition hover:opacity-90" aria-label="RouteNex Home">
-        <span class="flex h-7 w-7 items-center justify-center rounded-md bg-ink text-white">
+        <span class="flex h-7 w-7 items-center justify-center rounded-md bg-ink text-white dark:bg-white dark:text-black">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 2L2 12l10 10 10-10L12 2z"></path>
             <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
@@ -19,17 +20,19 @@
       <!-- Desktop Nav links -->
       <nav class="hidden md:flex items-center gap-6" aria-label="Main Navigation">
         <a href="/#features" class="text-sm font-normal text-body transition hover:text-ink">Features</a>
-        <a href="/#how-it-works" class="text-sm font-normal text-body transition hover:text-ink">Architecture</a>
+        <a href="/#editions" class="text-sm font-normal text-body transition hover:text-ink">Editions</a>
         <a href="/docs" class="text-sm font-normal text-body transition hover:text-ink">Documentation</a>
-        <a href="/dashboard" class="text-sm font-normal text-body transition hover:text-ink">Dashboard</a>
+        <a href="/dashboard" class="text-sm font-normal text-body transition hover:text-ink">Console</a>
         <a href="/#pricing" class="text-sm font-normal text-body transition hover:text-ink">Pricing</a>
       </nav>
     </div>
 
     <!-- Right: External actions & CTAs -->
     <div class="hidden sm:flex items-center gap-3">
+      <ThemeToggle />
+
       <a
-        href="https://github.com/routenex/routenex"
+        href="https://github.com/harshil1876/RouteNex"
         target="_blank"
         rel="noreferrer noopener"
         class="inline-flex h-9 w-9 items-center justify-center rounded-full text-body transition hover:bg-hairline hover:text-ink"
@@ -41,20 +44,21 @@
       </a>
 
       <a
-        href="/docs"
-        class="inline-flex items-center justify-center rounded-full bg-ink px-4 py-2 text-xs sm:text-sm font-medium text-white transition hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
+        href="/dashboard"
+        class="inline-flex items-center justify-center rounded-full bg-ink px-4 py-2 text-xs sm:text-sm font-medium text-white dark:bg-white dark:text-black transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
       >
-        Get Started
+        Open Console
       </a>
     </div>
 
     <!-- Mobile Hamburger Toggle via details disclosure -->
     <div class="flex items-center gap-2 sm:hidden">
+      <ThemeToggle />
       <a
-        href="/docs"
-        class="rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-white transition hover:bg-neutral-800"
+        href="/dashboard"
+        class="rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-white dark:bg-white dark:text-black transition hover:opacity-90"
       >
-        Get Started
+        Console
       </a>
       <details class="relative">
         <summary class="flex h-9 w-9 list-none items-center justify-center rounded-md border border-hairline text-ink cursor-pointer hover:bg-hairline/60" aria-label="Toggle navigation menu">
@@ -65,12 +69,12 @@
         <div class="absolute right-0 top-12 z-50 w-52 rounded-lg border border-hairline bg-elevated p-2 shadow-lg">
           <nav class="flex flex-col gap-1 text-sm">
             <a href="/#features" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Features</a>
-            <a href="/#how-it-works" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Architecture</a>
+            <a href="/#editions" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Editions Matrix</a>
             <a href="/docs" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Documentation</a>
-            <a href="/dashboard" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Dashboard</a>
+            <a href="/dashboard" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Console</a>
             <a href="/#pricing" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Pricing</a>
             <div class="my-1 border-t border-hairline"></div>
-            <a href="https://github.com/routenex/routenex" target="_blank" rel="noreferrer" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">GitHub</a>
+            <a href="https://github.com/harshil1876/RouteNex" target="_blank" rel="noreferrer" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">GitHub</a>
           </nav>
         </div>
       </details>

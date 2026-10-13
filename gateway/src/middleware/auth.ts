@@ -5,16 +5,23 @@ import type { ApiError } from '../schemas.js';
  * Creates authentication middleware enforcing Bearer token authentication.
  * Skips authentication if no API key is configured or for healthcheck endpoints.
  */
-export function createAuthMiddleware(expectedApiKey?: string): MiddlewareHandler {
+import type { AdminStore } from '../storage/admin-store.js';
+
+export function createAuthMiddleware(expectedApiKey?: string, adminStore?: AdminStore): MiddlewareHandler {
   return async (c, next) => {
     // If no API key configured, localhost dev mode allows all requests
     if (!expectedApiKey || expectedApiKey.trim().length === 0) {
       return next();
     }
 
-    // Skip auth for health endpoints and CORS preflights
+    // Skip auth for health endpoints, admin endpoints (local admin), and CORS preflights
     const path = c.req.path;
-    if (path === '/health' || path === '/health/live' || c.req.method === 'OPTIONS') {
+    if (
+      path === '/health' ||
+      path === '/health/live' ||
+      path.startsWith('/v1/admin') ||
+      c.req.method === 'OPTIONS'
+    ) {
       return next();
     }
 
@@ -32,7 +39,10 @@ export function createAuthMiddleware(expectedApiKey?: string): MiddlewareHandler
     }
 
     const token = authHeader.slice(7).trim();
-    if (token !== expectedApiKey) {
+    const isMasterKey = token === expectedApiKey;
+    const isVirtualKey = adminStore ? adminStore.isValidKey(token) : false;
+
+    if (!isMasterKey && !isVirtualKey) {
       const errorPayload: ApiError = {
         error: {
           message: 'Invalid API key provided.',

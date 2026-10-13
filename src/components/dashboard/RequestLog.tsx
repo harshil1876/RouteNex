@@ -35,6 +35,8 @@ export default function RequestLog() {
   const [filterText, setFilterText] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
+  const [copiedPayload, setCopiedPayload] = useState(false);
 
   // Poll live gateway for actual historical requests
   React.useEffect(() => {
@@ -199,44 +201,128 @@ export default function RequestLog() {
                   Cost (Est.) {sortField === 'costUsd' && (sortAsc ? '↑' : '↓')}
                 </th>
                 <th scope="col" className="px-4 py-3">Status</th>
+                <th scope="col" className="px-4 py-3 text-right">Inspect</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-hairline">
               {filteredRequests.map((req) => (
-                <tr key={req.id} className="hover:bg-canvas/40 transition-colors">
+                <tr
+                  key={req.id}
+                  onClick={() => setSelectedRequest(req)}
+                  className="hover:bg-canvas/60 cursor-pointer transition-colors"
+                >
                   <td className="px-4 py-3 font-mono tabular-nums text-mute whitespace-nowrap">{req.time}</td>
                   <td className="px-4 py-3 font-mono text-ink font-medium whitespace-nowrap">{req.model}</td>
                   <td className="px-4 py-3 text-body whitespace-nowrap">{req.provider}</td>
                   <td className="px-4 py-3 font-mono tabular-nums whitespace-nowrap">
-                    <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-medium ${
-                      req.latencyMs < 150 ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' : req.latencyMs < 400 ? 'text-neutral-700 bg-neutral-100' : 'text-amber-800 bg-amber-50 border border-amber-200'
-                    }`}>
+                    <span className="inline-block px-1.5 py-0.5 rounded text-[11px] font-medium bg-canvas border border-hairline text-ink">
                       {req.latencyMs}ms
                     </span>
                   </td>
                   <td className="px-4 py-3 font-mono tabular-nums text-body whitespace-nowrap">{req.tokens.total.toLocaleString()}</td>
                   <td className="px-4 py-3 font-mono tabular-nums whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-ink font-medium">${req.costUsd.toFixed(5)}</span>
-                      <span className="rounded bg-neutral-100 px-1 py-0.2 text-[9px] text-mute font-mono" title={`Provenance: ${req.provenance}`}>
-                        EST
-                      </span>
-                    </div>
+                    <span className="text-ink font-medium">${req.costUsd.toFixed(5)}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-mono font-medium ${
-                      req.status === '200 OK' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : req.status.includes('Fallback') ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-red-50 text-red-700 border border-red-200'
+                      req.status === '200 OK'
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                        : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
                     }`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${
-                        req.status === '200 OK' ? 'bg-emerald-500' : req.status.includes('Fallback') ? 'bg-amber-500' : 'bg-red-500'
-                      }`}></span>
+                      <span className={`h-1.5 w-1.5 rounded-full ${req.status === '200 OK' ? 'bg-emerald-500' : 'bg-red-500'}`} />
                       {req.status}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap font-mono text-[11px] text-mute hover:text-ink">
+                    Inspect →
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Request Inspector Slide-Over Modal */}
+      {selectedRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="relative w-full max-w-2xl rounded-xl border border-hairline bg-elevated p-6 shadow-2xl max-h-[90vh] overflow-y-auto space-y-5">
+            <div className="flex items-center justify-between border-b border-hairline pb-4">
+              <div>
+                <span className="font-mono text-xs text-mute uppercase">Request Inspector</span>
+                <h3 className="text-base font-semibold text-ink font-mono mt-0.5">{selectedRequest.id}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedRequest(null)}
+                className="h-8 w-8 rounded-full border border-hairline text-body hover:bg-hairline hover:text-ink flex items-center justify-center text-sm font-semibold transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+              <div className="p-3 rounded-lg border border-hairline bg-canvas">
+                <span className="text-mute block text-[10px]">Status</span>
+                <span className="text-ink font-semibold text-xs mt-1 block">{selectedRequest.status}</span>
+              </div>
+              <div className="p-3 rounded-lg border border-hairline bg-canvas">
+                <span className="text-mute block text-[10px]">Latency</span>
+                <span className="text-ink font-semibold text-xs mt-1 block">{selectedRequest.latencyMs} ms</span>
+              </div>
+              <div className="p-3 rounded-lg border border-hairline bg-canvas">
+                <span className="text-mute block text-[10px]">Total Tokens</span>
+                <span className="text-ink font-semibold text-xs mt-1 block">{selectedRequest.tokens.total}</span>
+              </div>
+              <div className="p-3 rounded-lg border border-hairline bg-canvas">
+                <span className="text-mute block text-[10px]">Est. Cost</span>
+                <span className="text-ink font-semibold text-xs mt-1 block">${selectedRequest.costUsd.toFixed(5)}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between py-1.5 border-b border-hairline">
+                <span className="text-mute">Model Requested</span>
+                <span className="font-mono text-ink font-medium">{selectedRequest.model}</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-hairline">
+                <span className="text-mute">Provider Selected</span>
+                <span className="font-mono text-ink font-medium">{selectedRequest.provider}</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-hairline">
+                <span className="text-mute">Token Breakdown</span>
+                <span className="font-mono text-body">
+                  Prompt: {selectedRequest.tokens.prompt} | Completion: {selectedRequest.tokens.completion}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-hairline">
+                <span className="text-mute">Cost Provenance</span>
+                <span className="font-mono text-xs px-2 py-0.5 rounded bg-canvas border border-hairline text-ink">
+                  {selectedRequest.provenance}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-mono font-semibold text-ink">Simulated Response Payload:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(JSON.stringify(selectedRequest, null, 2));
+                    setCopiedPayload(true);
+                    setTimeout(() => setCopiedPayload(false), 2000);
+                  }}
+                  className="text-xs font-mono text-body hover:text-ink underline"
+                >
+                  {copiedPayload ? '✓ Copied' : 'Copy JSON'}
+                </button>
+              </div>
+              <pre className="p-3 rounded-lg border border-hairline bg-canvas text-[11px] font-mono text-body overflow-x-auto max-h-48 leading-relaxed">
+                <code>{JSON.stringify(selectedRequest, null, 2)}</code>
+              </pre>
+            </div>
+          </div>
         </div>
       )}
     </div>
