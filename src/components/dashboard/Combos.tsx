@@ -54,10 +54,16 @@ const DEFAULT_COMBOS: ComboItem[] = [
   },
 ];
 
-const AVAILABLE_TARGET_OPTIONS = [
+const DEFAULT_TARGET_OPTIONS = [
   'groq/llama-3.3-70b-versatile',
   'groq/llama-3.1-8b-instant',
   'cerebras/llama-3.3-70b',
+  'mistral/codestral-latest',
+  'mistral/mistral-small-latest',
+  'siliconflow/deepseek-ai/DeepSeek-V3',
+  'siliconflow/deepseek-ai/DeepSeek-R1',
+  'duckduckgo/gpt-4o-mini',
+  'duckduckgo/claude-3-haiku',
   'pollinations/openai',
   'pollinations/qwen',
   'pollinations/mistral',
@@ -73,6 +79,7 @@ const AVAILABLE_TARGET_OPTIONS = [
 
 export default function Combos() {
   const [combos, setCombos] = useState<ComboItem[]>(DEFAULT_COMBOS);
+  const [availableTargets, setAvailableTargets] = useState<string[]>(DEFAULT_TARGET_OPTIONS);
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ [comboId: string]: string }>({});
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
@@ -96,9 +103,19 @@ export default function Combos() {
           setCombos(data.combos);
         }
       })
-      .catch(() => {
-        // Local gateway offline, fall back to default combos
-      });
+      .catch(() => {});
+
+    fetch('http://127.0.0.1:3001/v1/models')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.data)) {
+          const ids: string[] = data.data.map((m: any) => m.id).filter(Boolean);
+          if (ids.length > 0) {
+            setAvailableTargets(Array.from(new Set([...DEFAULT_TARGET_OPTIONS, ...ids])));
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const copySlug = (slugText: string) => {
@@ -374,7 +391,7 @@ export default function Combos() {
                   Target Models (Click to toggle sequence)
                 </label>
                 <div className="max-h-36 overflow-y-auto space-y-1 p-2 rounded border border-hairline bg-canvas">
-                  {AVAILABLE_TARGET_OPTIONS.map((opt) => {
+                  {availableTargets.map((opt) => {
                     const isSelected = selectedTargets.includes(opt);
                     const orderIdx = selectedTargets.indexOf(opt);
                     return (

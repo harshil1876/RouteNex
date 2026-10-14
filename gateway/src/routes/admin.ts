@@ -20,6 +20,8 @@ import { AnthropicProviderAdapter } from '../providers/anthropic.js';
 import { OllamaProviderAdapter } from '../providers/ollama.js';
 import { CerebrasProviderAdapter } from '../providers/cerebras.js';
 import { DeepSeekProviderAdapter } from '../providers/deepseek.js';
+import { MistralProviderAdapter } from '../providers/mistral.js';
+import { SiliconFlowProviderAdapter } from '../providers/siliconflow.js';
 
 export function createAdminRoutes(
   adminStore: AdminStore,
@@ -90,6 +92,12 @@ export function createAdminRoutes(
       } else if (provider === 'ollama') {
         adminStore.setProviderKey('ollamaBaseUrl', baseUrl || 'http://localhost:11434/v1');
         registry.register(new OllamaProviderAdapter(baseUrl));
+      } else if (provider === 'mistral') {
+        adminStore.setProviderKey('mistral', apiKey);
+        registry.register(new MistralProviderAdapter(apiKey));
+      } else if (provider === 'siliconflow') {
+        adminStore.setProviderKey('siliconflow', apiKey);
+        registry.register(new SiliconFlowProviderAdapter(apiKey));
       } else {
         return c.json({ error: `Unknown provider '${provider}'` }, 400);
       }

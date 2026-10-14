@@ -43,6 +43,8 @@ export interface AdminSettings {
     anthropic?: string;
     cerebras?: string;
     deepseek?: string;
+    mistral?: string;
+    siliconflow?: string;
     ollamaBaseUrl?: string;
   };
 }
@@ -190,7 +192,7 @@ export class AdminStore {
   }
 
   public setProviderKey(
-    provider: 'groq' | 'openai' | 'gemini' | 'anthropic' | 'cerebras' | 'deepseek' | 'ollamaBaseUrl',
+    provider: 'groq' | 'openai' | 'gemini' | 'anthropic' | 'cerebras' | 'deepseek' | 'mistral' | 'siliconflow' | 'ollamaBaseUrl',
     key: string
   ): void {
     this.settings.providerKeys[provider] = key;
