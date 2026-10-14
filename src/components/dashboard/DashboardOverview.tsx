@@ -246,7 +246,7 @@ export default function DashboardOverview() {
         {/* View Content Canvas */}
         <main className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           {/* Cloud Edition View */}
-          {edition === 'cloud' && <CloudEditionShowcase />}
+          {edition === 'cloud' && <CloudEditionShowcase activeTab={activeTab} />}
 
           {/* Open Source Edition Views */}
           {edition === 'oss' && (

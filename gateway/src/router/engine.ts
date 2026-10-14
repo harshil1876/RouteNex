@@ -66,11 +66,21 @@ export class RoutingEngine {
         for (const targetId of combo.targets) {
           const m = this.registry.getModel(targetId);
           if (m) {
-            const canRun = this.circuitBreaker.canExecute(m.provider);
+            const canRun = this.circuitBreaker.canExecute(m.provider, m.id);
+            let rejectionReason: string | undefined;
+            if (!canRun) {
+              if (this.circuitBreaker.getState(m.provider) === 'OPEN') {
+                rejectionReason = `Circuit breaker OPEN for provider '${m.provider}'`;
+              } else if (this.circuitBreaker.isModelLocked(m.id)) {
+                rejectionReason = `Model '${m.id}' temporarily locked out`;
+              } else {
+                rejectionReason = `Resilience block for '${m.provider}'`;
+              }
+            }
             candidates.push({
               model: m,
               eligible: canRun,
-              rejectionReason: canRun ? undefined : `Circuit breaker OPEN for '${m.provider}'`,
+              rejectionReason,
             });
             if (canRun) {
               chain.push(m);
@@ -119,11 +129,22 @@ export class RoutingEngine {
         };
       }
 
-      const isOpen = !this.circuitBreaker.canExecute(explicit.provider);
+      const canRun = this.circuitBreaker.canExecute(explicit.provider, explicit.id);
+      let rejectionReason: string | undefined;
+      if (!canRun) {
+        if (this.circuitBreaker.getState(explicit.provider) === 'OPEN') {
+          rejectionReason = `Circuit breaker for '${explicit.provider}' is OPEN`;
+        } else if (this.circuitBreaker.isModelLocked(explicit.id)) {
+          rejectionReason = `Model '${explicit.id}' is temporarily locked out`;
+        } else {
+          rejectionReason = `Resilience block for '${explicit.provider}'`;
+        }
+      }
+
       candidates.push({
         model: explicit,
-        eligible: !isOpen,
-        rejectionReason: isOpen ? `Circuit breaker for '${explicit.provider}' is OPEN` : undefined,
+        eligible: canRun,
+        rejectionReason,
       });
 
       // Check fallback models if specified in request.models
@@ -132,7 +153,7 @@ export class RoutingEngine {
         for (const mId of request.models) {
           if (mId === request.model) continue;
           const fb = this.registry.getModel(mId);
-          if (fb && this.circuitBreaker.canExecute(fb.provider)) {
+          if (fb && this.circuitBreaker.canExecute(fb.provider, fb.id)) {
             fallbacks.push(fb);
           }
         }
@@ -163,7 +184,7 @@ export class RoutingEngine {
           reasonCode: 'FALLBACK_CHAIN',
           candidates: chain.map((m, idx) => ({
             model: m,
-            eligible: this.circuitBreaker.canExecute(m.provider),
+            eligible: this.circuitBreaker.canExecute(m.provider, m.id),
             score: 100 - idx,
           })),
         };
@@ -180,8 +201,12 @@ export class RoutingEngine {
         candidates.push({ model, eligible: false, rejectionReason: 'Lacks tool_calls capability' });
         continue;
       }
-      if (!this.circuitBreaker.canExecute(model.provider)) {
-        candidates.push({ model, eligible: false, rejectionReason: `Circuit breaker OPEN for provider '${model.provider}'` });
+      const canRun = this.circuitBreaker.canExecute(model.provider, model.id);
+      if (!canRun) {
+        const rejectionReason = this.circuitBreaker.getState(model.provider) === 'OPEN'
+          ? `Circuit breaker OPEN for provider '${model.provider}'`
+          : `Model '${model.id}' temporarily locked out`;
+        candidates.push({ model, eligible: false, rejectionReason });
         continue;
       }
       if (pref?.only && pref.only.length > 0 && !pref.only.includes(model.provider)) {
@@ -295,7 +320,7 @@ export class RoutingEngine {
       const adapter = this.registry.getAdapter(targetModel.provider);
       if (!adapter) continue;
 
-      if (!this.circuitBreaker.canExecute(targetModel.provider)) {
+      if (!this.circuitBreaker.canExecute(targetModel.provider, targetModel.id)) {
         continue;
       }
 
@@ -303,6 +328,8 @@ export class RoutingEngine {
         const reqForTarget: ChatCompletionRequest = { ...request, model: targetModel.id };
         const response = await adapter.chat(reqForTarget);
         this.circuitBreaker.recordSuccess(targetModel.provider);
+        this.circuitBreaker.recordModelSuccess(targetModel.id);
+        this.circuitBreaker.recordKeySuccess(targetModel.provider);
 
         const latencyMs = Date.now() - startTime;
         const costEstimate = this.calculateCost(targetModel, response.usage);
@@ -320,7 +347,17 @@ export class RoutingEngine {
         return response;
       } catch (err: any) {
         lastError = err;
-        this.circuitBreaker.recordFailure(targetModel.provider);
+        const status = err.status || (err instanceof ProviderError ? err.status : 500);
+        if (status === 429) {
+          // Layer 2: Key Rate Limit Cooldown
+          this.circuitBreaker.recordKeyCooldown(targetModel.provider, 30000, err.message);
+        } else if (status === 404 || err.message?.toLowerCase().includes('model') || err.message?.toLowerCase().includes('not found')) {
+          // Layer 3: Model Lockout
+          this.circuitBreaker.recordModelLockout(targetModel.id, 60000, err.message);
+        } else {
+          // Layer 1: Cascading Provider Failure
+          this.circuitBreaker.recordFailure(targetModel.provider);
+        }
         const isRetriable = err instanceof ProviderError ? err.retriable : true;
         if (!isRetriable || i === maxAttempts - 1) {
           throw err;
@@ -357,7 +394,7 @@ export class RoutingEngine {
     for (let i = 0; i < maxAttempts; i++) {
       const targetModel = chain[i];
       const adapter = this.registry.getAdapter(targetModel.provider);
-      if (!adapter || !this.circuitBreaker.canExecute(targetModel.provider)) {
+      if (!adapter || !this.circuitBreaker.canExecute(targetModel.provider, targetModel.id)) {
         continue;
       }
 
@@ -368,6 +405,7 @@ export class RoutingEngine {
         // Track circuit breaker on stream lifecycle
         const circuitBreaker = this.circuitBreaker;
         const providerId = targetModel.provider;
+        const modelId = targetModel.id;
 
         async function* wrappedStream(): AsyncGenerator<StreamChunk> {
           try {
@@ -375,8 +413,17 @@ export class RoutingEngine {
               yield chunk;
             }
             circuitBreaker.recordSuccess(providerId);
-          } catch (err) {
-            circuitBreaker.recordFailure(providerId);
+            circuitBreaker.recordModelSuccess(modelId);
+            circuitBreaker.recordKeySuccess(providerId);
+          } catch (err: any) {
+            const status = err.status || 500;
+            if (status === 429) {
+              circuitBreaker.recordKeyCooldown(providerId, 30000, err.message);
+            } else if (status === 404 || err.message?.toLowerCase().includes('model')) {
+              circuitBreaker.recordModelLockout(modelId, 60000, err.message);
+            } else {
+              circuitBreaker.recordFailure(providerId);
+            }
             throw err;
           }
         }
@@ -390,7 +437,14 @@ export class RoutingEngine {
         };
       } catch (err: any) {
         lastError = err;
-        this.circuitBreaker.recordFailure(targetModel.provider);
+        const status = err.status || 500;
+        if (status === 429) {
+          this.circuitBreaker.recordKeyCooldown(targetModel.provider, 30000, err.message);
+        } else if (status === 404 || err.message?.toLowerCase().includes('model')) {
+          this.circuitBreaker.recordModelLockout(targetModel.id, 60000, err.message);
+        } else {
+          this.circuitBreaker.recordFailure(targetModel.provider);
+        }
         const isRetriable = err instanceof ProviderError ? err.retriable : true;
         if (!isRetriable || i === maxAttempts - 1) {
           throw err;

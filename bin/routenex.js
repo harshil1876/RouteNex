@@ -93,6 +93,8 @@ const server = startServer({
   openaiApiKey: process.env.OPENAI_API_KEY,
   geminiApiKey: process.env.GEMINI_API_KEY,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+  mistralApiKey: process.env.MISTRAL_API_KEY,
+  siliconflowApiKey: process.env.SILICONFLOW_API_KEY,
   ollamaBaseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434/v1',
   logPrompts: false,
   dbPath: './routenex.json',
@@ -103,10 +105,21 @@ const server = startServer({
   persistenceEnabled: true,
 });
 
+const dashboardUrl = `http://${host}:${port}/dashboard`;
+
 console.log(`\x1b[32m✔ Gateway Ready for Coding Agents & Client Applications:\x1b[0m`);
+console.log(`  • Web Dashboard: \x1b[1m\x1b[34m${dashboardUrl}\x1b[0m (100% Offline Standalone)`);
 console.log(`  • Base URL:      \x1b[1mhttp://${host}:${port}/v1\x1b[0m`);
 console.log(`  • Health Check:  http://${host}:${port}/health/live`);
 console.log(`  • Model Catalog: http://${host}:${port}/v1/models`);
 console.log(`  • Virtual Key:   \x1b[33mrn-local-dev-default\x1b[0m`);
+console.log(`  • Free Pools:    Pollinations (Zero-Key), Mistral (1B Tokens/mo), Cerebras (1M/day)`);
 console.log(`  • Free Combos:   combo/free-unlimited, combo/coding-power`);
 console.log(`\n\x1b[2mPress Ctrl+C to terminate gateway.\x1b[0m\n`);
+
+if (args.includes('--open') || args.includes('-o')) {
+  import('node:child_process').then(({ exec }) => {
+    const startCmd = process.platform === 'win32' ? `start ${dashboardUrl}` : process.platform === 'darwin' ? `open ${dashboardUrl}` : `xdg-open ${dashboardUrl}`;
+    exec(startCmd);
+  }).catch(() => {});
+}

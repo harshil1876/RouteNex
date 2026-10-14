@@ -56,6 +56,8 @@ export interface AppConfig {
   openaiApiKey?: string;
   geminiApiKey?: string;
   anthropicApiKey?: string;
+  mistralApiKey?: string;
+  siliconflowApiKey?: string;
   ollamaBaseUrl?: string;
   logPrompts: boolean;
   dbPath: string;
@@ -98,6 +100,8 @@ export function loadConfig(): AppConfig {
     openaiApiKey: process.env.OPENAI_API_KEY?.trim() || undefined,
     geminiApiKey: process.env.GEMINI_API_KEY?.trim() || undefined,
     anthropicApiKey: process.env.ANTHROPIC_API_KEY?.trim() || undefined,
+    mistralApiKey: process.env.MISTRAL_API_KEY?.trim() || undefined,
+    siliconflowApiKey: process.env.SILICONFLOW_API_KEY?.trim() || undefined,
     ollamaBaseUrl: process.env.OLLAMA_BASE_URL?.trim() || undefined,
     logPrompts: parseBool(process.env.ROUTENEX_LOG_PROMPTS, false),
     dbPath: process.env.ROUTENEX_DB_PATH || './routenex.db',

@@ -10,6 +10,9 @@ import { PromptCompressor } from './router/compression.js';
 import { AnthropicProviderAdapter } from './providers/anthropic.js';
 import { GeminiProviderAdapter } from './providers/gemini.js';
 import { OllamaProviderAdapter } from './providers/ollama.js';
+import { MistralProviderAdapter } from './providers/mistral.js';
+import { SiliconFlowProviderAdapter } from './providers/siliconflow.js';
+import { DuckDuckGoProviderAdapter } from './providers/duckduckgo.js';
 import type { AppConfig } from './config.js';
 
 const testConfig: AppConfig = {
@@ -105,6 +108,46 @@ describe('CircuitBreaker', () => {
     expect(cb.getState('mock')).toBe('HALF_OPEN');
     cb.recordSuccess('mock');
     expect(cb.getState('mock')).toBe('CLOSED');
+  });
+
+  it('Layer 2 (Key Cooldown): handles 429 backoff per key without breaking other keys', async () => {
+    const cb = new CircuitBreaker({ defaultKeyCooldownMs: 25 });
+    const keyId = 'sk-groq-key-1';
+    expect(cb.isKeyCoolingDown(keyId)).toBe(false);
+    expect(cb.canExecute('groq', undefined, keyId)).toBe(true);
+
+    cb.recordKeyCooldown(keyId, 25, 'Rate limited 429');
+    expect(cb.isKeyCoolingDown(keyId)).toBe(true);
+    expect(cb.canExecute('groq', undefined, keyId)).toBe(false);
+    // Other key on same provider remains operational
+    expect(cb.canExecute('groq', undefined, 'sk-groq-key-2')).toBe(true);
+
+    await new Promise((r) => setTimeout(r, 35));
+    expect(cb.isKeyCoolingDown(keyId)).toBe(false);
+    expect(cb.canExecute('groq', undefined, keyId)).toBe(true);
+  });
+
+  it('Layer 3 (Model Lockout): isolates a failing model without knocking out sibling models on same provider', () => {
+    const cb = new CircuitBreaker();
+    const failingModel = 'groq/llama-3.3-70b-versatile';
+    const healthyModel = 'groq/llama-3.1-8b-instant';
+
+    expect(cb.canExecute('groq', failingModel)).toBe(true);
+    expect(cb.canExecute('groq', healthyModel)).toBe(true);
+
+    // Lock out only the 70B model
+    cb.recordModelLockout(failingModel, 5000, 'Model overloaded 503');
+    expect(cb.isModelLocked(failingModel)).toBe(true);
+    expect(cb.canExecute('groq', failingModel)).toBe(false);
+
+    // Sibling model remains fully functional
+    expect(cb.isModelLocked(healthyModel)).toBe(false);
+    expect(cb.canExecute('groq', healthyModel)).toBe(true);
+
+    // Clear lockout on success
+    cb.recordModelSuccess(failingModel);
+    expect(cb.isModelLocked(failingModel)).toBe(false);
+    expect(cb.canExecute('groq', failingModel)).toBe(true);
   });
 });
 
@@ -351,6 +394,49 @@ describe('New Provider Adapters', () => {
     const adapter = new OllamaProviderAdapter();
     expect(adapter.id).toBe('ollama');
     expect(adapter.models.some((m) => m.id.includes('llama3.2'))).toBe(true);
+  });
+
+  it('Mistral adapter registers models including Codestral and handles unconfigured key', async () => {
+    const adapter = new MistralProviderAdapter(undefined);
+    expect(adapter.id).toBe('mistral');
+    expect(adapter.isConfigured()).toBe(false);
+    expect(adapter.models.some((m) => m.id.includes('codestral-latest'))).toBe(true);
+    expect(adapter.models.some((m) => m.id.includes('mistral-small-latest'))).toBe(true);
+
+    await expect(
+      adapter.chat({
+        model: 'mistral/codestral-latest',
+        messages: [{ role: 'user', content: 'def solve():' }],
+        stream: false,
+        n: 1,
+      })
+    ).rejects.toThrow('Mistral API key is not configured');
+  });
+
+  it('SiliconFlow adapter registers reasoning models and handles unconfigured key', async () => {
+    const adapter = new SiliconFlowProviderAdapter(undefined);
+    expect(adapter.id).toBe('siliconflow');
+    expect(adapter.isConfigured()).toBe(false);
+    expect(adapter.models.some((m) => m.id.includes('DeepSeek-V3'))).toBe(true);
+    expect(adapter.models.some((m) => m.id.includes('DeepSeek-R1'))).toBe(true);
+
+    await expect(
+      adapter.chat({
+        model: 'siliconflow/deepseek-ai/DeepSeek-V3',
+        messages: [{ role: 'user', content: 'Analyze this algorithm' }],
+        stream: false,
+        n: 1,
+      })
+    ).rejects.toThrow('SiliconFlow API key is not configured');
+  });
+
+  it('DuckDuckGo adapter is zero-key configured and provides anonymous chat models', async () => {
+    const adapter = new DuckDuckGoProviderAdapter();
+    expect(adapter.id).toBe('duckduckgo');
+    expect(adapter.isConfigured()).toBe(true);
+    expect(adapter.models.length).toBeGreaterThanOrEqual(4);
+    expect(adapter.models.some((m) => m.id === 'duckduckgo/gpt-4o-mini')).toBe(true);
+    expect(adapter.models.some((m) => m.id === 'duckduckgo/claude-3-haiku')).toBe(true);
   });
 });
 

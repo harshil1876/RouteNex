@@ -11,6 +11,9 @@ import type { IProviderAdapter, ModelEntry } from './types.js';
 import { PollinationsProviderAdapter } from './pollinations.js';
 import { CerebrasProviderAdapter } from './cerebras.js';
 import { DeepSeekProviderAdapter } from './deepseek.js';
+import { MistralProviderAdapter } from './mistral.js';
+import { SiliconFlowProviderAdapter } from './siliconflow.js';
+import { DuckDuckGoProviderAdapter } from './duckduckgo.js';
 
 /**
  * Registry managing provider adapters and available models.
@@ -23,9 +26,12 @@ export class ProviderRegistry {
     const mock = new MockProviderAdapter(200);
     this.adapters.set(mock.id, mock);
 
-    // Free-Tier Zero-Key Provider: Pollinations AI
+    // Free-Tier Zero-Key Providers
     const pollinations = new PollinationsProviderAdapter();
     this.adapters.set(pollinations.id, pollinations);
+
+    const duckduckgo = new DuckDuckGoProviderAdapter();
+    this.adapters.set(duckduckgo.id, duckduckgo);
 
     // Initialize Groq adapter
     const groq = new GroqProviderAdapter(appConfig.groqApiKey, appConfig.timeoutMs);
@@ -42,6 +48,14 @@ export class ProviderRegistry {
     // Initialize Anthropic adapter
     const anthropic = new AnthropicProviderAdapter(appConfig.anthropicApiKey, appConfig.timeoutMs);
     this.adapters.set(anthropic.id, anthropic);
+
+    // Initialize Mistral adapter (1B Free Tokens/Mo tier)
+    const mistral = new MistralProviderAdapter(appConfig.mistralApiKey || process.env.MISTRAL_API_KEY, appConfig.timeoutMs);
+    this.adapters.set(mistral.id, mistral);
+
+    // Initialize SiliconFlow adapter (Free reasoning tier)
+    const siliconflow = new SiliconFlowProviderAdapter(appConfig.siliconflowApiKey || process.env.SILICONFLOW_API_KEY, appConfig.timeoutMs);
+    this.adapters.set(siliconflow.id, siliconflow);
 
     // Initialize Ollama adapter
     const ollama = new OllamaProviderAdapter(appConfig.ollamaBaseUrl, appConfig.timeoutMs);

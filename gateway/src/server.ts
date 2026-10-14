@@ -17,8 +17,11 @@ import { RequestStore } from './storage/sqlite.js';
 /**
  * Creates and configures the Hono application with all middleware and routes.
  */
+import fs from 'node:fs';
+import path from 'node:path';
 import { AdminStore } from './storage/admin-store.js';
 import { createAdminRoutes } from './routes/admin.js';
+import { mountStaticDashboard } from './middleware/static-dashboard.js';
 
 export function createApp(appConfig: AppConfig = config) {
   const app = new Hono();
@@ -76,6 +79,16 @@ export function createApp(appConfig: AppConfig = config) {
   app.route('/', modelsRoute);
   app.route('/', explainRoute);
   app.route('/', usageRoute);
+
+  // 4. Standalone Dashboard Asset Serving (serves built dist/ if available)
+  const distCandidatePaths = [
+    path.resolve(process.cwd(), 'dist'),
+    path.resolve(process.cwd(), '..', 'dist'),
+  ];
+  const staticRoot = distCandidatePaths.find((p) => fs.existsSync(p));
+  if (staticRoot) {
+    mountStaticDashboard(app, staticRoot);
+  }
 
   return { app, registry, circuitBreaker, store, engine, adminStore };
 }

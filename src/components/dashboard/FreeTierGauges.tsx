@@ -93,6 +93,32 @@ const INITIAL_POOLS: FreePool[] = [
     requiresKey: true,
     models: ['deepseek/deepseek-chat', 'deepseek/deepseek-reasoner'],
   },
+  {
+    id: 'duckduckgo',
+    name: 'DuckDuckGo AI (Zero-Key)',
+    provider: 'duckduckgo',
+    allowance: 'Anonymous search & chat (Zero-Key)',
+    monthlyTokens: 20000000,
+    monthlyTokensFormatted: '~20M / mo',
+    badge: 'Anonymous',
+    badgeColor: 'bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-800',
+    status: 'active',
+    requiresKey: false,
+    models: ['duckduckgo/gpt-4o-mini', 'duckduckgo/claude-3-haiku', 'duckduckgo/meta-llama-3.1-70b'],
+  },
+  {
+    id: 'siliconflow',
+    name: 'SiliconFlow Free Tier',
+    provider: 'siliconflow',
+    allowance: 'Generous Free Tier for DeepSeek & Qwen',
+    monthlyTokens: 50000000,
+    monthlyTokensFormatted: '~50M / mo',
+    badge: 'Reasoning Tier',
+    badgeColor: 'bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 border-teal-300 dark:border-teal-800',
+    status: 'active',
+    requiresKey: true,
+    models: ['siliconflow/deepseek-ai/DeepSeek-V3', 'siliconflow/Qwen/Qwen2.5-Coder-32B-Instruct'],
+  },
 ];
 
 export default function FreeTierGauges() {
