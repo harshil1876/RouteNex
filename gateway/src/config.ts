@@ -74,6 +74,7 @@ export interface AppConfig {
     | 'cache-optimized';
   rateLimitRpm: number;
   persistenceEnabled: boolean;
+  allowCautionFallback: boolean;
 }
 
 /**
@@ -127,6 +128,7 @@ export function loadConfig(): AppConfig {
     defaultStrategy,
     rateLimitRpm: parseIntSafe(process.env.ROUTENEX_RATE_LIMIT_RPM, 60),
     persistenceEnabled: parseBool(process.env.ROUTENEX_PERSISTENCE, true),
+    allowCautionFallback: parseBool(process.env.ROUTENEX_ALLOW_CAUTION_FALLBACK, false),
   };
 }
 

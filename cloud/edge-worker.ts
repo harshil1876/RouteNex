@@ -20,22 +20,41 @@ export interface Env {
 }
 
 /**
+ * Estimates token count accurately across code/JSON symbols, whitespace, and non-Latin scripts.
+ */
+function estimateTokens(text: string): number {
+  if (!text) return 0;
+  const words = text.match(/\b\w+\b/g)?.length || 0;
+  const symbols = text.match(/[{}[\](),:;"'`=!@#$%^&*+\-~<>/?\\|]/g)?.length || 0;
+  const nonAscii = (text.match(/[^\x00-\x7F]/g)?.length || 0) * 1.5;
+  const spaces = Math.floor((text.match(/\s+/g)?.length || 0) * 0.5);
+  const estimated = Math.ceil(words + symbols + nonAscii + spaces);
+  return Math.max(1, Math.min(estimated, Math.ceil(text.length / 2.5)));
+}
+
+/**
  * Lightweight prompt compression helper for edge pipeline.
- * Strips duplicate whitespace and multi-line breaks to save token expenditure.
+ * Strips duplicate whitespace, trailing spaces, and multi-line breaks to save token expenditure.
+ * Calculates saved tokens using accurate symbol/word boundary estimation.
  */
 function compressMessages(messages: any[]): { compressed: any[]; tokensSaved: number } {
   if (!Array.isArray(messages)) return { compressed: messages, tokensSaved: 0 };
-  let charsSaved = 0;
+  let originalTokens = 0;
+  let compressedTokens = 0;
+
   const compressed = messages.map((m) => {
     if (typeof m?.content === 'string') {
       const orig = m.content;
       const trimmed = orig.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
-      charsSaved += Math.max(0, orig.length - trimmed.length);
+      originalTokens += estimateTokens(orig);
+      compressedTokens += estimateTokens(trimmed);
       return { ...m, content: trimmed };
     }
     return m;
   });
-  return { compressed, tokensSaved: Math.floor(charsSaved / 4) };
+
+  const tokensSaved = Math.max(0, originalTokens - compressedTokens);
+  return { compressed, tokensSaved };
 }
 
 export interface CloudKeyRecord {

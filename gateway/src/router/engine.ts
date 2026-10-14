@@ -244,6 +244,10 @@ export class RoutingEngine {
     const pref = request.provider;
     const candidates: RouteCandidate[] = [];
     const zdrProviders = new Set(['mock', 'groq', 'cerebras', 'mistral', 'deepseek', 'ollama']);
+    const allowCaution = Boolean((pref as any)?.allow_caution);
+    const allowCautionFallback = Boolean(
+      (pref as any)?.allow_caution_fallback || this.config.allowCautionFallback
+    );
 
     for (const model of allModels) {
       if (needsTools && !model.capabilities.tool_calls) {
@@ -263,10 +267,13 @@ export class RoutingEngine {
         candidates.push({ model, eligible: false, rejectionReason: 'Provider not verified for Zero Data Retention (:zdr)' });
         continue;
       }
-      // ToS Caution check: exclude caution providers unless explicitly permitted
-      const allowCaution = Boolean((pref as any)?.allow_caution);
-      if (model.tos_status === 'caution' && !allowCaution) {
-        candidates.push({ model, eligible: false, rejectionReason: 'Provider has ToS Caution status (enable with allow_caution: true)' });
+      if (model.tos_status === 'caution' && !allowCaution && !allowCautionFallback) {
+        candidates.push({
+          model,
+          eligible: false,
+          rejectionReason:
+            'Provider has ToS Caution status (enable with allow_caution: true or allow_caution_fallback: true)',
+        });
         continue;
       }
       const canRun = this.circuitBreaker.canExecute(model.provider, model.id);
@@ -370,6 +377,18 @@ export class RoutingEngine {
         return costDiff * 0.6 + latencyDiff * 0.4;
       });
       reasonCode = 'BALANCED';
+    }
+
+    // If allowCautionFallback is active and allowCaution is not explicitly enabled,
+    // ensure caution models are pinned strictly to the tail end of the candidate list
+    // so they are only used as last-resort fallbacks if all official providers fail.
+    if (allowCautionFallback && !allowCaution) {
+      const official = eligible.filter((c) => c.model.tos_status !== 'caution');
+      const caution = eligible.filter((c) => c.model.tos_status === 'caution');
+      if (official.length > 0) {
+        eligible.length = 0;
+        eligible.push(...official, ...caution);
+      }
     }
 
     eligible.forEach((c, idx) => {

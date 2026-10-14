@@ -31,6 +31,7 @@ const testConfig: AppConfig = {
   defaultStrategy: 'balanced',
   rateLimitRpm: 100,
   persistenceEnabled: false,
+  allowCautionFallback: false,
 };
 
 describe('MockProviderAdapter', () => {
@@ -1047,6 +1048,51 @@ describe('ToS Caution Guard & Provider Badges', () => {
 
     expect(route.primary.provider).toBe('duckduckgo');
     expect(route.primary.tos_status).toBe('caution');
+  });
+
+  it('appends caution providers to the tail of fallbackChain when allow_caution_fallback is true', () => {
+    const registry = new ProviderRegistry(testConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(registry, cb, testConfig);
+
+    const route = engine.resolveRoute({
+      model: 'auto',
+      messages: [{ role: 'user', content: 'Test prompt' }],
+      provider: {
+        allow_caution_fallback: true,
+      },
+      n: 1,
+    });
+
+    // Primary should still be an official provider
+    expect(route.primary.tos_status).not.toBe('caution');
+    expect(route.primary.provider).not.toBe('duckduckgo');
+
+    // Caution provider should now be present in fallback chain
+    const hasCautionInFallback = route.fallbackChain.some(
+      (m) => m.provider === 'duckduckgo' && m.tos_status === 'caution'
+    );
+    expect(hasCautionInFallback).toBe(true);
+  });
+
+  it('supports allow_caution_fallback via global AppConfig', () => {
+    const cautionFallbackConfig: AppConfig = {
+      ...testConfig,
+      allowCautionFallback: true,
+    };
+    const registry = new ProviderRegistry(cautionFallbackConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(registry, cb, cautionFallbackConfig);
+
+    const route = engine.resolveRoute({
+      model: 'auto',
+      messages: [{ role: 'user', content: 'Test prompt' }],
+      n: 1,
+    });
+
+    expect(route.primary.tos_status).not.toBe('caution');
+    const hasCautionInFallback = route.fallbackChain.some((m) => m.provider === 'duckduckgo');
+    expect(hasCautionInFallback).toBe(true);
   });
 });
 

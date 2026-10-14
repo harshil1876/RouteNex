@@ -42,6 +42,8 @@ export const ProviderPreferencesSchema = z.object({
     prompt: z.number().optional(),
     completion: z.number().optional(),
   }).optional(),
+  allow_caution: z.boolean().optional(),
+  allow_caution_fallback: z.boolean().optional(),
 }).optional();
 
 export type ProviderPreferences = z.infer<typeof ProviderPreferencesSchema>;

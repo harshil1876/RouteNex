@@ -79,24 +79,68 @@ Like OpenRouter and OmniRoute, RouteNex lets you request clusters that automatic
 
 ---
 
-## 🤖 Coding Agent Integrations (30 Seconds)
+---
 
-### Cursor IDE
-1. Open **Cursor Settings** ➔ **Models** ➔ **OpenAI API Key**.
-2. Set **Override OpenAI Base URL**: `http://localhost:3001/v1`
-3. Enter API Key: `rn-local-dev-default`
+## 🤖 One-Command Agent Launcher & Integrations
 
-### Claude Code CLI
+Launch your favorite coding agent with RouteNex environment variables and virtual keys injected per-process without touching or modifying your global dotfiles (`~/.bashrc`, `~/.zshrc`):
+
 ```bash
-export ANTHROPIC_BASE_URL="http://localhost:3001/v1"
-claude --model combo/coding-power
+# Launch Claude Code, Aider, Cursor, Cline, or OpenCode directly
+npx routenex run claude --model auto
+npx routenex run aider --model combo/coding-power
+npx routenex run cursor
 ```
 
-### Cline (VS Code Extension)
-1. Select Provider: **OpenAI Compatible**
-2. Base URL: `http://localhost:3001/v1`
-3. API Key: `rn-local-dev-default`
-4. Model ID: `combo/free-unlimited`
+### Interactive Tool Setup
+Run `npx routenex configure <tool>` to inspect drop-in instructions:
+```bash
+npx routenex configure cursor
+npx routenex configure claude
+npx routenex configure cline
+```
+
+---
+
+## 🔌 Built-In Model Context Protocol (MCP) Server
+
+RouteNex includes a native Model Context Protocol (MCP) server with 5 autonomous tools (`list_models`, `explain_route`, `get_free_tier_quotas`, `test_provider_health`, `upsert_combo`):
+
+### 1. Local Stdio MCP (Claude Desktop, Cursor, Cline)
+Configure in your `claude_desktop_config.json` or Cursor MCP settings:
+```json
+{
+  "mcpServers": {
+    "routenex": {
+      "command": "npx",
+      "args": ["routenex", "--mcp"]
+    }
+  }
+}
+```
+
+### 2. Remote HTTP MCP (VPS & Self-Hosters with Bearer Auth)
+For VPS deployments, connect over HTTP JSON-RPC 2.0 with your scoped virtual key:
+```bash
+curl -X POST https://your-vps.example.com/v1/mcp \
+  -H "Authorization: Bearer rn_live_your_virtual_key" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}'
+```
+
+Remote MCP client configuration:
+```json
+{
+  "mcpServers": {
+    "routenex-remote": {
+      "url": "https://your-vps.example.com/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer rn_live_your_virtual_key"
+      }
+    }
+  }
+}
+```
 
 ---
 
