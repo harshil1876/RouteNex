@@ -21,6 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { AdminStore } from './storage/admin-store.js';
 import { createAdminRoutes } from './routes/admin.js';
+import { createMessagesRoute } from './routes/messages.js';
 import { mountStaticDashboard } from './middleware/static-dashboard.js';
 import { ResponseCache } from './router/cache.js';
 
@@ -63,6 +64,7 @@ export function createApp(appConfig: AppConfig = config) {
   const explainRoute = createExplainRoute(engine);
   const usageRoute = createUsageRoute(store);
   const adminRoute = createAdminRoutes(adminStore, registry, appConfig);
+  const messagesRoute = createMessagesRoute(engine, store, appConfig, responseCache);
 
   // Health routes
   app.route('/', healthRoute);
@@ -70,14 +72,16 @@ export function createApp(appConfig: AppConfig = config) {
   // Admin routes (for self-hosted Open Source Web Console)
   app.route('/v1/admin', adminRoute);
 
-  // OpenAI-compatible v1 prefix
+  // OpenAI-compatible and Anthropic-compatible routes
   app.route('/v1', chatRoute);
+  app.route('/v1', messagesRoute);
   app.route('/v1', modelsRoute);
   app.route('/v1', explainRoute);
   app.route('/v1', usageRoute);
 
   // Also support root endpoints for flexibility
   app.route('/', chatRoute);
+  app.route('/', messagesRoute);
   app.route('/', modelsRoute);
   app.route('/', explainRoute);
   app.route('/', usageRoute);
@@ -99,7 +103,7 @@ export function createApp(appConfig: AppConfig = config) {
  * Starts the HTTP server on configured host and port.
  */
 export function startServer(appConfig: AppConfig = config) {
-  const { app, registry, store } = createApp(appConfig);
+  const { app, registry, store, adminStore } = createApp(appConfig);
 
   const server = serve(
     {
@@ -115,7 +119,15 @@ export function startServer(appConfig: AppConfig = config) {
 
       console.log(`\n======================================================`);
       console.log(`  RouteNex Gateway running on http://${info.address}:${info.port}`);
+      if (adminStore.initialSetupToken) {
+        console.log(`\x1b[35m  ┌─────────────────────────────────────────────────────────┐\x1b[0m`);
+        console.log(`\x1b[35m  │ RouteNex Admin Setup Password (OmniRoute Pattern):      │\x1b[0m`);
+        console.log(`\x1b[35m  │ \x1b[1m\x1b[36m${adminStore.initialSetupToken}\x1b[0m\x1b[35m │\x1b[0m`);
+        console.log(`\x1b[35m  │ (One-time password for local web console access)        │\x1b[0m`);
+        console.log(`\x1b[35m  └─────────────────────────────────────────────────────────┘\x1b[0m`);
+      }
       console.log(`  Auth:        ${appConfig.apiKey ? 'Enabled (Bearer token required)' : 'Disabled (Localhost dev mode)'}`);
+      console.log(`  Security:    AES-256-GCM Keystore Active • Virtual Keys Hashed`);
       console.log(`  Providers:   [${configuredList}]`);
       console.log(`  Mock Mode:   ${appConfig.mockMode ? 'Active (zero-cost offline testing)' : 'Disabled'}`);
       console.log(`  Persistence: ${appConfig.persistenceEnabled ? appConfig.dbPath : 'Disabled'}`);

@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 
 type CategoryFilter = 'ALL' | 'FREE' | 'API_KEY' | 'LOCAL';
 
+interface ModelTestResult {
+  modelId: string;
+  status: 'WORKING' | 'RATE_LIMITED' | 'OFFLINE';
+  latencyMs: number;
+  message?: string;
+}
+
 interface ProviderCardState {
   id: string;
   name: string;
@@ -14,135 +21,239 @@ interface ProviderCardState {
   statusMessage?: string;
   badge: string;
   freeLimit?: string;
+  maskedKeys?: string[];
+  keyCount?: number;
+  isSyncing?: boolean;
+  isBatchTesting?: boolean;
+  testResults?: ModelTestResult[];
 }
+
+const INITIAL_PROVIDERS: ProviderCardState[] = [
+  {
+    id: 'pollinations',
+    name: 'Pollinations AI',
+    category: 'FREE',
+    key: '',
+    isConfigured: true,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'Zero-Key Free Tier',
+    freeLimit: 'Unlimited / Anonymous (100% Free)',
+  },
+  {
+    id: 'duckduckgo',
+    name: 'DuckDuckGo AI Chat',
+    category: 'FREE',
+    key: '',
+    isConfigured: true,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'Zero-Key Anonymous',
+    freeLimit: 'Unlimited / Anonymous (GPT-4o mini & Claude 3 Haiku)',
+  },
+  {
+    id: 'groq',
+    name: 'Groq Cloud LPU',
+    category: 'FREE',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'Free Tier (30 RPM)',
+    freeLimit: '14,400 req/day free',
+  },
+  {
+    id: 'cerebras',
+    name: 'Cerebras Cloud',
+    category: 'FREE',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'Fast Free Tier (2,000 tok/s)',
+    freeLimit: '1,000,000 tokens/day free',
+  },
+  {
+    id: 'mistral',
+    name: 'Mistral AI (La Plateforme)',
+    category: 'FREE',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: '1B Free Tokens/Mo',
+    freeLimit: '1 Billion tokens/mo free (Codestral, Mistral Small)',
+  },
+  {
+    id: 'siliconflow',
+    name: 'SiliconFlow Cloud',
+    category: 'FREE',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'DeepSeek Reasoning Free Tier',
+    freeLimit: 'DeepSeek-V3 / R1 free tier (20M tokens signup)',
+  },
+  {
+    id: 'nvidia',
+    name: 'NVIDIA NIM',
+    category: 'FREE',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: '1,000 Free Credits / NIM Microservices',
+    freeLimit: 'Llama 3.1 405B & Nemotron serverless',
+  },
+  {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    category: 'FREE',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: ':free Models Available',
+    freeLimit: 'Free tier aggregator endpoints',
+  },
+  {
+    id: 'zhipu',
+    name: 'Zhipu AI (GLM)',
+    category: 'FREE',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'GLM-4-Flash 100% Free',
+    freeLimit: 'Unlimited free coding and reasoning',
+  },
+  {
+    id: 'sambanova',
+    name: 'SambaNova Systems',
+    category: 'FREE',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'Free Fast Tier',
+    freeLimit: 'Meta-Llama-3.3-70B serverless free',
+  },
+  {
+    id: 'gemini',
+    name: 'Google AI Studio (Gemini)',
+    category: 'FREE',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'Free Tier (15 RPM)',
+    freeLimit: '1,500 req/day free',
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek (V3 & R1)',
+    category: 'API_KEY',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'Ultra-low Cost / Starter Bonus',
+    freeLimit: 'Free balance on signup',
+  },
+  {
+    id: 'openai',
+    name: 'OpenAI API',
+    category: 'API_KEY',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'API Key Compatible',
+  },
+  {
+    id: 'anthropic',
+    name: 'Anthropic Claude',
+    category: 'API_KEY',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'API Key Compatible',
+  },
+  {
+    id: 'together',
+    name: 'Together AI',
+    category: 'API_KEY',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'High Throughput Serverless',
+  },
+  {
+    id: 'fireworks',
+    name: 'Fireworks AI',
+    category: 'API_KEY',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'Sub-100ms Inference',
+  },
+  {
+    id: 'xai',
+    name: 'xAI (Grok)',
+    category: 'API_KEY',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'Grok-2 Frontier Reasoning',
+  },
+  {
+    id: 'perplexity',
+    name: 'Perplexity AI',
+    category: 'API_KEY',
+    key: '',
+    isConfigured: false,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'Live Web Search Grounding',
+  },
+  {
+    id: 'ollama',
+    name: 'Ollama Local Daemon',
+    category: 'LOCAL',
+    key: '',
+    baseUrl: 'http://localhost:11434/v1',
+    isConfigured: true,
+    isEnabled: true,
+    status: 'idle',
+    badge: '100% Private Offline',
+  },
+  {
+    id: 'lmstudio',
+    name: 'LM Studio Local',
+    category: 'LOCAL',
+    key: '',
+    baseUrl: 'http://localhost:1234/v1',
+    isConfigured: true,
+    isEnabled: true,
+    status: 'idle',
+    badge: 'Local Port 1234',
+  },
+];
 
 export default function ProviderCredentials() {
   const [filter, setFilter] = useState<CategoryFilter>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [isTestingAll, setIsTestingAll] = useState(false);
+  const [freeOnly, setFreeOnly] = useState(false);
+  const [poolingProviderId, setPoolingProviderId] = useState<string | null>(null);
+  const [newPoolKey, setNewPoolKey] = useState('');
 
-  const [providers, setProviders] = useState<ProviderCardState[]>([
-    {
-      id: 'pollinations',
-      name: 'Pollinations AI',
-      category: 'FREE',
-      key: '',
-      isConfigured: true,
-      isEnabled: true,
-      status: 'idle',
-      badge: 'Zero-Key Free Tier',
-      freeLimit: 'Unlimited / Anonymous (100% Free)',
-    },
-    {
-      id: 'groq',
-      name: 'Groq Cloud LPU',
-      category: 'FREE',
-      key: '',
-      isConfigured: false,
-      isEnabled: true,
-      status: 'idle',
-      badge: 'Free Tier (30 RPM)',
-      freeLimit: '14,400 req/day free',
-    },
-    {
-      id: 'cerebras',
-      name: 'Cerebras Cloud',
-      category: 'FREE',
-      key: '',
-      isConfigured: false,
-      isEnabled: true,
-      status: 'idle',
-      badge: 'Fast Free Tier (2,000 tok/s)',
-      freeLimit: '1,000,000 tokens/day free',
-    },
-    {
-      id: 'gemini',
-      name: 'Google AI Studio (Gemini)',
-      category: 'FREE',
-      key: '',
-      isConfigured: false,
-      isEnabled: true,
-      status: 'idle',
-      badge: 'Free Tier (15 RPM)',
-      freeLimit: '1,500 req/day free',
-    },
-    {
-      id: 'deepseek',
-      name: 'DeepSeek (V3 & R1)',
-      category: 'API_KEY',
-      key: '',
-      isConfigured: false,
-      isEnabled: true,
-      status: 'idle',
-      badge: 'Ultra-low Cost / Starter Bonus',
-      freeLimit: 'Free balance on signup',
-    },
-    {
-      id: 'openai',
-      name: 'OpenAI API',
-      category: 'API_KEY',
-      key: '',
-      isConfigured: false,
-      isEnabled: true,
-      status: 'idle',
-      badge: 'API Key Compatible',
-    },
-    {
-      id: 'anthropic',
-      name: 'Anthropic Claude',
-      category: 'API_KEY',
-      key: '',
-      isConfigured: false,
-      isEnabled: true,
-      status: 'idle',
-      badge: 'API Key Compatible',
-    },
-    {
-      id: 'mistral',
-      name: 'Mistral AI (La Plateforme)',
-      category: 'FREE',
-      key: '',
-      isConfigured: false,
-      isEnabled: true,
-      status: 'idle',
-      badge: '1B Free Tokens/Mo',
-      freeLimit: '1 Billion tokens/mo free (Codestral, Mistral Small)',
-    },
-    {
-      id: 'siliconflow',
-      name: 'SiliconFlow Cloud',
-      category: 'FREE',
-      key: '',
-      isConfigured: false,
-      isEnabled: true,
-      status: 'idle',
-      badge: 'DeepSeek Reasoning Free Tier',
-      freeLimit: 'DeepSeek-V3 / R1 free tier (20M tokens signup)',
-    },
-    {
-      id: 'duckduckgo',
-      name: 'DuckDuckGo AI Chat',
-      category: 'FREE',
-      key: '',
-      isConfigured: true,
-      isEnabled: true,
-      status: 'idle',
-      badge: 'Zero-Key Anonymous',
-      freeLimit: 'Unlimited / Anonymous (GPT-4o mini & Claude 3 Haiku)',
-    },
-    {
-      id: 'ollama',
-      name: 'Ollama Local Daemon',
-      category: 'LOCAL',
-      key: '',
-      baseUrl: 'http://localhost:11434/v1',
-      isConfigured: true,
-      isEnabled: true,
-      status: 'idle',
-      badge: '100% Private Offline',
-    },
-  ]);
-
+  const [providers, setProviders] = useState<ProviderCardState[]>(INITIAL_PROVIDERS);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Poll current config from gateway
@@ -156,7 +267,14 @@ export default function ProviderCredentials() {
             setProviders((prev) =>
               prev.map((p) => {
                 const found = data.providers.find((item: any) => item.id === p.id);
-                return found ? { ...p, isConfigured: found.configured } : p;
+                return found
+                  ? {
+                      ...p,
+                      isConfigured: found.configured,
+                      keyCount: found.keyCount || (found.configured ? 1 : 0),
+                      maskedKeys: found.maskedKeys || [],
+                    }
+                  : p;
               })
             );
           }
@@ -192,9 +310,7 @@ export default function ProviderCredentials() {
     } catch {
       setProviders((prev) =>
         prev.map((p) =>
-          p.id === providerId
-            ? { ...p, status: 'error', statusMessage: 'Gateway offline' }
-            : p
+          p.id === providerId ? { ...p, status: 'error', statusMessage: 'Gateway offline' } : p
         )
       );
     }
@@ -221,9 +337,17 @@ export default function ProviderCredentials() {
       const data = await res.json();
       if (res.ok && data.success) {
         setProviders((prev) =>
-          prev.map((p) => (p.id === provider.id ? { ...p, isConfigured: Boolean(provider.key || provider.baseUrl || p.id === 'pollinations') } : p))
+          prev.map((p) =>
+            p.id === provider.id
+              ? {
+                  ...p,
+                  isConfigured: Boolean(provider.key || provider.baseUrl || p.id === 'pollinations' || p.id === 'duckduckgo'),
+                  maskedKeys: provider.key ? [`${provider.key.slice(0, 7)}...${provider.key.slice(-4)}`] : [],
+                }
+              : p
+          )
         );
-        setNotification({ message: `Saved credentials for ${provider.name}.`, type: 'success' });
+        setNotification({ message: `Saved & encrypted credentials for ${provider.name} (AES-256-GCM).`, type: 'success' });
       } else {
         setNotification({ message: data.error || 'Failed to update credentials.', type: 'error' });
       }
@@ -233,10 +357,85 @@ export default function ProviderCredentials() {
     setTimeout(() => setNotification(null), 4000);
   };
 
+  const handleSyncModels = async (providerId: string) => {
+    setProviders((prev) =>
+      prev.map((p) => (p.id === providerId ? { ...p, isSyncing: true } : p))
+    );
+    try {
+      const res = await fetch(`http://127.0.0.1:3001/v1/admin/providers/${providerId}/sync`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setNotification({ message: `✓ Synced ${data.modelCount} models from ${providerId}.`, type: 'success' });
+      } else {
+        setNotification({ message: data.error || 'Failed to sync models.', type: 'error' });
+      }
+    } catch {
+      setNotification({ message: 'Gateway offline.', type: 'error' });
+    } finally {
+      setProviders((prev) =>
+        prev.map((p) => (p.id === providerId ? { ...p, isSyncing: false } : p))
+      );
+      setTimeout(() => setNotification(null), 3000);
+    }
+  };
+
+  const handleBatchTest = async (providerId: string) => {
+    setProviders((prev) =>
+      prev.map((p) => (p.id === providerId ? { ...p, isBatchTesting: true } : p))
+    );
+    try {
+      const res = await fetch(`http://127.0.0.1:3001/v1/admin/providers/${providerId}/test-models`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.results) {
+        setProviders((prev) =>
+          prev.map((p) => (p.id === providerId ? { ...p, testResults: data.results } : p))
+        );
+        setNotification({ message: `Tested ${data.testedCount} models for ${providerId}. ${data.workingCount} working.`, type: 'success' });
+      } else {
+        setNotification({ message: data.error || 'Batch test failed.', type: 'error' });
+      }
+    } catch {
+      setNotification({ message: 'Gateway offline.', type: 'error' });
+    } finally {
+      setProviders((prev) =>
+        prev.map((p) => (p.id === providerId ? { ...p, isBatchTesting: false } : p))
+      );
+      setTimeout(() => setNotification(null), 4000);
+    }
+  };
+
+  const handleAddPoolKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!poolingProviderId || !newPoolKey.trim()) return;
+
+    try {
+      const res = await fetch('http://127.0.0.1:3001/v1/admin/providers/pool', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: poolingProviderId, apiKey: newPoolKey.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setProviders((prev) =>
+          prev.map((p) => (p.id === poolingProviderId ? { ...p, keyCount: data.poolSize } : p))
+        );
+        setNotification({ message: `Added key to pool for ${poolingProviderId}. Total pooled keys: ${data.poolSize}`, type: 'success' });
+        setPoolingProviderId(null);
+        setNewPoolKey('');
+      } else {
+        setNotification({ message: data.error || 'Failed to add key to pool.', type: 'error' });
+      }
+    } catch {
+      setNotification({ message: 'Gateway offline.', type: 'error' });
+    }
+    setTimeout(() => setNotification(null), 4000);
+  };
+
   const filteredProviders = providers.filter((p) => {
     const matchesCategory = filter === 'ALL' || p.category === filter;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.id.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesFreeOnly = !freeOnly || p.category === 'FREE';
+    return matchesCategory && matchesSearch && matchesFreeOnly;
   });
 
   const configuredCount = providers.filter((p) => p.isConfigured).length;
@@ -244,29 +443,36 @@ export default function ProviderCredentials() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header & OmniRoute-style Search/Toolbar */}
+      {/* Top Header & Toolbar */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-ink tracking-tight">AI Providers Catalog</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-ink tracking-tight">AI Providers Catalog (40+ Models)</h2>
+              <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-mono">
+                🔒 AES-256-GCM Keystore
+              </span>
+            </div>
             <p className="mt-1 text-sm text-mute">
-              Manage free tiers, API keys, and local LLM runtimes. Toggle providers and test endpoints in real time.
+              Manage free tiers, API keys, multi-key pooling, and local runtimes. All keys encrypted at rest.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleTestAll}
-            disabled={isTestingAll}
-            className="inline-flex items-center justify-center gap-1.5 rounded-full bg-ink px-5 py-2 text-xs font-medium text-white dark:bg-white dark:text-black hover:opacity-90 transition disabled:opacity-50 shrink-0"
-          >
-            {isTestingAll ? 'Testing All...' : '▶ Test All Active'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleTestAll}
+              disabled={isTestingAll}
+              className="inline-flex items-center gap-1.5 rounded-full bg-ink text-white px-4 py-1.5 text-xs font-medium hover:opacity-90 transition disabled:opacity-50"
+            >
+              {isTestingAll ? 'Testing All...' : '⚡ Test All Endpoints'}
+            </button>
+          </div>
         </div>
 
-        {/* Filter Pills Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+        {/* Filter Badges & Search */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-hairline">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
               onClick={() => setFilter('ALL')}
@@ -276,20 +482,19 @@ export default function ProviderCredentials() {
                   : 'bg-canvas text-mute border border-hairline hover:text-ink'
               }`}
             >
-              All Providers ({providers.length})
+              All ({providers.length})
             </button>
 
             <button
               type="button"
               onClick={() => setFilter('FREE')}
-              className={`rounded-full px-3 py-1 font-mono text-xs transition flex items-center gap-1.5 ${
+              className={`rounded-full px-3 py-1 font-mono text-xs transition ${
                 filter === 'FREE'
-                  ? 'bg-emerald-600 text-white font-semibold'
-                  : 'bg-canvas text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/10'
+                  ? 'bg-ink text-white dark:bg-white dark:text-black font-semibold'
+                  : 'bg-canvas text-mute border border-hairline hover:text-ink'
               }`}
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-              Free Tier Pools ({freeCount})
+              🎁 Free Tiers ({freeCount})
             </button>
 
             <button
@@ -315,14 +520,25 @@ export default function ProviderCredentials() {
             >
               Local Daemons
             </button>
+
+            {/* Free-Only Filter Toggle (OmniRoute feature) */}
+            <label className="ml-2 flex items-center gap-1.5 cursor-pointer text-xs font-mono text-body select-none">
+              <input
+                type="checkbox"
+                checked={freeOnly}
+                onChange={(e) => setFreeOnly(e.target.checked)}
+                className="rounded border-hairline text-ink focus:ring-0"
+              />
+              <span>$0 Free-Only</span>
+            </label>
           </div>
 
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Filter providers..."
-            className="w-full sm:w-48 rounded-md border border-hairline bg-canvas px-3 py-1.5 text-xs font-mono text-ink placeholder:text-mute focus:outline-none focus:ring-1 focus:ring-ink"
+            placeholder="Filter 40+ providers..."
+            className="w-full sm:w-56 rounded-md border border-hairline bg-canvas px-3 py-1.5 text-xs font-mono text-ink placeholder:text-mute focus:outline-none focus:ring-1 focus:ring-ink"
           />
         </div>
       </div>
@@ -392,11 +608,22 @@ export default function ProviderCredentials() {
                 </div>
               )}
 
-              {p.id === 'pollinations' ? (
+              {/* Status & Key Mask Info */}
+              {p.isConfigured && p.maskedKeys && p.maskedKeys.length > 0 && (
+                <div className="mb-3 flex items-center justify-between text-[11px] font-mono bg-canvas p-2 rounded border border-hairline">
+                  <span className="text-mute">Active Key:</span>
+                  <span className="text-ink font-semibold">{p.maskedKeys[0]}</span>
+                  {p.keyCount && p.keyCount > 1 ? (
+                    <span className="text-emerald-600 font-bold">({p.keyCount} Pooled Keys)</span>
+                  ) : null}
+                </div>
+              )}
+
+              {p.id === 'pollinations' || p.id === 'duckduckgo' ? (
                 <div className="rounded-md border border-hairline bg-canvas p-2.5 text-xs text-mute font-mono">
                   Ready out of the box. Zero API key or configuration required.
                 </div>
-              ) : p.id === 'ollama' ? (
+              ) : p.category === 'LOCAL' ? (
                 <div>
                   <label className="block text-xs font-mono text-mute mb-1">Daemon Base URL</label>
                   <input
@@ -413,7 +640,16 @@ export default function ProviderCredentials() {
                 </div>
               ) : (
                 <div>
-                  <label className="block text-xs font-mono text-mute mb-1">API Key</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-mono text-mute">API Key (AES-256-GCM Encrypted)</label>
+                    <button
+                      type="button"
+                      onClick={() => setPoolingProviderId(p.id)}
+                      className="text-[11px] font-mono text-sky-600 hover:underline"
+                    >
+                      + Pool Multi-Key
+                    </button>
+                  </div>
                   <input
                     type="password"
                     value={p.key}
@@ -427,17 +663,54 @@ export default function ProviderCredentials() {
                   />
                 </div>
               )}
+
+              {/* Batch Test Model Results if present */}
+              {p.testResults && p.testResults.length > 0 && (
+                <div className="mt-3 p-2 rounded bg-canvas border border-hairline space-y-1">
+                  <span className="text-[10px] font-mono uppercase text-mute block">Batch Test Results</span>
+                  <div className="max-h-24 overflow-y-auto space-y-1">
+                    {p.testResults.map((r, i) => (
+                      <div key={i} className="flex items-center justify-between text-[11px] font-mono">
+                        <span className="truncate max-w-[180px]">{r.modelId}</span>
+                        <span className={r.status === 'WORKING' ? 'text-emerald-500' : r.status === 'RATE_LIMITED' ? 'text-amber-500' : 'text-red-500'}>
+                          {r.status === 'WORKING' ? `✓ ${r.latencyMs}ms` : r.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="mt-4 pt-3 border-t border-hairline flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+            <div className="mt-4 pt-3 border-t border-hairline flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleTest(p.id)}
                   disabled={p.status === 'testing'}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-canvas px-3 py-1 text-xs font-medium text-body hover:bg-hairline hover:text-ink transition disabled:opacity-50"
+                  className="rounded-full border border-hairline bg-canvas px-2.5 py-1 text-xs font-medium text-body hover:bg-hairline hover:text-ink transition disabled:opacity-50"
                 >
                   Test Connection
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSyncModels(p.id)}
+                  disabled={p.isSyncing}
+                  className="rounded-full border border-hairline bg-canvas px-2.5 py-1 text-xs font-medium text-mute hover:text-ink transition"
+                  title="Auto-sync live model catalog from upstream"
+                >
+                  {p.isSyncing ? 'Syncing...' : '↻ Sync'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleBatchTest(p.id)}
+                  disabled={p.isBatchTesting}
+                  className="rounded-full border border-hairline bg-canvas px-2.5 py-1 text-xs font-medium text-mute hover:text-ink transition"
+                  title="Probe all models with 1-token health check"
+                >
+                  {p.isBatchTesting ? 'Testing...' : '⚡ Batch Test'}
                 </button>
 
                 {p.status !== 'idle' && (
@@ -455,19 +728,63 @@ export default function ProviderCredentials() {
                 )}
               </div>
 
-              {p.id !== 'pollinations' && (
+              {p.category !== 'FREE' || (p.id !== 'pollinations' && p.id !== 'duckduckgo') ? (
                 <button
                   type="button"
                   onClick={() => handleSave(p)}
-                  className="inline-flex items-center rounded-full bg-ink px-4 py-1 text-xs font-medium text-white dark:bg-white dark:text-black hover:opacity-90 transition"
+                  className="rounded-full bg-ink text-white dark:bg-white dark:text-black px-4 py-1 text-xs font-medium hover:opacity-90 transition"
                 >
                   Save Key
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
         ))}
       </div>
+
+      {/* Multi-Key Pooling Modal */}
+      {poolingProviderId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-xl border border-hairline bg-elevated p-6 shadow-xl space-y-4">
+            <div>
+              <h3 className="text-base font-semibold text-ink">Add Key to Multi-Key Pool</h3>
+              <p className="text-xs text-mute mt-1">
+                Add an additional API key for <strong>{poolingProviderId}</strong>. RouteNex will round-robin across keys to multiply your rate limits (e.g. from 14.4k to 28.8k req/day).
+              </p>
+            </div>
+
+            <form onSubmit={handleAddPoolKey} className="space-y-4">
+              <div>
+                <label className="block text-xs font-mono text-mute mb-1">Secondary API Key</label>
+                <input
+                  type="password"
+                  required
+                  value={newPoolKey}
+                  onChange={(e) => setNewPoolKey(e.target.value)}
+                  placeholder="Paste secondary key..."
+                  className="w-full rounded border border-hairline bg-canvas px-3 py-2 text-xs font-mono text-ink focus:outline-none focus:ring-1 focus:ring-ink"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
+                <button
+                  type="button"
+                  onClick={() => setPoolingProviderId(null)}
+                  className="rounded px-4 py-1.5 text-xs text-body hover:text-ink"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded bg-ink text-white dark:bg-white dark:text-black px-4 py-1.5 text-xs font-medium hover:opacity-90"
+                >
+                  Add to Pool
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

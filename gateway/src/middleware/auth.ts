@@ -1,27 +1,63 @@
 import type { MiddlewareHandler } from 'hono';
 import type { ApiError } from '../schemas.js';
+import type { AdminStore } from '../storage/admin-store.js';
 
 /**
  * Creates authentication middleware enforcing Bearer token authentication.
- * Skips authentication if no API key is configured or for healthcheck endpoints.
+ * Supports:
+ * - Master API key authentication
+ * - Virtual Client Key authentication (SHA-256 hashed rn-local-... / rn_live_...)
+ * - Local Admin Session authentication (terminal setup token)
+ * - Safe localhost dev mode with opt-in ROUTENEX_STRICT_AUTH
  */
-import type { AdminStore } from '../storage/admin-store.js';
-
 export function createAuthMiddleware(expectedApiKey?: string, adminStore?: AdminStore): MiddlewareHandler {
+  const strictAuth = process.env.ROUTENEX_STRICT_AUTH === 'true';
+
   return async (c, next) => {
-    // If no API key configured, localhost dev mode allows all requests
-    if (!expectedApiKey || expectedApiKey.trim().length === 0) {
+    const path = c.req.path;
+
+    // 1. Skip preflights and unauthenticated health endpoints
+    if (path === '/health' || path === '/health/live' || c.req.method === 'OPTIONS') {
       return next();
     }
 
-    // Skip auth for health endpoints, admin endpoints (local admin), and CORS preflights
-    const path = c.req.path;
-    if (
-      path === '/health' ||
-      path === '/health/live' ||
-      path.startsWith('/v1/admin') ||
-      c.req.method === 'OPTIONS'
-    ) {
+    // 2. Admin auth login & verify endpoints are open
+    if (path === '/v1/admin/auth/login' || path === '/v1/admin/auth/verify') {
+      return next();
+    }
+
+    // 3. Admin endpoints protection
+    if (path.startsWith('/v1/admin')) {
+      if (!strictAuth && (!expectedApiKey || expectedApiKey.trim().length === 0)) {
+        // Local developer mode: allow direct access
+        return next();
+      }
+
+      // Check admin token via Bearer header or x-admin-token header
+      const authHeader = c.req.header('authorization');
+      const xAdminToken = c.req.header('x-admin-token');
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : (xAdminToken || '');
+
+      const isMasterKey = Boolean(expectedApiKey && token === expectedApiKey);
+      const isAdminToken = adminStore ? adminStore.verifyAdminToken(token) : false;
+
+      if (!isMasterKey && !isAdminToken) {
+        const errorPayload: ApiError = {
+          error: {
+            message: 'Admin authentication required. Provide valid setup token or master API key.',
+            type: 'authentication_error',
+            code: 'admin_auth_required',
+            param: null,
+          },
+        };
+        return c.json(errorPayload, 401);
+      }
+
+      return next();
+    }
+
+    // 4. Client completions, models, and usage endpoints
+    if (!expectedApiKey || expectedApiKey.trim().length === 0) {
       return next();
     }
 
@@ -40,7 +76,7 @@ export function createAuthMiddleware(expectedApiKey?: string, adminStore?: Admin
 
     const token = authHeader.slice(7).trim();
     const isMasterKey = token === expectedApiKey;
-    const isVirtualKey = adminStore ? adminStore.isValidKey(token) : false;
+    const isVirtualKey = adminStore ? adminStore.isValidKey(token, expectedApiKey) : false;
 
     if (!isMasterKey && !isVirtualKey) {
       const errorPayload: ApiError = {

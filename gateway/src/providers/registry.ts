@@ -14,6 +14,8 @@ import { DeepSeekProviderAdapter } from './deepseek.js';
 import { MistralProviderAdapter } from './mistral.js';
 import { SiliconFlowProviderAdapter } from './siliconflow.js';
 import { DuckDuckGoProviderAdapter } from './duckduckgo.js';
+import { OpenAICompatibleAdapter } from './openai-compatible.js';
+import catalogData from './catalog.json';
 
 /**
  * Registry managing provider adapters and available models.
@@ -68,6 +70,21 @@ export class ProviderRegistry {
     // Initialize DeepSeek adapter
     const deepseek = new DeepSeekProviderAdapter(process.env.DEEPSEEK_API_KEY, appConfig.timeoutMs);
     this.adapters.set(deepseek.id, deepseek);
+
+    // Initialize 40+ Declarative Catalog Providers
+    for (const entry of catalogData as any[]) {
+      if (!this.adapters.has(entry.id)) {
+        const envKey = entry.envKey ? process.env[entry.envKey] : undefined;
+        const adapter = new OpenAICompatibleAdapter({
+          id: entry.id,
+          name: entry.name,
+          baseUrl: entry.baseUrl,
+          apiKey: envKey,
+          models: entry.models || [],
+        });
+        this.adapters.set(entry.id, adapter);
+      }
+    }
   }
 
   /**
@@ -125,10 +142,11 @@ export class ProviderRegistry {
   }
 
   /**
-   * Returns all available model entries from configured providers.
+   * Returns available model entries.
    */
-  getAllModels(): ModelEntry[] {
-    return this.getConfiguredAdapters().flatMap((a) => a.models);
+  getAllModels(configuredOnly = false): ModelEntry[] {
+    const list = configuredOnly ? this.getConfiguredAdapters() : Array.from(this.adapters.values());
+    return list.flatMap((a) => a.models);
   }
 
   /**

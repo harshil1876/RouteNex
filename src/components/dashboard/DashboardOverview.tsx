@@ -11,6 +11,8 @@ import CloudEditionShowcase from './CloudEditionShowcase';
 import Combos from './Combos';
 import AgentSetupHub from './AgentSetupHub';
 import FreeTierGauges from './FreeTierGauges';
+import TopologyMap from './TopologyMap';
+import CompressionStudio from './CompressionStudio';
 
 interface LiveTelemetry {
   isConnected: boolean;
@@ -132,6 +134,8 @@ export default function DashboardOverview() {
       case 'providers': return 'BYOK Provider Credentials';
       case 'combos': return 'Provider Combos & Model Clusters';
       case 'aliases': return 'Model Aliases & Policy Routing';
+      case 'topology': return 'Live Routing Topology & Graph';
+      case 'compression': return 'Prompt Compression & Token Studio';
       case 'agents': return 'Coding Agent Setup Hub';
       case 'keys': return 'Virtual Access Keys';
       case 'requests': return 'Real-Time Request Inspector';
@@ -348,6 +352,12 @@ export default function DashboardOverview() {
 
               {/* Tab: Aliases */}
               {activeTab === 'aliases' && <ModelAliases />}
+
+              {/* Tab: Topology Map */}
+              {activeTab === 'topology' && <TopologyMap />}
+
+              {/* Tab: Compression Studio */}
+              {activeTab === 'compression' && <CompressionStudio />}
 
               {/* Tab: Agent Setup Hub */}
               {activeTab === 'agents' && <AgentSetupHub />}

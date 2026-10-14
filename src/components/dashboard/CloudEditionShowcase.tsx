@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ActiveTab } from './Sidebar';
 
 interface CloudEditionShowcaseProps {
@@ -25,40 +25,83 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
   const [volume, setVolume] = useState('1M - 10M tokens/mo');
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('routenex_cloud_waitlist_submitted') === 'true';
+    }
+    return false;
+  });
 
-  // Interactive Team Members state
-  const [members, setMembers] = useState<TeamMember[]>([
-    { id: '1', name: 'Harshil (You)', email: 'harshil@routenex.com', role: 'Owner', status: 'Active' },
-    { id: '2', name: 'Elena Rostova', email: 'elena@enterprise.internal', role: 'Admin', status: 'Active' },
-    { id: '3', name: 'Marcus Vance', email: 'marcus@enterprise.internal', role: 'Developer', status: 'Active' },
-    { id: '4', name: 'Audit Compliance Bot', email: 'auditor@enterprise.internal', role: 'Auditor', status: 'Active' },
-  ]);
+  // Interactive Team Members state with localStorage persistence
+  const [members, setMembers] = useState<TeamMember[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('routenex_cloud_team_members');
+        if (saved) return JSON.parse(saved);
+      } catch {
+        // Fallback to default
+      }
+    }
+    return [
+      { id: '1', name: 'Harshil (You)', email: 'harshil@routenex.com', role: 'Owner', status: 'Active' },
+      { id: '2', name: 'Elena Rostova', email: 'elena@enterprise.internal', role: 'Admin', status: 'Active' },
+      { id: '3', name: 'Marcus Vance', email: 'marcus@enterprise.internal', role: 'Developer', status: 'Active' },
+      { id: '4', name: 'Audit Compliance Bot', email: 'auditor@enterprise.internal', role: 'Auditor', status: 'Active' },
+    ];
+  });
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'Developer' | 'Admin' | 'Auditor'>('Developer');
   const [inviteSuccess, setInviteSuccess] = useState(false);
 
-  // Interactive Budgets state
-  const [budgets, setBudgets] = useState<BudgetEntry[]>([
-    { workspace: 'Production Gateway (api.routenex.com)', monthlyCapUsd: 500, currentSpendUsd: 142.60, hardStop: true },
-    { workspace: 'Staging & QA Cluster', monthlyCapUsd: 100, currentSpendUsd: 28.40, hardStop: true },
-    { workspace: 'Developer Sandbox Keys', monthlyCapUsd: 50, currentSpendUsd: 43.10, hardStop: false },
-  ]);
+  // Interactive Budgets state with localStorage persistence
+  const [budgets, setBudgets] = useState<BudgetEntry[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('routenex_cloud_budgets');
+        if (saved) return JSON.parse(saved);
+      } catch {
+        // Fallback
+      }
+    }
+    return [
+      { workspace: 'Production Gateway (api.routenex.com)', monthlyCapUsd: 500, currentSpendUsd: 142.60, hardStop: true },
+      { workspace: 'Staging & QA Cluster', monthlyCapUsd: 100, currentSpendUsd: 28.40, hardStop: true },
+      { workspace: 'Developer Sandbox Keys', monthlyCapUsd: 50, currentSpendUsd: 43.10, hardStop: false },
+    ];
+  });
+
+  // Save changes to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('routenex_cloud_team_members', JSON.stringify(members));
+    } catch {
+      // Ignore
+    }
+  }, [members]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('routenex_cloud_budgets', JSON.stringify(budgets));
+    } catch {
+      // Ignore
+    }
+  }, [budgets]);
 
   const handleInvite = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail) return;
-    setMembers([
+    const updated = [
       ...members,
       {
         id: String(Date.now()),
         name: inviteEmail.split('@')[0],
         email: inviteEmail,
         role: inviteRole,
-        status: 'Invited',
+        status: 'Invited' as const,
       },
-    ]);
+    ];
+    setMembers(updated);
     setInviteEmail('');
     setInviteSuccess(true);
     setTimeout(() => setInviteSuccess(false), 3000);
@@ -68,12 +111,34 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
     e.preventDefault();
     if (!email) return;
     setSubmitted(true);
+    try {
+      localStorage.setItem('routenex_cloud_waitlist_submitted', 'true');
+    } catch {
+      // Ignore
+    }
   };
+
+  // Common Preview Notice Banner
+  const PreviewNotice = () => (
+    <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+      <div className="flex items-center gap-2">
+        <span className="flex h-2 w-2 rounded-full bg-sky-500 animate-pulse shrink-0"></span>
+        <span className="text-body font-mono">
+          <strong className="text-ink">Architectural Preview:</strong> RouteNex Cloud is a separately operated hosted SaaS offering. Edge Worker & D1 SQL schema (`cloud/schema.sql`) are staged. Mutations persist to local session preview.
+        </span>
+      </div>
+      <span className="rounded-full bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 px-2.5 py-0.5 text-[10px] font-mono shrink-0">
+        Stage 5 Engine Ready
+      </span>
+    </div>
+  );
 
   // 1. Team & RBAC View
   if (activeTab === 'cloud-team') {
     return (
       <div className="space-y-6">
+        <PreviewNotice />
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-hairline pb-4">
           <div>
             <span className="font-mono text-xs text-sky-600 dark:text-sky-400 font-medium">RouteNex Cloud SaaS</span>
@@ -98,12 +163,12 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
               onChange={(e) => setInviteEmail(e.target.value)}
               placeholder="colleague@company.com"
               required
-              className="flex-1 rounded-md border border-hairline bg-canvas px-3 py-1.5 text-xs font-mono text-ink placeholder:text-mute focus:outline-none focus:ring-1 focus:ring-ink"
+              className="flex-1 rounded-md border border-hairline bg-canvas px-3 py-1.5 text-xs font-mono text-ink placeholder:text-mute focus:outline-hidden focus:ring-1 focus:ring-ink"
             />
             <select
               value={inviteRole}
               onChange={(e) => setInviteRole(e.target.value as any)}
-              className="rounded-md border border-hairline bg-canvas px-3 py-1.5 text-xs font-mono text-ink focus:outline-none focus:ring-1 focus:ring-ink"
+              className="rounded-md border border-hairline bg-canvas px-3 py-1.5 text-xs font-mono text-ink focus:outline-hidden focus:ring-1 focus:ring-ink"
             >
               <option value="Developer">Developer (Read/Execute)</option>
               <option value="Admin">Admin (Manage Keys & Limits)</option>
@@ -111,7 +176,7 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
             </select>
             <button
               type="submit"
-              className="rounded-md bg-ink px-4 py-1.5 text-xs font-medium text-white dark:bg-white dark:text-black hover:opacity-90 transition shrink-0"
+              className="rounded-md bg-ink px-4 py-1.5 text-xs font-medium text-white hover:opacity-90 transition shrink-0"
             >
               Send Invite
             </button>
@@ -143,25 +208,21 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
               </thead>
               <tbody className="divide-y divide-hairline">
                 {members.map((m) => (
-                  <tr key={m.id} className="hover:bg-canvas transition">
+                  <tr key={m.id} className="hover:bg-canvas/50">
                     <td className="py-3 px-4">
-                      <div className="font-semibold text-ink">{m.name}</div>
+                      <div className="font-sans font-medium text-ink">{m.name}</div>
                       <div className="text-[11px] text-mute">{m.email}</div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${
-                        m.role === 'Owner'
-                          ? 'bg-purple-500/10 text-purple-600 border border-purple-500/20'
-                          : m.role === 'Admin'
-                          ? 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
-                          : 'bg-neutral-100 dark:bg-neutral-800 text-body border border-hairline'
-                      }`}>
+                      <span className="rounded-md bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-[11px] text-ink">
                         {m.role}
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                      <span className={`inline-flex items-center gap-1 ${
+                        m.status === 'Active' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+                      }`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${m.status === 'Active' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
                         {m.status}
                       </span>
                     </td>
@@ -190,6 +251,8 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
   if (activeTab === 'cloud-budgets') {
     return (
       <div className="space-y-6">
+        <PreviewNotice />
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-hairline pb-4">
           <div>
             <span className="font-mono text-xs text-sky-600 dark:text-sky-400 font-medium">RouteNex Cloud SaaS</span>
@@ -262,6 +325,8 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
   // 3. Default Cloud Overview
   return (
     <div className="space-y-8">
+      <PreviewNotice />
+
       {/* Banner */}
       <div className="rounded-xl border border-hairline bg-gradient-to-br from-elevated via-canvas to-elevated p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -282,7 +347,7 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
           <div className="w-full md:w-auto shrink-0">
             <a
               href="#waitlist-form"
-              className="inline-flex w-full md:w-auto items-center justify-center rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white dark:bg-white dark:text-black hover:opacity-90 transition shadow-sm"
+              className="inline-flex w-full md:w-auto items-center justify-center rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-white hover:opacity-90 transition shadow-xs"
             >
               Request Cloud Access →
             </a>
@@ -302,7 +367,7 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
           </div>
           <h3 className="font-semibold text-ink text-base">Hosted Global Edge</h3>
           <p className="mt-2 text-xs text-mute leading-relaxed">
-            Requests route automatically through our low-latency edge nodes deployed in North America, Europe, and Asia-Pacific (<code className="font-mono">https://api.routenex.com</code>).
+            Requests route automatically through low-latency edge nodes deployed in North America, Europe, and Asia-Pacific (<code className="font-mono">https://api.routenex.com</code>).
           </p>
           <div className="mt-4 pt-3 border-t border-hairline font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
             ✓ 99.9% SLA & DDoS Protected
@@ -357,7 +422,7 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
             <span className="text-2xl">🎉</span>
             <h4 className="mt-2 font-semibold text-ink text-base">You're on the Cloud Access List!</h4>
             <p className="mt-1 text-xs text-mute">
-              We'll notify <strong className="text-ink">{email}</strong> as soon as your hosted edge workspace is ready to deploy.
+              We'll notify <strong className="text-ink">{email || 'your email'}</strong> as soon as your hosted edge workspace is ready to deploy.
             </p>
           </div>
         ) : (
@@ -370,7 +435,7 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
                 required
-                className="w-full rounded-md border border-hairline bg-canvas px-3.5 py-2 text-xs font-mono text-ink placeholder:text-mute focus:outline-none focus:ring-1 focus:ring-ink"
+                className="w-full rounded-md border border-hairline bg-canvas px-3.5 py-2 text-xs font-mono text-ink placeholder:text-mute focus:outline-hidden focus:ring-1 focus:ring-ink"
               />
             </div>
 
@@ -382,7 +447,7 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder="Acme Corp"
-                  className="w-full rounded-md border border-hairline bg-canvas px-3.5 py-2 text-xs font-mono text-ink placeholder:text-mute focus:outline-none focus:ring-1 focus:ring-ink"
+                  className="w-full rounded-md border border-hairline bg-canvas px-3.5 py-2 text-xs font-mono text-ink placeholder:text-mute focus:outline-hidden focus:ring-1 focus:ring-ink"
                 />
               </div>
 
@@ -391,7 +456,7 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
                 <select
                   value={volume}
                   onChange={(e) => setVolume(e.target.value)}
-                  className="w-full rounded-md border border-hairline bg-canvas px-3.5 py-2 text-xs font-mono text-ink focus:outline-none focus:ring-1 focus:ring-ink"
+                  className="w-full rounded-md border border-hairline bg-canvas px-3.5 py-2 text-xs font-mono text-ink focus:outline-hidden focus:ring-1 focus:ring-ink"
                 >
                   <option value="< 1M tokens/mo">&lt; 1M tokens / month</option>
                   <option value="1M - 10M tokens/mo">1M - 10M tokens / month</option>
@@ -403,7 +468,7 @@ export default function CloudEditionShowcase({ activeTab = 'overview' }: CloudEd
 
             <button
               type="submit"
-              className="w-full rounded-full bg-ink px-6 py-2.5 text-xs font-medium text-white dark:bg-white dark:text-black hover:opacity-90 transition mt-2"
+              className="w-full rounded-full bg-ink px-6 py-2.5 text-xs font-medium text-white hover:opacity-90 transition mt-2"
             >
               Request Access
             </button>

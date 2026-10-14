@@ -7,6 +7,8 @@ export type ActiveTab =
   | 'providers'
   | 'combos'
   | 'aliases'
+  | 'topology'
+  | 'compression'
   | 'agents'
   | 'keys'
   | 'requests'
@@ -151,11 +153,42 @@ export default function Sidebar({
             </svg>
           ),
         },
+        {
+          id: 'topology',
+          label: 'Topology Map',
+          tooltip: 'Live 4-Tier Routing Graph & Explain Simulator',
+          badge: 'Live',
+          badgeColor: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800',
+          icon: (
+            <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          ),
+        },
       ],
     },
     {
       title: 'DEVELOPER TOOLS',
       items: [
+        {
+          id: 'compression',
+          label: 'Compression Studio',
+          tooltip: '4-Stage Token Optimizer & Prompt Diff',
+          badge: '-30%',
+          badgeColor: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800',
+          icon: (
+            <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="4 14 10 14 10 20"></polyline>
+              <polyline points="20 10 14 10 14 4"></polyline>
+              <line x1="14" y1="10" x2="21" y2="3"></line>
+              <line x1="3" y1="21" x2="10" y2="14"></line>
+            </svg>
+          ),
+        },
         {
           id: 'agents',
           label: 'Agent Setup Hub',

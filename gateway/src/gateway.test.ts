@@ -14,6 +14,7 @@ import { MistralProviderAdapter } from './providers/mistral.js';
 import { SiliconFlowProviderAdapter } from './providers/siliconflow.js';
 import { DuckDuckGoProviderAdapter } from './providers/duckduckgo.js';
 import { ResponseCache } from './router/cache.js';
+import { encryptValue, decryptValue, maskSecret, hashToken } from './storage/crypto.js';
 import type { AppConfig } from './config.js';
 
 const testConfig: AppConfig = {
@@ -689,6 +690,301 @@ describe('Open Source Admin API & Virtual Keys (OmniRoute Pattern)', () => {
     const chatBody = await chatRes.json();
     expect(chatBody.model).toBe('mock/fast');
     expect(chatBody.routenex.routing_reason).toContain('combo/test-cluster');
+  });
+
+  it('AES-256-GCM encrypts provider credentials at rest and decrypts accurately', () => {
+    const rawSecret = 'sk-live-super-secret-key-999xyz';
+    const encrypted = encryptValue(rawSecret);
+
+    expect(encrypted).toMatch(/^enc:v1:/);
+    expect(encrypted).not.toContain(rawSecret);
+
+    const decrypted = decryptValue(encrypted);
+    expect(decrypted).toBe(rawSecret);
+
+    // Masking check
+    const masked = maskSecret(rawSecret);
+    expect(masked).toBe('sk-live...9xyz');
+  });
+
+  it('verifies one-time admin setup token and handles session login', async () => {
+    expect(adminStore.initialSetupToken).toBeDefined();
+    const token = adminStore.initialSetupToken!;
+
+    // 1. Valid login with terminal setup token
+    const loginRes = await app.request('/v1/admin/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    expect(loginRes.status).toBe(200);
+    const loginBody = await loginRes.json();
+    expect(loginBody.success).toBe(true);
+
+    // 2. Invalid login rejected
+    const badLoginRes = await app.request('/v1/admin/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: 'wrong-token-abc' }),
+    });
+    expect(badLoginRes.status).toBe(401);
+
+    // 3. GET /v1/admin/auth/verify checks token
+    const verifyRes = await app.request('/v1/admin/auth/verify', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(verifyRes.status).toBe(200);
+    const verifyBody = await verifyRes.json();
+    expect(verifyBody.authenticated).toBe(true);
+  });
+
+  it('supports multi-key pooling per provider with round-robin load distribution', async () => {
+    // Add two keys to Cerebras pool
+    const poolRes1 = await app.request('/v1/admin/providers/pool', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: 'cerebras', apiKey: 'csk-key-alpha-1111' }),
+    });
+    expect(poolRes1.status).toBe(200);
+
+    const poolRes2 = await app.request('/v1/admin/providers/pool', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: 'cerebras', apiKey: 'csk-key-beta-2222' }),
+    });
+    expect(poolRes2.status).toBe(200);
+    const poolBody2 = await poolRes2.json();
+    expect(poolBody2.poolSize).toBe(2);
+
+    // Verify round-robin retrieval
+    const k1 = adminStore.getProviderKey('cerebras');
+    const k2 = adminStore.getProviderKey('cerebras');
+    expect(k1).not.toBe(k2);
+    expect([k1, k2]).toContain('csk-key-alpha-1111');
+    expect([k1, k2]).toContain('csk-key-beta-2222');
+  });
+
+  it('runs batch model health testing across registered models', async () => {
+    const testRes = await app.request('/v1/admin/providers/mock/test-models', {
+      method: 'POST',
+    });
+    expect(testRes.status).toBe(200);
+    const testBody = await testRes.json();
+    expect(testBody.provider).toBe('mock');
+    expect(testBody.testedCount).toBeGreaterThan(0);
+    expect(testBody.results.some((r: any) => r.status === 'WORKING')).toBe(true);
+  });
+
+  it('POST /v1/messages handles native Anthropic protocol requests and maps responses', async () => {
+    const res = await app.request('/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mock/fast',
+        system: 'System instructions for Claude',
+        messages: [{ role: 'user', content: 'Testing Anthropic messages route' }],
+        max_tokens: 50,
+        stream: false,
+      }),
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.type).toBe('message');
+    expect(body.role).toBe('assistant');
+    expect(body.content).toBeInstanceOf(Array);
+    expect(body.content[0].type).toBe('text');
+    expect(body.content[0].text).toContain('Received: "Testing Anthropic messages route"');
+    expect(body.stop_reason).toBe('end_turn');
+    expect(body.usage).toBeDefined();
+    expect(body.usage.input_tokens).toBeGreaterThan(0);
+    expect(body.routenex).toBeDefined();
+  });
+
+  it('POST /v1/messages supports streaming in Anthropic SSE format', async () => {
+    const res = await app.request('/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mock/fast',
+        messages: [{ role: 'user', content: 'Streaming Anthropic ping' }],
+        stream: true,
+      }),
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('text/event-stream');
+    const streamText = await res.text();
+    expect(streamText).toContain('event: message_start');
+    expect(streamText).toContain('event: content_block_start');
+    expect(streamText).toContain('event: content_block_delta');
+    expect(streamText).toContain('event: message_stop');
+  });
+
+  it('loads 40+ providers from declarative catalog.json into model catalog', async () => {
+    const res = await app.request('/v1/models');
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    const modelIds: string[] = body.data.map((m: any) => m.id);
+
+    // Verify catalog models are registered
+    expect(modelIds.some((id) => id.startsWith('nvidia/'))).toBe(true);
+    expect(modelIds.some((id) => id.startsWith('openrouter/'))).toBe(true);
+    expect(modelIds.some((id) => id.startsWith('together/'))).toBe(true);
+    expect(modelIds.some((id) => id.startsWith('xai/'))).toBe(true);
+    expect(modelIds.some((id) => id.startsWith('zhipu/'))).toBe(true);
+  });
+});
+
+describe('4-Stage Prompt Compression & Optimizer Pipeline', () => {
+  it('preserves code blocks, markdown tables, and URLs verbatim in Guard stage', () => {
+    const raw = `
+Here is a test:
+<!-- strip this comment -->
+\`\`\`typescript
+const a = 1;
+   const indented = 2;
+\`\`\`
+
+| Col 1 | Col 2 |
+|---|---|
+| A | B |
+
+Visit https://example.com/api/v1?query=test
+`;
+
+    const res = PromptCompressor.compressMessages([{ role: 'user', content: raw }]);
+    const output = res.messages[0].content!;
+
+    // Fenced code preserved with whitespace
+    expect(output).toContain('const a = 1;\n   const indented = 2;');
+    // Table preserved
+    expect(output).toContain('| Col 1 | Col 2 |');
+    // URL preserved
+    expect(output).toContain('https://example.com/api/v1?query=test');
+    // HTML comment stripped
+    expect(output).not.toContain('strip this comment');
+    expect(res.stageBreakdown.stage1Saved).toBeGreaterThan(0);
+  });
+
+  it('compacts verbose stack traces in Stage 2 RTK compactor', () => {
+    const stackTrace = `Error: Connection lost
+    at query (c:/app/node_modules/pg/client.js:10:5)
+    at pool (c:/app/node_modules/pg/pool.js:20:5)
+    at runQuery (c:/app/node_modules/orm/exec.js:30:5)
+    at fetchUser (c:/app/node_modules/services/user.js:40:5)
+    at handler (c:/app/node_modules/routes/api.js:50:5)
+    at Object.run (c:/app/node_modules/server.js:60:5)
+    at main (c:/app/src/index.ts:15:1)`;
+
+    const res = PromptCompressor.compressMessages([{ role: 'user', content: stackTrace }]);
+    const output = res.messages[0].content!;
+
+    expect(output).toContain('omitted for token efficiency');
+    expect(res.stageBreakdown.stage2Saved).toBeGreaterThan(0);
+  });
+
+  it('deduplicates long repeated paragraphs across conversation turns in Stage 3', () => {
+    const longParagraph = 'This is a very long and detailed instruction paragraph that explains all system requirements and formatting rules for the output. It is repeated in full detail across multiple turns.'.repeat(2);
+
+    const messages = [
+      { role: 'system' as const, content: longParagraph },
+      { role: 'user' as const, content: `Please review this: \n\n${longParagraph}` },
+    ];
+
+    const res = PromptCompressor.compressMessages(messages, { stage3Dedup: true });
+    expect(res.stageBreakdown.stage3Saved).toBeGreaterThan(0);
+    expect(res.messages[1].content).toContain('[Repeated context omitted:');
+  });
+
+  it('removes conversational fluff in Stage 4 Caveman mode', () => {
+    const fluffyText = 'Could you please kindly provide me with the answer? As an AI language model, thank you in advance.';
+    const res = PromptCompressor.compressMessages(
+      [{ role: 'user', content: fluffyText }],
+      { stage4Caveman: true }
+    );
+    const output = res.messages[0].content!;
+    expect(output).not.toContain('Could you please');
+    expect(output).not.toContain('As an AI language model');
+    expect(output).not.toContain('thank you in advance');
+    expect(res.stageBreakdown.stage4Saved).toBeGreaterThan(0);
+  });
+
+  it('POST /v1/admin/compress/preview returns live token and stage statistics', async () => {
+    const store = new RequestStore();
+    const registry = new ProviderRegistry(testConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(registry, cb, testConfig);
+    const { app } = createApp(testConfig, engine, store, registry, cb);
+
+    const res = await app.request('/v1/admin/compress/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: '<!-- comment --> Hello world   with   spaces.\n\n\n\nParagraph 2.',
+        options: { stage1Lite: true },
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.success).toBe(true);
+    expect(data.originalChars).toBeGreaterThan(data.compressedChars);
+    expect(data.compressedText).toBe('Hello world with spaces.\n\nParagraph 2.');
+    expect(data.stageBreakdown).toBeDefined();
+  });
+});
+
+describe('OpenRouter Model Tag Routing (:free, :nitro, :floor, :zdr)', () => {
+  it('routes auto:nitro to lowest latency model', async () => {
+    const store = new RequestStore();
+    const registry = new ProviderRegistry(testConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(registry, cb, testConfig);
+
+    const route = engine.resolveRoute({
+      model: 'auto:nitro',
+      messages: [{ role: 'user', content: 'test' }],
+      n: 1,
+    });
+
+    expect(route.primary).toBeDefined();
+    // mock/fast has 20ms latency vs 200ms for others
+    expect(route.primary.id).toBe('mock/fast');
+    expect(route.reasonCode).toBe('LATENCY_MINIMIZED');
+  });
+
+  it('routes auto:free and filters out paid models', async () => {
+    const store = new RequestStore();
+    const registry = new ProviderRegistry(testConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(registry, cb, testConfig);
+
+    const route = engine.resolveRoute({
+      model: 'auto:free',
+      messages: [{ role: 'user', content: 'test' }],
+      n: 1,
+    });
+
+    expect(route.primary).toBeDefined();
+    // Free models should have 0 price
+    const cost = (route.primary.pricing?.prompt_per_million ?? 0) + (route.primary.pricing?.completion_per_million ?? 0);
+    expect(cost).toBe(0);
+  });
+
+  it('routes auto:zdr to zero data retention compliant providers', async () => {
+    const store = new RequestStore();
+    const registry = new ProviderRegistry(testConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(registry, cb, testConfig);
+
+    const route = engine.resolveRoute({
+      model: 'auto:zdr',
+      messages: [{ role: 'user', content: 'test' }],
+      n: 1,
+    });
+
+    expect(route.primary).toBeDefined();
+    const zdrProviders = ['mock', 'groq', 'cerebras', 'mistral', 'deepseek', 'ollama'];
+    expect(zdrProviders).toContain(route.primary.provider);
   });
 });
 

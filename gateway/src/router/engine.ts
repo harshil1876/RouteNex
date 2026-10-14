@@ -52,10 +52,37 @@ export class RoutingEngine {
   resolveRoute(request: ChatCompletionRequest): RouteSelection {
     const allModels = this.registry.getAllModels();
 
-    // 0. Resolve model alias if configured
-    const targetModelName = (this.aliasResolver && request.model)
-      ? this.aliasResolver(request.model)
-      : request.model;
+    // 0. Extract OpenRouter tags (:free, :nitro, :floor, :zdr)
+    let rawModel = request.model || 'auto';
+    let isFreeTag = false;
+    let isNitroTag = false;
+    let isFloorTag = false;
+    let isZdrTag = Boolean((request as any).zdr || (request.provider as any)?.zdr);
+
+    if (rawModel.includes(':free')) {
+      isFreeTag = true;
+      rawModel = rawModel.replace(':free', '');
+    }
+    if (rawModel.includes(':nitro')) {
+      isNitroTag = true;
+      rawModel = rawModel.replace(':nitro', '');
+    }
+    if (rawModel.includes(':floor')) {
+      isFloorTag = true;
+      rawModel = rawModel.replace(':floor', '');
+    }
+    if (rawModel.includes(':zdr')) {
+      isZdrTag = true;
+      rawModel = rawModel.replace(':zdr', '');
+    }
+    if (!rawModel || rawModel === 'openrouter/auto') {
+      rawModel = 'auto';
+    }
+
+    // 0.1 Resolve model alias if configured
+    const targetModelName = (this.aliasResolver && rawModel)
+      ? this.aliasResolver(rawModel)
+      : rawModel;
 
     // 0.1 Check for Combo match (OmniRoute / OpenRouter fallback cluster)
     if (this.comboResolver && targetModelName) {
@@ -195,10 +222,24 @@ export class RoutingEngine {
     const needsTools = Boolean(request.tools && request.tools.length > 0);
     const pref = request.provider;
     const candidates: RouteCandidate[] = [];
+    const zdrProviders = new Set(['mock', 'groq', 'cerebras', 'mistral', 'deepseek', 'ollama']);
 
     for (const model of allModels) {
       if (needsTools && !model.capabilities.tool_calls) {
         candidates.push({ model, eligible: false, rejectionReason: 'Lacks tool_calls capability' });
+        continue;
+      }
+      if (isFreeTag) {
+        const pPrompt = model.pricing?.prompt_per_million ?? 0;
+        const pComp = model.pricing?.completion_per_million ?? 0;
+        const isFree = (pPrompt === 0 && pComp === 0) || model.provider === 'mock' || model.provider === 'duckduckgo' || model.provider === 'pollinations';
+        if (!isFree) {
+          candidates.push({ model, eligible: false, rejectionReason: 'Paid model excluded by :free tag' });
+          continue;
+        }
+      }
+      if (isZdrTag && !zdrProviders.has(model.provider)) {
+        candidates.push({ model, eligible: false, rejectionReason: 'Provider not verified for Zero Data Retention (:zdr)' });
         continue;
       }
       const canRun = this.circuitBreaker.canExecute(model.provider, model.id);
@@ -243,8 +284,11 @@ export class RoutingEngine {
       };
     }
 
-    // Strategy sorting
-    const strategy = pref?.sort || (this.config.defaultStrategy === 'explicit' ? 'balanced' : this.config.defaultStrategy);
+    // Strategy sorting (supports :nitro -> latency, :floor -> price)
+    let strategy = pref?.sort || (this.config.defaultStrategy === 'explicit' ? 'balanced' : this.config.defaultStrategy);
+    if (isNitroTag) strategy = 'latency';
+    if (isFloorTag) strategy = 'price';
+
     const getCost = (m: ModelEntry) => (m.pricing?.prompt_per_million ?? 0) + (m.pricing?.completion_per_million ?? 0);
     const getLatency = (m: ModelEntry) => (m.id === 'mock/fast' ? 20 : m.provider === 'mock' ? 200 : m.provider === 'groq' ? 150 : 500);
 

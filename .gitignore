@@ -26,6 +26,8 @@ test_routenex.json
 *.db
 *.sqlite
 *.tmp
+*.key
+.routenex.key
 
 # macOS-specific files
 .DS_Store
