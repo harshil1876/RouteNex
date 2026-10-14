@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
+export type ComboStrategy = 'priority' | 'round-robin' | 'fastest' | 'lkgp' | 'headroom' | 'reset-window' | 'cache-optimized';
+
 export interface ComboItem {
   id: string;
   name: string;
   slug: string;
   description: string;
   targets: string[];
-  strategy: 'priority' | 'round-robin' | 'fastest';
+  strategy: ComboStrategy;
   createdAt: string;
 }
 
@@ -93,7 +95,46 @@ export default function Combos() {
     'groq/llama-3.3-70b-versatile',
     'pollinations/openai',
   ]);
-  const [strategy, setStrategy] = useState<'priority' | 'round-robin' | 'fastest'>('priority');
+  const [strategy, setStrategy] = useState<ComboStrategy>('priority');
+
+  const moveSelectedTarget = (index: number, direction: 'up' | 'down') => {
+    const newIdx = direction === 'up' ? index - 1 : index + 1;
+    if (newIdx < 0 || newIdx >= selectedTargets.length) return;
+    const updated = [...selectedTargets];
+    const temp = updated[index];
+    updated[index] = updated[newIdx];
+    updated[newIdx] = temp;
+    setSelectedTargets(updated);
+  };
+
+  const moveComboTarget = async (comboId: string, index: number, direction: 'up' | 'down') => {
+    const targetCombo = combos.find((c) => c.id === comboId);
+    if (!targetCombo) return;
+    const newIdx = direction === 'up' ? index - 1 : index + 1;
+    if (newIdx < 0 || newIdx >= targetCombo.targets.length) return;
+    const updatedTargets = [...targetCombo.targets];
+    const temp = updatedTargets[index];
+    updatedTargets[index] = updatedTargets[newIdx];
+    updatedTargets[newIdx] = temp;
+
+    const updatedCombos = combos.map((c) =>
+      c.id === comboId ? { ...c, targets: updatedTargets } : c
+    );
+    setCombos(updatedCombos);
+
+    try {
+      await fetch('http://127.0.0.1:3001/v1/admin/combos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...targetCombo,
+          targets: updatedTargets,
+        }),
+      });
+    } catch {
+      // Sync error ignore
+    }
+  };
 
   useEffect(() => {
     fetch('http://127.0.0.1:3001/v1/admin/combos')
@@ -293,7 +334,12 @@ export default function Combos() {
 
             {/* Failover Sequence Visualization */}
             <div className="mt-4">
-              <span className="text-[11px] font-mono text-mute block mb-2">Fallback Execution Sequence:</span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-mono text-mute">Fallback Execution Sequence:</span>
+                <span className="rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 px-2 py-0.5 text-[10px] font-mono">
+                  Strategy: {combo.strategy.toUpperCase()}
+                </span>
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 {combo.targets.map((target, idx) => (
                   <React.Fragment key={target}>
@@ -307,6 +353,26 @@ export default function Combos() {
                           Primary
                         </span>
                       )}
+                      <div className="flex items-center ml-1 border-l border-hairline pl-1 space-x-0.5">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => moveComboTarget(combo.id, idx, 'up')}
+                          className="px-0.5 text-[9px] text-mute hover:text-ink disabled:opacity-20"
+                          title="Move earlier in fallback sequence"
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === combo.targets.length - 1}
+                          onClick={() => moveComboTarget(combo.id, idx, 'down')}
+                          className="px-0.5 text-[9px] text-mute hover:text-ink disabled:opacity-20"
+                          title="Move later in fallback sequence"
+                        >
+                          ▼
+                        </button>
+                      </div>
                     </div>
                     {idx < combo.targets.length - 1 && (
                       <span className="text-mute font-mono text-xs">➔</span>
@@ -387,6 +453,23 @@ export default function Combos() {
               </div>
 
               <div>
+                <label className="block font-medium text-ink mb-1">Failover & Routing Strategy</label>
+                <select
+                  value={strategy}
+                  onChange={(e) => setStrategy(e.target.value as ComboStrategy)}
+                  className="w-full rounded border border-hairline bg-canvas px-3 py-2 text-ink font-mono text-xs focus:border-ink focus:outline-hidden"
+                >
+                  <option value="priority">Priority Failover (1st ➔ 2nd ➔ 3rd)</option>
+                  <option value="lkgp">📌 LKGP (Last-Known-Good Provider stickiness)</option>
+                  <option value="headroom">📊 Headroom (Highest remaining RPM / quota)</option>
+                  <option value="reset-window">⏳ Reset-Window (Soonest rate-limit reset)</option>
+                  <option value="cache-optimized">🎯 Cache-Optimized (Prefix affinity for prompt-cache hits)</option>
+                  <option value="fastest">⚡ Fastest (Lowest Latency First)</option>
+                  <option value="round-robin">🔄 Round-Robin (Equally Balanced)</option>
+                </select>
+              </div>
+
+              <div>
                 <label className="block font-medium text-ink mb-1">
                   Target Models (Click to toggle sequence)
                 </label>
@@ -422,9 +505,50 @@ export default function Combos() {
                   })}
                 </div>
                 <span className="text-[11px] text-mute mt-1 block">
-                  {selectedTargets.length} target(s) selected in sequence.
+                  {selectedTargets.length} target(s) selected.
                 </span>
               </div>
+
+              {selectedTargets.length > 0 && (
+                <div className="space-y-1">
+                  <span className="text-[11px] font-semibold text-ink block">
+                    Execution Sequence Order (click arrows to reorder):
+                  </span>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {selectedTargets.map((target, idx) => (
+                      <div
+                        key={target}
+                        className="flex items-center justify-between px-2.5 py-1 rounded border border-hairline bg-canvas text-xs font-mono"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-mute">#{idx + 1}</span>
+                          <span className="text-ink font-medium">{target}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => moveSelectedTarget(idx, 'up')}
+                            className="p-1 text-xs hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded disabled:opacity-30"
+                            title="Move Up"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === selectedTargets.length - 1}
+                            onClick={() => moveSelectedTarget(idx, 'down')}
+                            className="p-1 text-xs hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded disabled:opacity-30"
+                            title="Move Down"
+                          >
+                            ▼
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
                 <button

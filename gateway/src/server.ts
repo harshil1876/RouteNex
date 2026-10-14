@@ -24,6 +24,7 @@ import { createAdminRoutes } from './routes/admin.js';
 import { createMessagesRoute } from './routes/messages.js';
 import { mountStaticDashboard } from './middleware/static-dashboard.js';
 import { ResponseCache } from './router/cache.js';
+import { createMcpRoute } from './routes/mcp.js';
 
 export function createApp(appConfig: AppConfig = config) {
   const app = new Hono();
@@ -65,12 +66,17 @@ export function createApp(appConfig: AppConfig = config) {
   const usageRoute = createUsageRoute(store);
   const adminRoute = createAdminRoutes(adminStore, registry, appConfig);
   const messagesRoute = createMessagesRoute(engine, store, appConfig, responseCache);
+  const mcpRoute = createMcpRoute(engine, registry, circuitBreaker, adminStore);
 
   // Health routes
   app.route('/', healthRoute);
 
   // Admin routes (for self-hosted Open Source Web Console)
   app.route('/v1/admin', adminRoute);
+
+  // Model Context Protocol (MCP) Server
+  app.route('/v1', mcpRoute);
+  app.route('/', mcpRoute);
 
   // OpenAI-compatible and Anthropic-compatible routes
   app.route('/v1', chatRoute);

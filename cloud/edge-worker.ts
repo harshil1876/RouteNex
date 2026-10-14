@@ -16,6 +16,26 @@ export interface Env {
   ROUTENEX_KV?: any;        // Cloudflare KV for sub-millisecond key cache
   JWT_SECRET?: string;
   GATEWAY_ORIGIN?: string;  // Upstream edge cluster or core router origin
+  ROUTENEX_INTERNAL_SECRET?: string;
+}
+
+/**
+ * Lightweight prompt compression helper for edge pipeline.
+ * Strips duplicate whitespace and multi-line breaks to save token expenditure.
+ */
+function compressMessages(messages: any[]): { compressed: any[]; tokensSaved: number } {
+  if (!Array.isArray(messages)) return { compressed: messages, tokensSaved: 0 };
+  let charsSaved = 0;
+  const compressed = messages.map((m) => {
+    if (typeof m?.content === 'string') {
+      const orig = m.content;
+      const trimmed = orig.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+      charsSaved += Math.max(0, orig.length - trimmed.length);
+      return { ...m, content: trimmed };
+    }
+    return m;
+  });
+  return { compressed, tokensSaved: Math.floor(charsSaved / 4) };
 }
 
 export interface CloudKeyRecord {
@@ -121,11 +141,10 @@ export default {
       );
     }
 
-    // 6. Allowed Models Enforcer
+    // 6. Allowed Models Enforcer & Real Upstream Execution
     if (url.pathname.endsWith('/chat/completions') && request.method === 'POST') {
       try {
-        const clonedReq = request.clone();
-        const body = (await clonedReq.json()) as any;
+        const body = (await request.json()) as any;
         const requestedModel = body.model;
 
         if (
@@ -147,35 +166,164 @@ export default {
           );
         }
 
-        // Asynchronous spend accounting update (waitUntil in Cloudflare Workers)
-        if (ctx && typeof ctx.waitUntil === 'function') {
-          ctx.waitUntil(recordUsageAndAudit(env, keyRecord, requestedModel));
-        }
-
         const remainingSpend = Math.max(
           0,
           keyRecord.monthly_spend_limit_usd - keyRecord.current_month_spend_usd
         );
 
-        return new Response(
-          JSON.stringify({
-            message: 'RouteNex Cloud Edge request authenticated & validated against D1 schema.',
-            workspace_id: keyRecord.workspace_id,
-            organization_id: keyRecord.organization_id,
-            plan: keyRecord.plan,
-            spend_remaining_usd: remainingSpend.toFixed(2),
-            edge_region: (request as any).cf?.colo || 'LOCAL_EDGE',
-          }),
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-              'x-routenex-cloud-workspace': keyRecord.workspace_id,
-              'x-routenex-cloud-plan': keyRecord.plan,
-              'x-routenex-spend-remaining': remainingSpend.toFixed(2),
-            },
+        // Run prompt compression pipeline
+        const { compressed, tokensSaved } = compressMessages(body.messages || []);
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '127.0.0.1';
+
+        // Check for explicit Dry-Run header
+        const isDryRun = request.headers.get('x-routenex-dry-run') === 'true';
+        if (isDryRun) {
+          if (ctx && typeof ctx.waitUntil === 'function') {
+            ctx.waitUntil(recordUsageAndAudit(env, keyRecord, requestedModel || 'auto', 10, 10, 20, 0, clientIp));
           }
-        );
+
+          return new Response(
+            JSON.stringify({
+              message: 'RouteNex Cloud Edge request authenticated & validated against D1 schema.',
+              workspace_id: keyRecord.workspace_id,
+              organization_id: keyRecord.organization_id,
+              plan: keyRecord.plan,
+              spend_remaining_usd: remainingSpend.toFixed(2),
+              dry_run: true,
+              tokens_saved: tokensSaved,
+              edge_region: (request as any).cf?.colo || 'LOCAL_EDGE',
+            }),
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'x-routenex-cloud-workspace': keyRecord.workspace_id,
+                'x-routenex-cloud-plan': keyRecord.plan,
+                'x-routenex-spend-remaining': remainingSpend.toFixed(2),
+                'X-RouteNex-Tokens-Saved': String(tokensSaved),
+                'X-RouteNex-Dry-Run': 'true',
+              },
+            }
+          );
+        }
+
+        // Real Upstream Execution through upstream cluster / gateway origin
+        const upstreamOrigin = env.GATEWAY_ORIGIN || 'http://127.0.0.1:3001';
+        const upstreamUrl = new URL(url.pathname, upstreamOrigin);
+
+        const upstreamHeaders = new Headers(request.headers);
+        upstreamHeaders.delete('Authorization');
+        if (env.ROUTENEX_INTERNAL_SECRET) {
+          upstreamHeaders.set('Authorization', `Bearer ${env.ROUTENEX_INTERNAL_SECRET}`);
+        }
+        upstreamHeaders.set('x-routenex-cloud-workspace', keyRecord.workspace_id);
+        upstreamHeaders.set('x-routenex-cloud-org', keyRecord.organization_id);
+
+        let upstreamRes: Response;
+        try {
+          upstreamRes = await fetch(upstreamUrl.toString(), {
+            method: 'POST',
+            headers: upstreamHeaders,
+            body: JSON.stringify({ ...body, messages: compressed }),
+          });
+        } catch (upstreamErr: any) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                message: `Upstream gateway unreachable at ${upstreamOrigin}: ${upstreamErr.message}`,
+                type: 'upstream_connection_error',
+                code: 'bad_gateway',
+              },
+              workspace_id: keyRecord.workspace_id,
+            }),
+            { status: 502, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Handle streaming response
+        const isStream = upstreamRes.headers.get('content-type')?.includes('text/event-stream');
+        if (isStream) {
+          const promptEst = Math.ceil(JSON.stringify(compressed).length / 4);
+          const completionEst = 60;
+          const costEst = (promptEst * 0.15 + completionEst * 0.60) / 1_000_000;
+
+          if (ctx && typeof ctx.waitUntil === 'function') {
+            ctx.waitUntil(
+              recordUsageAndAudit(
+                env,
+                keyRecord,
+                requestedModel || 'auto',
+                promptEst,
+                completionEst,
+                promptEst + completionEst,
+                costEst,
+                clientIp
+              )
+            );
+          }
+
+          const streamHeaders = new Headers(upstreamRes.headers);
+          streamHeaders.set('Access-Control-Allow-Origin', '*');
+          streamHeaders.set('x-routenex-cloud-workspace', keyRecord.workspace_id);
+          streamHeaders.set('x-routenex-cloud-plan', keyRecord.plan);
+          streamHeaders.set('x-routenex-spend-remaining', remainingSpend.toFixed(2));
+          streamHeaders.set('X-RouteNex-Tokens-Saved', String(tokensSaved));
+
+          return new Response(upstreamRes.body, {
+            status: upstreamRes.status,
+            statusText: upstreamRes.statusText,
+            headers: streamHeaders,
+          });
+        }
+
+        // Handle non-streaming JSON completion
+        const resText = await upstreamRes.text();
+        let promptTokens = 0;
+        let completionTokens = 0;
+        let totalTokens = 0;
+        let costUsd = 0;
+
+        try {
+          const resData = JSON.parse(resText);
+          promptTokens = resData.usage?.prompt_tokens ?? Math.ceil(JSON.stringify(compressed).length / 4);
+          completionTokens = resData.usage?.completion_tokens ?? 50;
+          totalTokens = resData.usage?.total_tokens ?? (promptTokens + completionTokens);
+          costUsd = (promptTokens * 0.15 + completionTokens * 0.60) / 1_000_000;
+        } catch {
+          promptTokens = 10;
+          completionTokens = 10;
+          totalTokens = 20;
+        }
+
+        if (ctx && typeof ctx.waitUntil === 'function') {
+          ctx.waitUntil(
+            recordUsageAndAudit(
+              env,
+              keyRecord,
+              requestedModel || 'auto',
+              promptTokens,
+              completionTokens,
+              totalTokens,
+              costUsd,
+              clientIp
+            )
+          );
+        }
+
+        const outHeaders = new Headers(upstreamRes.headers);
+        outHeaders.set('Content-Type', 'application/json');
+        outHeaders.set('Access-Control-Allow-Origin', '*');
+        outHeaders.set('x-routenex-cloud-workspace', keyRecord.workspace_id);
+        outHeaders.set('x-routenex-cloud-plan', keyRecord.plan);
+        outHeaders.set('x-routenex-spend-remaining', Math.max(0, remainingSpend - costUsd).toFixed(4));
+        outHeaders.set('X-RouteNex-Tokens-Saved', String(tokensSaved));
+        outHeaders.set('X-RouteNex-Estimated-Cost-USD', costUsd.toFixed(6));
+
+        return new Response(resText, {
+          status: upstreamRes.status,
+          statusText: upstreamRes.statusText,
+          headers: outHeaders,
+        });
       } catch (err: any) {
         return new Response(
           JSON.stringify({
@@ -307,25 +455,82 @@ async function resolveCloudKey(rawKey: string, env: Env): Promise<CloudKeyRecord
 }
 
 /**
- * Updates `spend_accounting` and records audit telemetry asynchronously.
+ * Updates `spend_accounting`, `cloud_api_keys.current_month_spend_usd`, and `cloud_audit_logs` in D1.
  */
-async function recordUsageAndAudit(env: Env, keyRecord: CloudKeyRecord, model: string) {
+async function recordUsageAndAudit(
+  env: Env,
+  keyRecord: CloudKeyRecord,
+  model: string,
+  promptTokens: number = 0,
+  completionTokens: number = 0,
+  totalTokens: number = 0,
+  costUsd: number = 0,
+  clientIp?: string
+) {
   const db = env.DB || env.ROUTENEX_CLOUD_DB;
   if (!db || typeof db.prepare !== 'function') return;
 
   const currentPeriod = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const spendRecordId = `sp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const auditId = `aud_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
   try {
-    // Upsert into spend_accounting
-    const upsertSql = `
-      INSERT INTO spend_accounting (id, workspace_id, billing_period, request_count, updated_at)
-      VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
+    // 1. Upsert into spend_accounting
+    const upsertSpendSql = `
+      INSERT INTO spend_accounting (
+        id, workspace_id, billing_period, prompt_tokens, completion_tokens, total_tokens, total_cost_usd, request_count, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
       ON CONFLICT(workspace_id, billing_period) DO UPDATE SET
+        prompt_tokens = prompt_tokens + excluded.prompt_tokens,
+        completion_tokens = completion_tokens + excluded.completion_tokens,
+        total_tokens = total_tokens + excluded.total_tokens,
+        total_cost_usd = total_cost_usd + excluded.total_cost_usd,
         request_count = request_count + 1,
         updated_at = CURRENT_TIMESTAMP
     `;
-    const recordId = `sp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    await db.prepare(upsertSql).bind(recordId, keyRecord.workspace_id, currentPeriod).run();
-  } catch {
+    await db.prepare(upsertSpendSql).bind(
+      spendRecordId,
+      keyRecord.workspace_id,
+      currentPeriod,
+      promptTokens,
+      completionTokens,
+      totalTokens,
+      costUsd
+    ).run();
+
+    // 2. Increment cloud_api_keys.current_month_spend_usd
+    const updateKeySql = `
+      UPDATE cloud_api_keys
+      SET current_month_spend_usd = current_month_spend_usd + ?
+      WHERE id = ?
+    `;
+    await db.prepare(updateKeySql).bind(costUsd, keyRecord.id).run();
+
+    // 3. Insert audit log into cloud_audit_logs
+    const insertAuditSql = `
+      INSERT INTO cloud_audit_logs (
+        id, organization_id, actor_id, action, target_resource, metadata, ip_address, created_at
+      )
+      VALUES (?, ?, NULL, 'chat.completion', ?, ?, ?, CURRENT_TIMESTAMP)
+    `;
+    const metadata = JSON.stringify({
+      model,
+      prompt_tokens: promptTokens,
+      completion_tokens: completionTokens,
+      total_tokens: totalTokens,
+      cost_usd: costUsd,
+      workspace_id: keyRecord.workspace_id,
+    });
+    await db.prepare(insertAuditSql).bind(
+      auditId,
+      keyRecord.organization_id,
+      keyRecord.workspace_id,
+      metadata,
+      clientIp || '127.0.0.1'
+    ).run();
+  } catch (err) {
     // Non-fatal edge metric logging
+    console.error('Edge D1 spend accounting error:', err);
   }
 }

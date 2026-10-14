@@ -4,7 +4,7 @@ import { createApp } from './server.js';
 import { MockProviderAdapter } from './providers/mock.js';
 import { CircuitBreaker } from './router/circuit-breaker.js';
 import { ProviderRegistry } from './providers/registry.js';
-import { RoutingEngine } from './router/engine.js';
+import { RoutingEngine, formatCostHeader } from './router/engine.js';
 import { RequestStore } from './storage/sqlite.js';
 import { PromptCompressor } from './router/compression.js';
 import { AnthropicProviderAdapter } from './providers/anthropic.js';
@@ -987,5 +987,224 @@ describe('OpenRouter Model Tag Routing (:free, :nitro, :floor, :zdr)', () => {
     expect(zdrProviders).toContain(route.primary.provider);
   });
 });
+
+describe('Routing Transparency Headers & Cost Provenance', () => {
+  it('attaches all X-RouteNex-* transparency headers with cost provenance', async () => {
+    const { app } = createApp(testConfig);
+    const res = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mock/gpt-4',
+        messages: [{ role: 'user', content: 'Testing transparency headers' }],
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('X-RouteNex-Request-Id')).toBeDefined();
+    expect(res.headers.get('X-RouteNex-Selected-Provider')).toBe('mock');
+    expect(res.headers.get('X-RouteNex-Selected-Model')).toBe('mock/gpt-4');
+    expect(res.headers.get('X-RouteNex-Decision-Reason')).toBeDefined();
+    expect(res.headers.get('X-RouteNex-Fallback-Count')).toBe('0');
+    expect(res.headers.get('X-RouteNex-Tokens-Saved')).toBeDefined();
+    expect(res.headers.get('X-RouteNex-Estimated-Cost-USD')).toBe('0.000000');
+  });
+
+  it('formats unknown cost as "unknown" and $0.00 as "0.000000"', () => {
+    expect(formatCostHeader({ total_usd: 0 })).toBe('0.000000');
+    expect(formatCostHeader({ total_usd: null })).toBe('unknown');
+    expect(formatCostHeader(undefined)).toBe('unknown');
+    expect(formatCostHeader({ total_usd: 0.000456 })).toBe('0.000456');
+  });
+});
+
+describe('ToS Caution Guard & Provider Badges', () => {
+  it('excludes caution providers (duckduckgo) from automatic auto routing', () => {
+    const registry = new ProviderRegistry(testConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(registry, cb, testConfig);
+
+    const route = engine.resolveRoute({
+      model: 'auto',
+      messages: [{ role: 'user', content: 'Test prompt' }],
+      n: 1,
+    });
+
+    // Auto routing should never pick DuckDuckGo automatically because tos_status is caution
+    expect(route.primary.provider).not.toBe('duckduckgo');
+  });
+
+  it('allows caution provider when explicitly targeted by model id', () => {
+    const registry = new ProviderRegistry(testConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(registry, cb, testConfig);
+
+    const route = engine.resolveRoute({
+      model: 'duckduckgo/gpt-4o-mini',
+      messages: [{ role: 'user', content: 'Test prompt' }],
+      n: 1,
+    });
+
+    expect(route.primary.provider).toBe('duckduckgo');
+    expect(route.primary.tos_status).toBe('caution');
+  });
+});
+
+describe('Quota & Affinity Routing Strategies', () => {
+  it('routes via cache-optimized affinity deterministically', () => {
+    const registry = new ProviderRegistry(testConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(registry, cb, testConfig);
+
+    const route1 = engine.resolveRoute({
+      model: 'auto',
+      messages: [{ role: 'user', content: 'System prompt prefix cache' }],
+      provider: { sort: 'cache-optimized', allow_fallbacks: true },
+      n: 1,
+    });
+
+    const route2 = engine.resolveRoute({
+      model: 'auto',
+      messages: [{ role: 'user', content: 'System prompt prefix cache' }],
+      provider: { sort: 'cache-optimized', allow_fallbacks: true },
+      n: 1,
+    });
+
+    expect(route1.primary.id).toBe(route2.primary.id);
+    expect(route1.reasonCode).toBe('CACHE_AFFINITY');
+  });
+
+  it('routes via headroom strategy prioritizing highest capacity pools', () => {
+    const registry = new ProviderRegistry(testConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(registry, cb, testConfig);
+
+    const route = engine.resolveRoute({
+      model: 'auto',
+      messages: [{ role: 'user', content: 'High throughput query' }],
+      provider: { sort: 'headroom', allow_fallbacks: true },
+      n: 1,
+    });
+
+    expect(route.primary).toBeDefined();
+    expect(route.reasonCode).toBe('HEADROOM_MAXIMIZED');
+  });
+
+  it('routes via reset-window strategy preferring non-penalized targets', () => {
+    const registry = new ProviderRegistry(testConfig);
+    const cb = new CircuitBreaker();
+    const engine = new RoutingEngine(registry, cb, testConfig);
+
+    const route = engine.resolveRoute({
+      model: 'auto',
+      messages: [{ role: 'user', content: 'Quick window test' }],
+      provider: { sort: 'reset-window', allow_fallbacks: true },
+      n: 1,
+    });
+
+    expect(route.primary).toBeDefined();
+    expect(route.reasonCode).toBe('RESET_WINDOW_OPTIMIZED');
+  });
+});
+
+describe('Built-in Model Context Protocol (MCP) Server', () => {
+  it('GET /v1/mcp/tools lists the 5 autonomous tools', async () => {
+    const { app } = createApp(testConfig);
+    const res = await app.request('/v1/mcp/tools');
+    expect(res.status).toBe(200);
+
+    const data = await res.json();
+    expect(data.tools).toBeDefined();
+    expect(data.tools.length).toBe(5);
+
+    const toolNames = data.tools.map((t: any) => t.name);
+    expect(toolNames).toContain('list_models');
+    expect(toolNames).toContain('explain_route');
+    expect(toolNames).toContain('get_free_tier_quotas');
+    expect(toolNames).toContain('test_provider_health');
+    expect(toolNames).toContain('upsert_combo');
+  });
+
+  it('POST /v1/mcp handles MCP initialize and tools/list protocol calls', async () => {
+    const { app } = createApp(testConfig);
+
+    // Initialize call
+    const initRes = await app.request('/v1/mcp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {},
+      }),
+    });
+    expect(initRes.status).toBe(200);
+    const initData = await initRes.json();
+    expect(initData.result.serverInfo.name).toBe('routenex-mcp');
+
+    // tools/list call
+    const listRes = await app.request('/v1/mcp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/list',
+        params: {},
+      }),
+    });
+    expect(listRes.status).toBe(200);
+    const listData = await listRes.json();
+    expect(listData.result.tools.length).toBe(5);
+  });
+
+  it('POST /v1/mcp tools/call executes get_free_tier_quotas and upsert_combo', async () => {
+    const { app } = createApp(testConfig);
+
+    // get_free_tier_quotas call
+    const quotaRes = await app.request('/v1/mcp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 3,
+        method: 'tools/call',
+        params: {
+          name: 'get_free_tier_quotas',
+          arguments: {},
+        },
+      }),
+    });
+    expect(quotaRes.status).toBe(200);
+    const quotaData = await quotaRes.json();
+    const parsedText = JSON.parse(quotaData.result.content[0].text);
+    expect(parsedText.total_free_tokens_available).toBe('1.6 Billion+');
+
+    // upsert_combo call
+    const comboRes = await app.request('/v1/mcp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 4,
+        method: 'tools/call',
+        params: {
+          name: 'upsert_combo',
+          arguments: {
+            name: 'mcp-autonomous-cluster',
+            models: ['mock/fast', 'mock/gpt-4'],
+            strategy: 'headroom',
+          },
+        },
+      }),
+    });
+    expect(comboRes.status).toBe(200);
+    const comboData = await comboRes.json();
+    const comboText = JSON.parse(comboData.result.content[0].text);
+    expect(comboText.success).toBe(true);
+  });
+});
+
 
 

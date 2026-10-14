@@ -39,7 +39,17 @@ export interface ComboDefinition {
   slug: string;
   description: string;
   targets: string[];
-  strategy: 'priority' | 'round-robin' | 'fastest';
+  strategy:
+    | 'priority'
+    | 'round-robin'
+    | 'fastest'
+    | 'cost'
+    | 'latency'
+    | 'balanced'
+    | 'lkgp'
+    | 'headroom'
+    | 'reset-window'
+    | 'cache-optimized';
   createdAt: string;
 }
 
@@ -406,6 +416,45 @@ export class AdminStore {
     this.settings.combos.push(newCombo);
     this.save();
     return newCombo;
+  }
+
+  public upsertCombo(combo: {
+    id?: string;
+    name: string;
+    slug?: string;
+    description?: string;
+    targets?: string[];
+    models?: string[];
+    strategy?: string;
+    enabled?: boolean;
+  }): ComboDefinition {
+    const slug = combo.slug || combo.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    const existingIdx = (this.settings.combos || []).findIndex(
+      (c) => c.slug === slug || (combo.id && c.id === combo.id)
+    );
+    const targets = combo.targets || combo.models || [];
+    const strategy = (combo.strategy || 'priority') as any;
+
+    if (existingIdx >= 0) {
+      const updated: ComboDefinition = {
+        ...this.settings.combos[existingIdx],
+        name: combo.name,
+        description: combo.description || this.settings.combos[existingIdx].description,
+        targets,
+        strategy,
+      };
+      this.settings.combos[existingIdx] = updated;
+      this.save();
+      return updated;
+    }
+
+    return this.createCombo({
+      name: combo.name,
+      slug,
+      description: combo.description || `Custom combo ${combo.name}`,
+      targets,
+      strategy,
+    });
   }
 
   public deleteCombo(idOrSlug: string): boolean {

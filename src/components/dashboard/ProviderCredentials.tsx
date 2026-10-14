@@ -21,6 +21,9 @@ interface ProviderCardState {
   statusMessage?: string;
   badge: string;
   freeLimit?: string;
+  tosStatus?: 'official' | 'caution';
+  freeOnly?: boolean;
+  supportsOAuth?: boolean;
   maskedKeys?: string[];
   keyCount?: number;
   isSyncing?: boolean;
@@ -243,7 +246,12 @@ const INITIAL_PROVIDERS: ProviderCardState[] = [
     status: 'idle',
     badge: 'Local Port 1234',
   },
-];
+].map((p) => ({
+  ...p,
+  tosStatus: (p.id === 'duckduckgo' ? 'caution' : 'official') as 'official' | 'caution',
+  supportsOAuth: p.id === 'openrouter' || p.id === 'gemini',
+  freeOnly: false,
+}));
 
 export default function ProviderCredentials() {
   const [filter, setFilter] = useState<CategoryFilter>('ALL');
@@ -253,8 +261,79 @@ export default function ProviderCredentials() {
   const [poolingProviderId, setPoolingProviderId] = useState<string | null>(null);
   const [newPoolKey, setNewPoolKey] = useState('');
 
+  // OAuth 2.0 PKCE modal state
+  const [oauthModal, setOauthModal] = useState<{
+    providerId: string;
+    authUrl: string;
+    deviceCode?: string;
+    state?: string;
+  } | null>(null);
+  const [oauthCodeInput, setOauthCodeInput] = useState('');
+  const [isSubmittingOAuth, setIsSubmittingOAuth] = useState(false);
+
   const [providers, setProviders] = useState<ProviderCardState[]>(INITIAL_PROVIDERS);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const handleOAuthStart = async (providerId: string) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:3001/v1/admin/providers/${providerId}/oauth/start`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOauthModal({
+          providerId,
+          authUrl: data.authUrl,
+          deviceCode: data.deviceCode,
+          state: data.state,
+        });
+      } else {
+        setNotification({ message: data.error || 'Failed to start OAuth flow.', type: 'error' });
+      }
+    } catch {
+      setNotification({ message: 'Gateway offline.', type: 'error' });
+    }
+  };
+
+  const handleOAuthCallback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!oauthModal || !oauthCodeInput.trim()) return;
+    setIsSubmittingOAuth(true);
+    try {
+      const res = await fetch(`http://127.0.0.1:3001/v1/admin/providers/${oauthModal.providerId}/oauth/callback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: oauthCodeInput.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setProviders((prev) =>
+          prev.map((p) =>
+            p.id === oauthModal.providerId
+              ? {
+                  ...p,
+                  isConfigured: true,
+                  maskedKeys: [`rn_oauth_...${data.accessTokenSuffix || 'auth'}`],
+                }
+              : p
+          )
+        );
+        setNotification({
+          message: `✓ OAuth connection verified for ${oauthModal.providerId}! Encrypted session active.`,
+          type: 'success',
+        });
+        setOauthModal(null);
+        setOauthCodeInput('');
+      } else {
+        setNotification({ message: data.error || 'OAuth verification failed.', type: 'error' });
+      }
+    } catch {
+      setNotification({ message: 'Gateway offline.', type: 'error' });
+    } finally {
+      setIsSubmittingOAuth(false);
+      setTimeout(() => setNotification(null), 4000);
+    }
+  };
 
   // Poll current config from gateway
   useEffect(() => {
@@ -358,14 +437,22 @@ export default function ProviderCredentials() {
   };
 
   const handleSyncModels = async (providerId: string) => {
+    const targetProvider = providers.find((p) => p.id === providerId);
     setProviders((prev) =>
       prev.map((p) => (p.id === providerId ? { ...p, isSyncing: true } : p))
     );
     try {
-      const res = await fetch(`http://127.0.0.1:3001/v1/admin/providers/${providerId}/sync`, { method: 'POST' });
+      const res = await fetch(`http://127.0.0.1:3001/v1/admin/providers/${providerId}/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ freeOnly: targetProvider?.freeOnly ?? false }),
+      });
       const data = await res.json();
       if (res.ok && data.success) {
-        setNotification({ message: `✓ Synced ${data.modelCount} models from ${providerId}.`, type: 'success' });
+        setNotification({
+          message: `✓ Synced ${data.modelCount} ${data.freeOnly ? 'free ' : ''}models from ${providerId}.`,
+          type: 'success',
+        });
       } else {
         setNotification({ message: data.error || 'Failed to sync models.', type: 'error' });
       }
@@ -579,6 +666,21 @@ export default function ProviderCredentials() {
                   >
                     {p.badge}
                   </span>
+                  {p.tosStatus === 'caution' ? (
+                    <span
+                      className="rounded px-1.5 py-0.5 font-mono text-[9px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30"
+                      title="Caution: Web/unofficial endpoint. Excluded from auto-routing unless allow_caution is set."
+                    >
+                      ToS: Caution
+                    </span>
+                  ) : (
+                    <span
+                      className="rounded px-1.5 py-0.5 font-mono text-[9px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+                      title="Official provider API with published Terms of Service"
+                    >
+                      ToS: Official
+                    </span>
+                  )}
                 </div>
 
                 {/* On/Off Active Toggle Switch */}
@@ -683,7 +785,7 @@ export default function ProviderCredentials() {
             </div>
 
             <div className="mt-4 pt-3 border-t border-hairline flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleTest(p.id)}
@@ -693,15 +795,31 @@ export default function ProviderCredentials() {
                   Test Connection
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleSyncModels(p.id)}
-                  disabled={p.isSyncing}
-                  className="rounded-full border border-hairline bg-canvas px-2.5 py-1 text-xs font-medium text-mute hover:text-ink transition"
-                  title="Auto-sync live model catalog from upstream"
-                >
-                  {p.isSyncing ? 'Syncing...' : '↻ Sync'}
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleSyncModels(p.id)}
+                    disabled={p.isSyncing}
+                    className="rounded-full border border-hairline bg-canvas px-2.5 py-1 text-xs font-medium text-mute hover:text-ink transition"
+                    title="Auto-sync live model catalog from upstream"
+                  >
+                    {p.isSyncing ? 'Syncing...' : '↻ Sync'}
+                  </button>
+                  <label className="flex items-center gap-1 text-[10px] font-mono text-mute hover:text-ink cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={p.freeOnly || false}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setProviders((prev) =>
+                          prev.map((item) => (item.id === p.id ? { ...item, freeOnly: checked } : item))
+                        );
+                      }}
+                      className="rounded border-hairline text-ink focus:ring-0 text-xs"
+                    />
+                    <span>$0 Free</span>
+                  </label>
+                </div>
 
                 <button
                   type="button"
@@ -728,15 +846,28 @@ export default function ProviderCredentials() {
                 )}
               </div>
 
-              {p.category !== 'FREE' || (p.id !== 'pollinations' && p.id !== 'duckduckgo') ? (
-                <button
-                  type="button"
-                  onClick={() => handleSave(p)}
-                  className="rounded-full bg-ink text-white dark:bg-white dark:text-black px-4 py-1 text-xs font-medium hover:opacity-90 transition"
-                >
-                  Save Key
-                </button>
-              ) : null}
+              <div className="flex items-center gap-1.5">
+                {p.supportsOAuth && (
+                  <button
+                    type="button"
+                    onClick={() => handleOAuthStart(p.id)}
+                    className="rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition"
+                    title="Authenticate via OAuth 2.0 PKCE / Device Code"
+                  >
+                    🔑 OAuth PKCE
+                  </button>
+                )}
+
+                {p.category !== 'FREE' || (p.id !== 'pollinations' && p.id !== 'duckduckgo') ? (
+                  <button
+                    type="button"
+                    onClick={() => handleSave(p)}
+                    className="rounded-full bg-ink text-white dark:bg-white dark:text-black px-4 py-1 text-xs font-medium hover:opacity-90 transition"
+                  >
+                    Save Key
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         ))}
@@ -779,6 +910,80 @@ export default function ProviderCredentials() {
                   className="rounded bg-ink text-white dark:bg-white dark:text-black px-4 py-1.5 text-xs font-medium hover:opacity-90"
                 >
                   Add to Pool
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* OAuth 2.0 PKCE Modal */}
+      {oauthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-xl border border-hairline bg-elevated p-6 shadow-xl space-y-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🔑</span>
+                <h3 className="text-base font-semibold text-ink">
+                  OAuth 2.0 PKCE: {oauthModal.providerId}
+                </h3>
+              </div>
+              <p className="text-xs text-mute mt-1">
+                Authenticate directly with <strong>{oauthModal.providerId}</strong> via PKCE (RFC 7636).
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-canvas p-3 border border-hairline space-y-2 text-xs font-mono">
+              <div className="flex justify-between items-center text-mute">
+                <span>Authorization URI:</span>
+                <a
+                  href={oauthModal.authUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sky-600 hover:underline flex items-center gap-1"
+                >
+                  Open Auth Page ↗
+                </a>
+              </div>
+              {oauthModal.deviceCode && (
+                <div className="flex justify-between items-center text-mute">
+                  <span>Device Code:</span>
+                  <span className="text-ink font-bold bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded">
+                    {oauthModal.deviceCode}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleOAuthCallback} className="space-y-4">
+              <div>
+                <label className="block text-xs font-mono text-mute mb-1">
+                  Authorization Code / Callback Token
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={oauthCodeInput}
+                  onChange={(e) => setOauthCodeInput(e.target.value)}
+                  placeholder="Paste authorization code or callback token..."
+                  className="w-full rounded border border-hairline bg-canvas px-3 py-2 text-xs font-mono text-ink focus:outline-none focus:ring-1 focus:ring-ink"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
+                <button
+                  type="button"
+                  onClick={() => setOauthModal(null)}
+                  className="rounded px-4 py-1.5 text-xs text-body hover:text-ink"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingOAuth}
+                  className="rounded bg-ink text-white dark:bg-white dark:text-black px-4 py-1.5 text-xs font-medium hover:opacity-90 disabled:opacity-50"
+                >
+                  {isSubmittingOAuth ? 'Verifying...' : 'Complete OAuth'}
                 </button>
               </div>
             </form>

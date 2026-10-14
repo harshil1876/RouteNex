@@ -19,6 +19,7 @@ export interface OpenAICompatibleOptions {
   customHeaders?: Record<string, string>;
   modelPrefix?: string;
   authHeaderPrefix?: string; // default "Bearer"
+  tos_status?: 'official' | 'caution';
 }
 
 /**
@@ -29,6 +30,7 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
   readonly id: string;
   readonly name: string;
   readonly models: ModelEntry[];
+  readonly tos_status: 'official' | 'caution';
   private baseUrl: string;
   private apiKey?: string;
   private customHeaders: Record<string, string>;
@@ -40,7 +42,11 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
     this.name = options.name;
     this.baseUrl = options.baseUrl.replace(/\/+$/, '');
     this.apiKey = options.apiKey;
-    this.models = options.models;
+    this.tos_status = options.tos_status || 'official';
+    this.models = (options.models || []).map((m) => ({
+      ...m,
+      tos_status: m.tos_status || this.tos_status,
+    }));
     this.customHeaders = options.customHeaders || {};
     this.modelPrefix = options.modelPrefix ?? `${options.id}/`;
     this.authHeaderPrefix = options.authHeaderPrefix ?? 'Bearer';

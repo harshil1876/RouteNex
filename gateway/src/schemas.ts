@@ -26,7 +26,16 @@ export type Message = z.infer<typeof MessageSchema>;
 export const ProviderPreferencesSchema = z.object({
   order: z.array(z.string()).optional(),
   allow_fallbacks: z.boolean().default(true),
-  sort: z.enum(['price', 'latency', 'throughput', 'balanced']).optional(),
+  sort: z.enum([
+    'price',
+    'latency',
+    'throughput',
+    'balanced',
+    'lkgp',
+    'headroom',
+    'reset-window',
+    'cache-optimized',
+  ]).optional(),
   ignore: z.array(z.string()).optional(),
   only: z.array(z.string()).optional(),
   max_price: z.object({
@@ -197,6 +206,10 @@ export const RoutingExplanationSchema = z.object({
     'NO_ELIGIBLE_MODEL',
     'CIRCUIT_OPEN',
     'BUDGET_EXCEEDED',
+    'LKGP_PINNED',
+    'HEADROOM_MAXIMIZED',
+    'RESET_WINDOW_OPTIMIZED',
+    'CACHE_AFFINITY',
   ]),
   candidates_evaluated: z.array(z.object({
     model: z.string(),

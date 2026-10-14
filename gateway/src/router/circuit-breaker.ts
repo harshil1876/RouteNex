@@ -282,4 +282,20 @@ export class CircuitBreaker {
       this.modelLockouts.clear();
     }
   }
+
+  /**
+   * Returns current consecutive failure count for provider.
+   */
+  getFailureCount(providerId: string): number {
+    return this.states.get(providerId)?.failures ?? 0;
+  }
+
+  /**
+   * Returns remaining cooldown in milliseconds for provider (0 if not in cooldown).
+   */
+  getRemainingCooldown(providerId: string): number {
+    const s = this.states.get(providerId);
+    if (!s || s.state !== 'OPEN' || !s.lastFailureTime) return 0;
+    return Math.max(0, s.lastFailureTime + this.cooldownMs - Date.now());
+  }
 }

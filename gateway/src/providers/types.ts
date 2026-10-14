@@ -21,12 +21,14 @@ export interface ModelEntry {
     provenance: 'OFFICIAL' | 'ESTIMATED' | 'UNKNOWN';
     updated_at: string | null;
   };
+  tos_status?: 'official' | 'caution';
 }
 
 export interface IProviderAdapter {
   readonly id: string;
   readonly name: string;
   readonly models: ModelEntry[];
+  readonly tos_status?: 'official' | 'caution';
   chat(request: ChatCompletionRequest): Promise<ChatCompletionResponse>;
   chatStream(request: ChatCompletionRequest): AsyncGenerator<StreamChunk>;
   isConfigured(): boolean;

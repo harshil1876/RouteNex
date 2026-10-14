@@ -3,7 +3,7 @@ import { streamSSE } from 'hono/streaming';
 import { nanoid } from 'nanoid';
 import type { AppConfig } from '../config.js';
 import type { CircuitBreaker } from '../router/circuit-breaker.js';
-import type { RoutingEngine } from '../router/engine.js';
+import { RoutingEngine, formatCostHeader, sanitizeHeader } from '../router/engine.js';
 import type { RequestStore } from '../storage/sqlite.js';
 import {
   type ApiError,
@@ -94,6 +94,15 @@ export function createChatRoute(
           cost_estimate: cached.routenex?.cost_estimate,
           routing_reason: cached.routenex?.routing_reason || 'Local cache hit',
         });
+
+        c.header('X-RouteNex-Request-Id', sanitizeHeader(requestId));
+        c.header('X-RouteNex-Selected-Provider', sanitizeHeader(cached.routenex?.provider || 'cache'));
+        c.header('X-RouteNex-Selected-Model', sanitizeHeader(cached.routenex?.model_used || request.model));
+        c.header('X-RouteNex-Decision-Reason', sanitizeHeader(cached.routenex?.routing_reason || 'Local cache hit'));
+        c.header('X-RouteNex-Fallback-Count', '0');
+        c.header('X-RouteNex-Tokens-Saved', String(compressionStats?.estimated_tokens_saved ?? 0));
+        c.header('X-RouteNex-Estimated-Cost-USD', formatCostHeader(cached.routenex?.cost_estimate));
+
         return c.json(cached);
       }
     }
@@ -128,6 +137,14 @@ export function createChatRoute(
       }
 
       const { generator, provider, model: modelUsed, reason, modelEntry } = streamContext;
+
+      c.header('X-RouteNex-Request-Id', sanitizeHeader(requestId));
+      c.header('X-RouteNex-Selected-Provider', sanitizeHeader(provider));
+      c.header('X-RouteNex-Selected-Model', sanitizeHeader(modelUsed));
+      c.header('X-RouteNex-Decision-Reason', sanitizeHeader(reason));
+      c.header('X-RouteNex-Fallback-Count', '0');
+      c.header('X-RouteNex-Tokens-Saved', String(compressionStats?.estimated_tokens_saved ?? 0));
+      c.header('X-RouteNex-Estimated-Cost-USD', formatCostHeader(engine.calculateCost(modelEntry, undefined)));
 
       return streamSSE(c, async (stream) => {
         let chunkCount = 0;
@@ -220,6 +237,14 @@ export function createChatRoute(
         cost_estimate: response.routenex?.cost_estimate,
         routing_reason: response.routenex?.routing_reason || 'Direct route',
       });
+
+      c.header('X-RouteNex-Request-Id', sanitizeHeader(requestId));
+      c.header('X-RouteNex-Selected-Provider', sanitizeHeader(response.routenex?.provider || 'unknown'));
+      c.header('X-RouteNex-Selected-Model', sanitizeHeader(response.routenex?.model_used || request.model));
+      c.header('X-RouteNex-Decision-Reason', sanitizeHeader(response.routenex?.routing_reason || 'Direct route'));
+      c.header('X-RouteNex-Fallback-Count', String(response.routenex?.fallback_attempts ?? 0));
+      c.header('X-RouteNex-Tokens-Saved', String(compressionStats?.estimated_tokens_saved ?? 0));
+      c.header('X-RouteNex-Estimated-Cost-USD', formatCostHeader(response.routenex?.cost_estimate));
 
       return c.json(response);
     } catch (err: any) {

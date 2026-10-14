@@ -63,7 +63,15 @@ export interface AppConfig {
   dbPath: string;
   maxRetries: number;
   timeoutMs: number;
-  defaultStrategy: 'cost' | 'latency' | 'balanced' | 'explicit';
+  defaultStrategy:
+    | 'cost'
+    | 'latency'
+    | 'balanced'
+    | 'explicit'
+    | 'lkgp'
+    | 'headroom'
+    | 'reset-window'
+    | 'cache-optimized';
   rateLimitRpm: number;
   persistenceEnabled: boolean;
 }
@@ -84,12 +92,21 @@ export function loadConfig(): AppConfig {
   };
 
   const strategy = process.env.ROUTENEX_DEFAULT_STRATEGY;
-  const validStrategies = ['cost', 'latency', 'balanced', 'explicit'] as const;
+  const validStrategies = [
+    'cost',
+    'latency',
+    'balanced',
+    'explicit',
+    'lkgp',
+    'headroom',
+    'reset-window',
+    'cache-optimized',
+  ] as const;
   const defaultStrategy = (
     strategy && validStrategies.includes(strategy as any)
       ? strategy
       : 'balanced'
-  ) as 'cost' | 'latency' | 'balanced' | 'explicit';
+  ) as AppConfig['defaultStrategy'];
 
   return {
     port: parseIntSafe(process.env.ROUTENEX_PORT, 3001),

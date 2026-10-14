@@ -15,7 +15,7 @@ import { MistralProviderAdapter } from './mistral.js';
 import { SiliconFlowProviderAdapter } from './siliconflow.js';
 import { DuckDuckGoProviderAdapter } from './duckduckgo.js';
 import { OpenAICompatibleAdapter } from './openai-compatible.js';
-import catalogData from './catalog.json';
+import catalogData from './catalog.js';
 
 /**
  * Registry managing provider adapters and available models.
@@ -72,7 +72,7 @@ export class ProviderRegistry {
     this.adapters.set(deepseek.id, deepseek);
 
     // Initialize 40+ Declarative Catalog Providers
-    for (const entry of catalogData as any[]) {
+    for (const entry of (catalogData as unknown as any[])) {
       if (!this.adapters.has(entry.id)) {
         const envKey = entry.envKey ? process.env[entry.envKey] : undefined;
         const adapter = new OpenAICompatibleAdapter({
@@ -81,6 +81,7 @@ export class ProviderRegistry {
           baseUrl: entry.baseUrl,
           apiKey: envKey,
           models: entry.models || [],
+          tos_status: entry.tos_status || 'official',
         });
         this.adapters.set(entry.id, adapter);
       }

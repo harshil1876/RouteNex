@@ -11,12 +11,14 @@ import type { ChatCompletionRequest, ChatCompletionResponse, StreamChunk } from 
 export class DuckDuckGoProviderAdapter implements IProviderAdapter {
   readonly id = 'duckduckgo';
   readonly name = 'DuckDuckGo AI (Zero-Key Free Tier)';
+  readonly tos_status = 'caution' as const;
   private readonly baseUrl = 'https://duck.ai/duckchat/v1';
 
   readonly models: ModelEntry[] = [
     {
       id: 'duckduckgo/gpt-4o-mini',
       provider: 'duckduckgo',
+      tos_status: 'caution',
       capabilities: { chat: true, streaming: true, tool_calls: false, vision: false, json_mode: false },
       context_length: 32000,
       pricing: { prompt_per_million: 0, completion_per_million: 0, provenance: 'OFFICIAL', updated_at: '2026-02-01' },
@@ -24,6 +26,7 @@ export class DuckDuckGoProviderAdapter implements IProviderAdapter {
     {
       id: 'duckduckgo/claude-3-haiku',
       provider: 'duckduckgo',
+      tos_status: 'caution',
       capabilities: { chat: true, streaming: true, tool_calls: false, vision: false, json_mode: false },
       context_length: 32000,
       pricing: { prompt_per_million: 0, completion_per_million: 0, provenance: 'OFFICIAL', updated_at: '2026-02-01' },
@@ -31,6 +34,7 @@ export class DuckDuckGoProviderAdapter implements IProviderAdapter {
     {
       id: 'duckduckgo/meta-llama-3.1-70b',
       provider: 'duckduckgo',
+      tos_status: 'caution',
       capabilities: { chat: true, streaming: true, tool_calls: false, vision: false, json_mode: false },
       context_length: 32000,
       pricing: { prompt_per_million: 0, completion_per_million: 0, provenance: 'OFFICIAL', updated_at: '2026-02-01' },
@@ -38,6 +42,7 @@ export class DuckDuckGoProviderAdapter implements IProviderAdapter {
     {
       id: 'duckduckgo/mixtral-8x7b',
       provider: 'duckduckgo',
+      tos_status: 'caution',
       capabilities: { chat: true, streaming: true, tool_calls: false, vision: false, json_mode: false },
       context_length: 32000,
       pricing: { prompt_per_million: 0, completion_per_million: 0, provenance: 'OFFICIAL', updated_at: '2026-02-01' },

@@ -30,14 +30,35 @@ export interface RouteSelection {
     | 'FALLBACK_CHAIN'
     | 'NO_ELIGIBLE_MODEL'
     | 'CIRCUIT_OPEN'
-    | 'BUDGET_EXCEEDED';
+    | 'BUDGET_EXCEEDED'
+    | 'LKGP_PINNED'
+    | 'HEADROOM_MAXIMIZED'
+    | 'RESET_WINDOW_OPTIMIZED'
+    | 'CACHE_AFFINITY';
   candidates: RouteCandidate[];
+}
+
+export function formatCostHeader(cost: { total_usd: number | null } | undefined | null): string {
+  if (!cost || cost.total_usd === null || cost.total_usd === undefined) {
+    return 'unknown';
+  }
+  if (cost.total_usd === 0) {
+    return '0.000000';
+  }
+  return cost.total_usd.toFixed(6);
+}
+
+export function sanitizeHeader(val: string | undefined | null, fallback: string = ''): string {
+  if (!val) return fallback;
+  return String(val).replace(/[^\x00-\x7F]/g, '-').trim();
 }
 
 /**
  * Deterministic Routing Engine for RouteNex.
  */
 export class RoutingEngine {
+  private readonly lastKnownGoodProviders = new Map<string, string>();
+
   constructor(
     private readonly registry: ProviderRegistry,
     private readonly circuitBreaker: CircuitBreaker,
@@ -242,6 +263,12 @@ export class RoutingEngine {
         candidates.push({ model, eligible: false, rejectionReason: 'Provider not verified for Zero Data Retention (:zdr)' });
         continue;
       }
+      // ToS Caution check: exclude caution providers unless explicitly permitted
+      const allowCaution = Boolean((pref as any)?.allow_caution);
+      if (model.tos_status === 'caution' && !allowCaution) {
+        candidates.push({ model, eligible: false, rejectionReason: 'Provider has ToS Caution status (enable with allow_caution: true)' });
+        continue;
+      }
       const canRun = this.circuitBreaker.canExecute(model.provider, model.id);
       if (!canRun) {
         const rejectionReason = this.circuitBreaker.getState(model.provider) === 'OPEN'
@@ -284,22 +311,66 @@ export class RoutingEngine {
       };
     }
 
-    // Strategy sorting (supports :nitro -> latency, :floor -> price)
-    let strategy = pref?.sort || (this.config.defaultStrategy === 'explicit' ? 'balanced' : this.config.defaultStrategy);
+    // Strategy sorting (supports price, latency, balanced, lkgp, headroom, reset-window, cache-optimized)
+    let strategy: string = pref?.sort || (this.config.defaultStrategy === 'explicit' ? 'balanced' : this.config.defaultStrategy);
     if (isNitroTag) strategy = 'latency';
     if (isFloorTag) strategy = 'price';
 
     const getCost = (m: ModelEntry) => (m.pricing?.prompt_per_million ?? 0) + (m.pricing?.completion_per_million ?? 0);
     const getLatency = (m: ModelEntry) => (m.id === 'mock/fast' ? 20 : m.provider === 'mock' ? 200 : m.provider === 'groq' ? 150 : 500);
 
-    eligible.sort((a, b) => {
-      if (strategy === 'price') return getCost(a.model) - getCost(b.model);
-      if (strategy === 'latency') return getLatency(a.model) - getLatency(b.model);
-      // Balanced: score = 0.6 * normalized cost + 0.4 * normalized latency
-      const costDiff = getCost(a.model) - getCost(b.model);
-      const latencyDiff = getLatency(a.model) - getLatency(b.model);
-      return costDiff * 0.6 + latencyDiff * 0.4;
-    });
+    let reasonCode: RouteSelection['reasonCode'] = 'BALANCED';
+
+    if (strategy === 'price') {
+      eligible.sort((a, b) => getCost(a.model) - getCost(b.model));
+      reasonCode = 'COST_MINIMIZED';
+    } else if (strategy === 'latency') {
+      eligible.sort((a, b) => getLatency(a.model) - getLatency(b.model));
+      reasonCode = 'LATENCY_MINIMIZED';
+    } else if (strategy === 'lkgp') {
+      const lkgp = this.lastKnownGoodProviders.get(targetModelName) || this.lastKnownGoodProviders.get('auto');
+      if (lkgp) {
+        eligible.sort((a, b) => (b.model.provider === lkgp ? 1 : 0) - (a.model.provider === lkgp ? 1 : 0));
+        reasonCode = 'LKGP_PINNED';
+      } else {
+        eligible.sort((a, b) => (getCost(a.model) - getCost(b.model)) * 0.6 + (getLatency(a.model) - getLatency(b.model)) * 0.4);
+        reasonCode = 'BALANCED';
+      }
+    } else if (strategy === 'headroom') {
+      const getHeadroomScore = (m: ModelEntry) => {
+        const failures = this.circuitBreaker.getFailureCount(m.provider);
+        let score = Math.max(0, 100 - failures * 30);
+        if (m.provider === 'mistral') score += 20; // 1B token pool
+        if (m.provider === 'cerebras' || m.provider === 'groq') score += 15;
+        if (m.provider === 'pollinations') score += 25;
+        return score;
+      };
+      eligible.sort((a, b) => getHeadroomScore(b.model) - getHeadroomScore(a.model));
+      reasonCode = 'HEADROOM_MAXIMIZED';
+    } else if (strategy === 'reset-window') {
+      const getCooldown = (m: ModelEntry) => this.circuitBreaker.getRemainingCooldown(m.provider);
+      eligible.sort((a, b) => getCooldown(a.model) - getCooldown(b.model));
+      reasonCode = 'RESET_WINDOW_OPTIMIZED';
+    } else if (strategy === 'cache-optimized') {
+      const prefix = (request.messages || []).map((m) => m.content || '').slice(0, 2).join(':::');
+      let hash = 0;
+      for (let i = 0; i < prefix.length; i++) {
+        hash = (hash << 5) - hash + prefix.charCodeAt(i);
+        hash |= 0;
+      }
+      const pinnedIdx = Math.abs(hash) % eligible.length;
+      const pinned = eligible[pinnedIdx];
+      eligible.splice(pinnedIdx, 1);
+      eligible.unshift(pinned);
+      reasonCode = 'CACHE_AFFINITY';
+    } else {
+      eligible.sort((a, b) => {
+        const costDiff = getCost(a.model) - getCost(b.model);
+        const latencyDiff = getLatency(a.model) - getLatency(b.model);
+        return costDiff * 0.6 + latencyDiff * 0.4;
+      });
+      reasonCode = 'BALANCED';
+    }
 
     eligible.forEach((c, idx) => {
       c.score = Number((100 / (idx + 1)).toFixed(1));
@@ -307,7 +378,6 @@ export class RoutingEngine {
 
     const primary = eligible[0].model;
     const fallbackChain = eligible.slice(1).map((c) => c.model);
-    const reasonCode = strategy === 'price' ? 'COST_MINIMIZED' : strategy === 'latency' ? 'LATENCY_MINIMIZED' : 'BALANCED';
 
     return {
       primary,
@@ -374,6 +444,8 @@ export class RoutingEngine {
         this.circuitBreaker.recordSuccess(targetModel.provider);
         this.circuitBreaker.recordModelSuccess(targetModel.id);
         this.circuitBreaker.recordKeySuccess(targetModel.provider);
+        this.lastKnownGoodProviders.set(targetModel.id, targetModel.provider);
+        this.lastKnownGoodProviders.set(request.model || 'auto', targetModel.provider);
 
         const latencyMs = Date.now() - startTime;
         const costEstimate = this.calculateCost(targetModel, response.usage);
@@ -451,6 +523,9 @@ export class RoutingEngine {
         const providerId = targetModel.provider;
         const modelId = targetModel.id;
 
+        const lastKnownGood = this.lastKnownGoodProviders;
+        const requestedModelKey = request.model || 'auto';
+
         async function* wrappedStream(): AsyncGenerator<StreamChunk> {
           try {
             for await (const chunk of streamGen) {
@@ -459,6 +534,8 @@ export class RoutingEngine {
             circuitBreaker.recordSuccess(providerId);
             circuitBreaker.recordModelSuccess(modelId);
             circuitBreaker.recordKeySuccess(providerId);
+            lastKnownGood.set(modelId, providerId);
+            lastKnownGood.set(requestedModelKey, providerId);
           } catch (err: any) {
             const status = err.status || 500;
             if (status === 429) {

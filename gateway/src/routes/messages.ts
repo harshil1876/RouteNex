@@ -12,7 +12,7 @@
 
 import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
-import type { RoutingEngine } from '../router/engine.js';
+import { RoutingEngine, formatCostHeader, sanitizeHeader } from '../router/engine.js';
 import type { RequestStore } from '../storage/sqlite.js';
 import type { ResponseCache } from '../router/cache.js';
 import type { AppConfig } from '../config.js';
@@ -126,6 +126,14 @@ export function createMessagesRoute(
           cache.set(chatRequest, response);
         }
 
+        c.header('X-RouteNex-Request-Id', sanitizeHeader(requestId));
+        c.header('X-RouteNex-Selected-Provider', sanitizeHeader(response.routenex?.provider || 'unknown'));
+        c.header('X-RouteNex-Selected-Model', sanitizeHeader(response.routenex?.model_used || model));
+        c.header('X-RouteNex-Decision-Reason', sanitizeHeader(response.routenex?.routing_reason || 'Direct route'));
+        c.header('X-RouteNex-Fallback-Count', String(response.routenex?.fallback_attempts ?? 0));
+        c.header('X-RouteNex-Tokens-Saved', '0');
+        c.header('X-RouteNex-Estimated-Cost-USD', formatCostHeader(response.routenex?.cost_estimate));
+
         return c.json(anthropicResponse);
       } catch (err: any) {
         return c.json(
@@ -142,6 +150,23 @@ export function createMessagesRoute(
     }
 
     // 3. Streaming Execution (Anthropic SSE Protocol)
+    let streamContext;
+    try {
+      streamContext = await engine.executeStream(chatRequest, requestId);
+    } catch (err: any) {
+      return c.json(
+        {
+          type: 'error',
+          error: {
+            type: 'api_error',
+            message: err.message || 'Routing failed',
+          },
+        },
+        err.status || 500
+      );
+    }
+
+    const { generator, provider, model: modelUsed, reason, modelEntry } = streamContext;
     const encoder = new TextEncoder();
     const streamResponse = new ReadableStream({
       async start(controller) {
@@ -155,7 +180,7 @@ export function createMessagesRoute(
                 type: 'message',
                 role: 'assistant',
                 content: [],
-                model,
+                model: modelUsed,
                 stop_reason: null,
                 stop_sequence: null,
                 usage: { input_tokens: 15, output_tokens: 1 },
@@ -177,7 +202,6 @@ export function createMessagesRoute(
 
         let outputTokens = 0;
         try {
-          const { generator } = await engine.executeStream(chatRequest, requestId);
           for await (const chunk of generator) {
             const token = chunk.choices[0]?.delta?.content;
             if (token) {
@@ -231,6 +255,13 @@ export function createMessagesRoute(
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
+        'X-RouteNex-Request-Id': sanitizeHeader(requestId),
+        'X-RouteNex-Selected-Provider': sanitizeHeader(provider),
+        'X-RouteNex-Selected-Model': sanitizeHeader(modelUsed),
+        'X-RouteNex-Decision-Reason': sanitizeHeader(reason),
+        'X-RouteNex-Fallback-Count': '0',
+        'X-RouteNex-Tokens-Saved': '0',
+        'X-RouteNex-Estimated-Cost-USD': formatCostHeader(engine.calculateCost(modelEntry, undefined)),
       },
     });
   });

@@ -89,7 +89,7 @@ export class ResponseCache {
     if (cloned.routenex) {
       cloned.routenex.cache_hit = true;
       cloned.routenex.latency_ms = 0;
-      cloned.routenex.routing_reason = `Served from local RouteNex cache (0ms • saved ${entry.tokens} tokens)`;
+      cloned.routenex.routing_reason = `Served from local RouteNex cache (0ms - saved ${entry.tokens} tokens)`;
     }
 
     return cloned;
