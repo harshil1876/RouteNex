@@ -55,6 +55,7 @@ export const ChatCompletionRequestSchema = z.object({
   frequency_penalty: z.number().min(-2).max(2).optional(),
   n: z.number().int().positive().default(1),
   user: z.string().optional(),
+  compress: z.boolean().optional(),
   // Tool calling
   tools: z.array(z.object({
     type: z.literal('function'),
@@ -73,6 +74,7 @@ export const ChatCompletionRequestSchema = z.object({
       function: z.object({ name: z.string() }),
     }),
   ]).optional(),
+  response_format: z.any().optional(),
 });
 
 export type ChatCompletionRequest = z.infer<typeof ChatCompletionRequestSchema>;
@@ -106,6 +108,13 @@ export const ChatCompletionResponseSchema = z.object({
       price_timestamp: z.string().nullable(),
     }).optional(),
     fallback_attempts: z.number().default(0),
+    cache_hit: z.boolean().optional(),
+    compression: z.object({
+      original_chars: z.number(),
+      compressed_chars: z.number(),
+      saved_percent: z.number(),
+      estimated_tokens_saved: z.number(),
+    }).optional(),
   }).optional(),
 });
 

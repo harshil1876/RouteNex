@@ -13,6 +13,7 @@ import { OllamaProviderAdapter } from './providers/ollama.js';
 import { MistralProviderAdapter } from './providers/mistral.js';
 import { SiliconFlowProviderAdapter } from './providers/siliconflow.js';
 import { DuckDuckGoProviderAdapter } from './providers/duckduckgo.js';
+import { ResponseCache } from './router/cache.js';
 import type { AppConfig } from './config.js';
 
 const testConfig: AppConfig = {
@@ -336,6 +337,8 @@ describe('Middleware Tests', () => {
 });
 
 describe('PromptCompressor', () => {
+  const { app } = createApp(testConfig);
+
   it('compresses repetitive newlines and whitespace while preserving code blocks', () => {
     const rawText = `Line 1
 
@@ -362,6 +365,106 @@ def hello():
     ]);
     expect(result.savedPercent).toBeGreaterThan(0);
     expect(result.estimatedTokensSaved).toBeGreaterThan(0);
+  });
+
+  it('chat completions with compress: true attaches compression telemetry', async () => {
+    const rawPrompt = "Explain   gravity   in   detail\n\n\n\n<!-- comment -->\nAnd relativity";
+    const res = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mock/fast',
+        messages: [{ role: 'user', content: rawPrompt }],
+        compress: true,
+      }),
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.routenex.compression).toBeDefined();
+    expect(body.routenex.compression.saved_percent).toBeGreaterThan(0);
+  });
+});
+
+describe('ResponseCache (0ms Semantic & Exact Caching)', () => {
+  const { app } = createApp(testConfig);
+
+  it('stores responses and serves identical requests from cache with 0ms latency', async () => {
+    const cache = new ResponseCache({ ttlSeconds: 60 });
+    const req = {
+      model: 'mock/fast',
+      messages: [{ role: 'user' as const, content: 'Cache test message 123' }],
+    };
+
+    expect(cache.get(req)).toBeUndefined();
+
+    const mockResponse: any = {
+      id: 'chatcmpl-test-1',
+      object: 'chat.completion',
+      created: 1700000000,
+      model: 'mock/fast',
+      choices: [{ index: 0, message: { role: 'assistant', content: 'Cached answer' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
+      routenex: {
+        request_id: 'req_test',
+        provider: 'mock',
+        model_used: 'mock/fast',
+        routing_reason: 'Direct',
+        latency_ms: 120,
+        cost_estimate: { total_usd: 0.0001, provenance: 'ESTIMATED' },
+        fallback_attempts: 0,
+      },
+    };
+
+    cache.set(req, mockResponse);
+
+    const cached = cache.get(req);
+    expect(cached).toBeDefined();
+    expect(cached?.choices[0].message.content).toBe('Cached answer');
+    expect(cached?.routenex?.cache_hit).toBe(true);
+    expect(cached?.routenex?.latency_ms).toBe(0);
+
+    const stats = cache.getStats();
+    expect(stats.hits).toBe(1);
+    expect(stats.tokensSaved).toBe(30);
+  });
+
+  it('/v1/chat/completions serves cached response on repeated identical query', async () => {
+    const promptText = `Unique cache query ${Date.now()}`;
+    const payload = {
+      model: 'mock/fast',
+      messages: [{ role: 'user', content: promptText }],
+    };
+
+    // First call: cache miss, executes against mock provider
+    const res1 = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    expect(res1.status).toBe(200);
+    const body1 = await res1.json();
+    expect(body1.routenex.cache_hit).toBeFalsy();
+
+    // Second call: cache hit!
+    const res2 = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    expect(res2.status).toBe(200);
+    const body2 = await res2.json();
+    expect(body2.routenex.cache_hit).toBe(true);
+    expect(body2.routenex.latency_ms).toBe(0);
+
+    // Bypass cache with header
+    const res3 = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-routenex-cache': 'false' },
+      body: JSON.stringify(payload),
+    });
+    expect(res3.status).toBe(200);
+    const body3 = await res3.json();
+    expect(body3.routenex.cache_hit).toBeFalsy();
   });
 });
 

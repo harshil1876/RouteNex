@@ -8,12 +8,20 @@ interface CompletionResult {
   tokens: { prompt: number; completion: number; total: number };
   routingReason: string;
   fallbackAttempts: number;
+  cacheHit?: boolean;
+  compression?: {
+    original_chars: number;
+    compressed_chars: number;
+    saved_percent: number;
+    estimated_tokens_saved: number;
+  };
 }
 
 export default function Playground() {
   const [prompt, setPrompt] = useState('Why should AI developers use an intelligent router like RouteNex?');
   const [selectedModel, setSelectedModel] = useState('auto');
   const [strategy, setStrategy] = useState<'balanced' | 'cost' | 'latency'>('balanced');
+  const [compress, setCompress] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<CompletionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,11 +43,13 @@ export default function Playground() {
         body = {
           models: ['mock/error', 'mock/fast', 'mock/gpt-4'],
           messages: [{ role: 'user', content: prompt }],
+          compress,
         };
       } else {
         body = {
           model: selectedModel,
           messages: [{ role: 'user', content: prompt }],
+          compress,
           provider: {
             sort: strategy,
             allow_fallbacks: true,
@@ -65,10 +75,12 @@ export default function Playground() {
         content: data.choices?.[0]?.message?.content || '(Empty content)',
         modelUsed: data.routenex?.model_used || data.model || selectedModel,
         provider: data.routenex?.provider || 'Unknown',
-        latencyMs: data.routenex?.latency_ms || latencyMs,
+        latencyMs: data.routenex?.latency_ms !== undefined ? data.routenex.latency_ms : latencyMs,
         tokens: data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
         routingReason: data.routenex?.routing_reason || 'Direct route',
         fallbackAttempts: data.routenex?.fallback_attempts || 0,
+        cacheHit: Boolean(data.routenex?.cache_hit),
+        compression: data.routenex?.compression,
       });
     } catch (err: any) {
       setError(
@@ -152,6 +164,24 @@ export default function Playground() {
               />
             </div>
 
+            {/* Context Token Compressor Toggle */}
+            <div className="flex items-center justify-between p-2.5 rounded border border-hairline bg-canvas">
+              <div>
+                <span className="block font-mono text-xs font-semibold text-ink">
+                  🗜️ Context Compressor
+                </span>
+                <span className="text-[10px] text-mute">
+                  Strip redundant whitespace & comments (-15% to -50% tokens)
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={compress}
+                onChange={(e) => setCompress(e.target.checked)}
+                className="h-4 w-4 rounded border-hairline accent-ink cursor-pointer"
+              />
+            </div>
+
             <button
               type="submit"
               disabled={isSubmitting || !prompt.trim()}
@@ -176,9 +206,16 @@ export default function Playground() {
               <div className="flex items-center justify-between border-b border-hairline pb-3">
                 <span className="font-mono text-xs font-semibold text-ink">Execution Telemetry</span>
                 {result && (
-                  <span className="rounded bg-emerald-100 px-2 py-0.5 font-mono text-[10px] text-emerald-800 font-medium">
-                    200 OK • {result.latencyMs}ms
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {result.cacheHit && (
+                      <span className="rounded bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 px-2 py-0.5 font-mono text-[10px] font-semibold border border-sky-300 dark:border-sky-800">
+                        ⚡ 0ms Cache Hit
+                      </span>
+                    )}
+                    <span className="rounded bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 font-mono text-[10px] text-emerald-800 dark:text-emerald-300 font-medium border border-emerald-300 dark:border-emerald-800">
+                      200 OK • {result.latencyMs}ms
+                    </span>
+                  </div>
                 )}
               </div>
 
@@ -206,6 +243,13 @@ export default function Playground() {
                       <div className="font-semibold text-ink">{result.tokens.total_tokens || result.tokens.prompt_tokens + result.tokens.completion_tokens}</div>
                     </div>
                   </div>
+
+                  {result.compression && (
+                    <div className="rounded border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/50 p-2.5 text-teal-900 dark:text-teal-200 text-[11px] flex items-center justify-between">
+                      <span>🗜️ <strong>Context Token Compression:</strong> -{result.compression.saved_percent}% characters</span>
+                      <span className="font-semibold text-teal-600 dark:text-teal-400">~{result.compression.estimated_tokens_saved} tokens saved</span>
+                    </div>
+                  )}
 
                   {result.fallbackAttempts > 0 && (
                     <div className="rounded border border-amber-200 bg-amber-50 p-2.5 text-amber-900 text-[11px]">

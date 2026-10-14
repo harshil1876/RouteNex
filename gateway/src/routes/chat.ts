@@ -11,6 +11,7 @@ import {
 } from '../schemas.js';
 import { ProviderError } from '../providers/types.js';
 import { PromptCompressor } from '../router/compression.js';
+import type { ResponseCache } from '../router/cache.js';
 
 /**
  * Creates the chat completions route handler.
@@ -18,7 +19,8 @@ import { PromptCompressor } from '../router/compression.js';
 export function createChatRoute(
   engine: RoutingEngine,
   store: RequestStore,
-  config: AppConfig
+  config: AppConfig,
+  cache?: ResponseCache
 ) {
   const router = new Hono();
 
@@ -58,9 +60,43 @@ export function createChatRoute(
     // Check for optional prompt compression flag
     const compressHeader = c.req.header('x-routenex-compress');
     const shouldCompress = compressHeader === 'true' || (body as any)?.compress === true;
-    const effectiveRequest = shouldCompress
-      ? { ...request, messages: PromptCompressor.compressMessages(request.messages).messages }
-      : request;
+    let compressionStats: any = undefined;
+    let effectiveRequest = request;
+
+    if (shouldCompress) {
+      const compResult = PromptCompressor.compressMessages(request.messages);
+      effectiveRequest = { ...request, messages: compResult.messages };
+      compressionStats = {
+        original_chars: compResult.originalChars,
+        compressed_chars: compResult.compressedChars,
+        saved_percent: compResult.savedPercent,
+        estimated_tokens_saved: compResult.estimatedTokensSaved,
+      };
+    }
+
+    // Fast-path: Check response cache for identical prompt
+    const skipCache = c.req.header('x-routenex-cache') === 'false';
+    if (!effectiveRequest.stream && cache && !skipCache) {
+      const cached = cache.get(effectiveRequest);
+      if (cached) {
+        if (compressionStats && cached.routenex) {
+          cached.routenex.compression = compressionStats;
+        }
+        store.logRequest({
+          request_id: requestId,
+          timestamp: new Date().toISOString(),
+          model_requested: request.model,
+          model_used: cached.routenex?.model_used || request.model,
+          provider: cached.routenex?.provider || 'cache',
+          latency_ms: 0,
+          status: 'success',
+          token_usage: cached.usage,
+          cost_estimate: cached.routenex?.cost_estimate,
+          routing_reason: cached.routenex?.routing_reason || 'Local cache hit',
+        });
+        return c.json(cached);
+      }
+    }
 
     // Stream response
     if (effectiveRequest.stream) {
@@ -161,9 +197,16 @@ export function createChatRoute(
       });
     }
 
-    // Non-streaming response
     try {
       const response = await engine.executeChat(effectiveRequest, requestId);
+
+      if (response.routenex && compressionStats) {
+        response.routenex.compression = compressionStats;
+      }
+
+      if (cache && !skipCache && response) {
+        cache.set(effectiveRequest, response);
+      }
 
       store.logRequest({
         request_id: requestId,

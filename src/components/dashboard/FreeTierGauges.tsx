@@ -130,32 +130,50 @@ export default function FreeTierGauges() {
 
   const handleProbeAll = async () => {
     setProbing(true);
-    setProbeLog('Probing all active free-tier endpoints concurrently...');
+    setProbeLog('Querying local RouteNex Gateway model registry & probing active pools...');
 
     try {
-      const res = await fetch('http://127.0.0.1:3001/v1/router/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'combo/free-unlimited',
-          messages: [{ role: 'user', content: 'Ping probe' }],
-        }),
-      });
+      const [modelsRes, explainRes] = await Promise.all([
+        fetch('http://127.0.0.1:3001/v1/models').catch(() => null),
+        fetch('http://127.0.0.1:3001/v1/router/explain', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'combo/free-unlimited',
+            messages: [{ role: 'user', content: 'Ping probe' }],
+          }),
+        }).catch(() => null),
+      ]);
 
-      if (res.ok) {
-        const data = await res.json();
-        setProbeLog(`✓ Probe successful! Free-tier cluster healthy. Resolved primary target: ${data.selected_model}`);
-        setPools((prev) =>
-          prev.map((p) => ({
-            ...p,
-            status: p.id === 'pollinations' || p.id === 'groq' || p.id === 'cerebras' ? 'probed_ok' : p.status,
-          }))
+      if (modelsRes && modelsRes.ok) {
+        const modelsData = await modelsRes.json().catch(() => ({ data: [] }));
+        const availableModelIds: string[] = (modelsData.data || []).map((m: any) => m.id);
+        const configuredProviders = new Set<string>(
+          (modelsData.data || []).map((m: any) => m.owned_by || m.routenex?.provider)
         );
+
+        let explainMsg = '';
+        if (explainRes && explainRes.ok) {
+          const exData = await explainRes.json().catch(() => ({}));
+          explainMsg = ` • Active Combo resolved to: ${exData.selected_model}`;
+        }
+
+        setPools((prev) =>
+          prev.map((p) => {
+            const hasModel = p.models.some((m) => availableModelIds.includes(m));
+            const isConfigured = !p.requiresKey || configuredProviders.has(p.provider) || hasModel;
+            return {
+              ...p,
+              status: isConfigured ? 'probed_ok' : 'active',
+            };
+          })
+        );
+        setProbeLog(`✓ Live Gateway probe successful! Verified active model registry (${availableModelIds.length} models online)${explainMsg}`);
       } else {
-        setProbeLog('⚠ Gateway responded with warning status. Simulating local fallback.');
+        setProbeLog('⚠ Local Gateway offline (127.0.0.1:3001). Showing offline verified specifications.');
       }
     } catch {
-      setProbeLog('✓ Simulated healthcheck: 3 free tier pools verified online and accessible.');
+      setProbeLog('⚠ Gateway offline. Showing offline verified specifications.');
     } finally {
       setProbing(false);
     }

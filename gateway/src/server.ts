@@ -22,6 +22,7 @@ import path from 'node:path';
 import { AdminStore } from './storage/admin-store.js';
 import { createAdminRoutes } from './routes/admin.js';
 import { mountStaticDashboard } from './middleware/static-dashboard.js';
+import { ResponseCache } from './router/cache.js';
 
 export function createApp(appConfig: AppConfig = config) {
   const app = new Hono();
@@ -31,6 +32,7 @@ export function createApp(appConfig: AppConfig = config) {
   const adminStore = new AdminStore('./routenex_admin.json', !appConfig.persistenceEnabled);
   const registry = new ProviderRegistry(appConfig);
   const circuitBreaker = new CircuitBreaker();
+  const responseCache = new ResponseCache();
   const store = new RequestStore(appConfig.dbPath, appConfig.persistenceEnabled);
   const engine = new RoutingEngine(
     registry,
@@ -56,7 +58,7 @@ export function createApp(appConfig: AppConfig = config) {
 
   // 3. Mount Route Handlers
   const healthRoute = createHealthRoute(registry, startTime);
-  const chatRoute = createChatRoute(engine, store, appConfig);
+  const chatRoute = createChatRoute(engine, store, appConfig, responseCache);
   const modelsRoute = createModelsRoute(registry, adminStore);
   const explainRoute = createExplainRoute(engine);
   const usageRoute = createUsageRoute(store);
@@ -90,7 +92,7 @@ export function createApp(appConfig: AppConfig = config) {
     mountStaticDashboard(app, staticRoot);
   }
 
-  return { app, registry, circuitBreaker, store, engine, adminStore };
+  return { app, registry, circuitBreaker, store, engine, adminStore, responseCache };
 }
 
 /**
