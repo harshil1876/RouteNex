@@ -32,3 +32,8 @@ test_routenex.json
 
 # IDE & local settings
 .idea/
+
+# Local reference repositories
+.omniroute-ref/
+.omniroute-ref
+
