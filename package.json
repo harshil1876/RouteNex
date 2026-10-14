@@ -1,8 +1,40 @@
 {
   "name": "routenex",
   "type": "module",
-  "version": "0.1.0",
-  "license": "MIT",
+  "version": "0.2.0",
+  "description": "High-Performance Open-Source AI Gateway & Routing Proxy with Free-Tier Pools and Coding Agent Integrations",
+  "license": "MIT OR Apache-2.0",
+  "author": "Harshil Patel",
+  "homepage": "https://github.com/harshil1876/RouteNex#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harshil1876/RouteNex.git"
+  },
+  "keywords": [
+    "ai",
+    "router",
+    "gateway",
+    "proxy",
+    "llm",
+    "openai",
+    "groq",
+    "anthropic",
+    "mistral",
+    "gemini",
+    "deepseek",
+    "cursor",
+    "claude-code",
+    "cline"
+  ],
+  "files": [
+    "bin",
+    "dist",
+    "gateway/dist",
+    "package.json",
+    "README.md",
+    "LICENSE",
+    "LICENSE-APACHE"
+  ],
   "bin": {
     "routenex": "./bin/routenex.js"
   },
