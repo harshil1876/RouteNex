@@ -1,0 +1,39 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout title="Claude, Cursor, Cline & Codex" currentPath="/docs/guides/cli-integrations">
+  <div class="space-y-8 font-mono text-xs">
+    <div>
+      <div class="text-[11px] text-purple-400 font-semibold mb-1">CODING AGENTS</div>
+      <h1 class="text-2xl font-bold text-white font-sans">Claude Code, Cursor, Cline & Codex</h1>
+      <p class="text-[#8f96a3] text-sm font-sans mt-1">Connecting terminal coding agents and IDE extensions in one command.</p>
+    </div>
+
+    <div class="space-y-4">
+      <div class="p-4 rounded-xl bg-[#121622] border border-[#222738] space-y-2">
+        <h2 class="text-sm font-bold text-white font-sans">Claude Code CLI</h2>
+        <div class="p-2.5 rounded bg-[#181d2c] border border-[#262f44] text-purple-300">
+          <code>routenex run claude --model auto</code>
+        </div>
+        <p class="text-[#8f96a3]">Injects ANTHROPIC_BASE_URL="http://127.0.0.1:3001" and ANTHROPIC_API_KEY="rn-local-dev-default" into the claude process without modifying global dotfiles.</p>
+      </div>
+
+      <div class="p-4 rounded-xl bg-[#121622] border border-[#222738] space-y-2">
+        <h2 class="text-sm font-bold text-white font-sans">Cursor IDE</h2>
+        <div class="p-2.5 rounded bg-[#181d2c] border border-[#262f44] text-purple-300">
+          <code>routenex configure cursor</code>
+        </div>
+        <p class="text-[#8f96a3]">Set OpenAI Base URL to <code class="text-white">http://127.0.0.1:3001/v1</code> with API Key <code class="text-white">rn-local-dev-default</code>.</p>
+      </div>
+
+      <div class="p-4 rounded-xl bg-[#121622] border border-[#222738] space-y-2">
+        <h2 class="text-sm font-bold text-white font-sans">Aider CLI</h2>
+        <div class="p-2.5 rounded bg-[#181d2c] border border-[#262f44] text-purple-300">
+          <code>routenex run aider --model combo/coding-power</code>
+        </div>
+        <p class="text-[#8f96a3]">Automatically passes --openai-api-base and injects virtual key.</p>
+      </div>
+    </div>
+  </div>
+</DocsLayout>

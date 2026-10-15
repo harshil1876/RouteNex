@@ -4,324 +4,342 @@ export interface RequestItem {
   id: string;
   time: string;
   model: string;
+  requestedModel: string;
   provider: string;
-  latencyMs: number;
+  cacheSource: 'UPSTREAM' | 'SEMANTIC_CACHE' | 'EXACT_CACHE';
+  protocol: 'HTTP /v1' | 'MCP stdio' | 'A2A' | 'SSE';
+  account: string;
+  apiKeyMasked: string;
+  combo: string;
   tokens: { prompt: number; completion: number; total: number };
+  tps: number;
+  latencyMs: number;
   costUsd: number;
-  status: '200 OK' | '429 Rate Limit' | '500 Error' | '503 Fallback';
+  status: string;
+  statusCode: number;
   isSuccess: boolean;
-  provenance: string;
+  correlationId?: string;
+  conversationId?: string;
 }
 
 export const initialRequests: RequestItem[] = [
-  { id: 'req_01HP8A', time: '14:23:08', model: 'llama-3.3-70b-versatile', provider: 'Groq', latencyMs: 98, tokens: { prompt: 142, completion: 284, total: 426 }, costUsd: 0.00032, status: '200 OK', isSuccess: true, provenance: 'rates-2026.02' },
-  { id: 'req_01HP8B', time: '14:22:51', model: 'gpt-4o-mini', provider: 'OpenAI', latencyMs: 312, tokens: { prompt: 512, completion: 120, total: 632 }, costUsd: 0.00015, status: '200 OK', isSuccess: true, provenance: 'rates-2026.02' },
-  { id: 'req_01HP8C', time: '14:21:40', model: 'gemini-1.5-flash', provider: 'Google Gemini', latencyMs: 245, tokens: { prompt: 820, completion: 410, total: 1230 }, costUsd: 0.00019, status: '200 OK', isSuccess: true, provenance: 'rates-2026.02' },
-  { id: 'req_01HP8D', time: '14:20:15', model: 'claude-3-5-haiku', provider: 'Anthropic', latencyMs: 410, tokens: { prompt: 310, completion: 180, total: 490 }, costUsd: 0.00045, status: '200 OK', isSuccess: true, provenance: 'rates-2026.02' },
-  { id: 'req_01HP8E', time: '14:19:02', model: 'llama-3.3-70b-versatile', provider: 'Groq', latencyMs: 510, tokens: { prompt: 950, completion: 0, total: 950 }, costUsd: 0.00000, status: '429 Rate Limit', isSuccess: false, provenance: 'unbilled' },
-  { id: 'req_01HP8F', time: '14:19:03', model: 'gpt-4o-mini', provider: 'OpenAI (Fallback)', latencyMs: 340, tokens: { prompt: 950, completion: 210, total: 1160 }, costUsd: 0.00028, status: '503 Fallback', isSuccess: true, provenance: 'rates-2026.02' },
-  { id: 'req_01HP8G', time: '14:17:44', model: 'llama-3.1-8b-instant', provider: 'Groq', latencyMs: 72, tokens: { prompt: 85, completion: 94, total: 179 }, costUsd: 0.00002, status: '200 OK', isSuccess: true, provenance: 'rates-2026.02' },
-  { id: 'req_01HP8H', time: '14:15:30', model: 'qwen2.5-coder:7b', provider: 'Ollama Local', latencyMs: 185, tokens: { prompt: 412, completion: 320, total: 732 }, costUsd: 0.00000, status: '200 OK', isSuccess: true, provenance: 'local-zero' },
-  { id: 'req_01HP8I', time: '14:12:11', model: 'gpt-4o', provider: 'OpenAI', latencyMs: 640, tokens: { prompt: 1204, completion: 532, total: 1736 }, costUsd: 0.00840, status: '200 OK', isSuccess: true, provenance: 'rates-2026.02' },
-  { id: 'req_01HP8J', time: '14:10:04', model: 'gemini-1.5-pro', provider: 'Google Gemini', latencyMs: 820, tokens: { prompt: 2100, completion: 890, total: 2990 }, costUsd: 0.00412, status: '200 OK', isSuccess: true, provenance: 'rates-2026.02' }
+  { id: 'req_01HP8A', time: '14:23:08', model: 'llama-3.3-70b-versatile', requestedModel: 'auto', provider: 'Groq', cacheSource: 'UPSTREAM', protocol: 'HTTP /v1', account: 'default', apiKeyMasked: 'rn_live_...9f2a', combo: 'combo/coding-power', latencyMs: 98, tps: 289, tokens: { prompt: 142, completion: 284, total: 426 }, costUsd: 0.00000, status: '200 OK', statusCode: 200, isSuccess: true, correlationId: 'corr-01824-a', conversationId: 'conv-dev-3' },
+  { id: 'req_01HP8B', time: '14:22:51', model: 'gpt-4o-mini', requestedModel: 'auto', provider: 'OpenAI', cacheSource: 'SEMANTIC_CACHE', protocol: 'HTTP /v1', account: 'prod', apiKeyMasked: 'rn_live_...14b2', combo: 'default', latencyMs: 14, tps: 840, tokens: { prompt: 512, completion: 120, total: 632 }, costUsd: 0.00000, status: '200 OK', statusCode: 200, isSuccess: true, correlationId: 'corr-01823-b' },
+  { id: 'req_01HP8C', time: '14:21:40', model: 'gemini-2.5-flash', requestedModel: 'gemini-2.5-flash', provider: 'Google Gemini', cacheSource: 'UPSTREAM', protocol: 'HTTP /v1', account: 'alex@dev', apiKeyMasked: 'rn_live_...9f2a', combo: 'combo/free-unlimited', latencyMs: 245, tps: 182, tokens: { prompt: 820, completion: 410, total: 1230 }, costUsd: 0.00000, status: '200 OK', statusCode: 200, isSuccess: true, correlationId: 'corr-01822-c' },
+  { id: 'req_01HP8D', time: '14:20:15', model: 'claude-3-7-sonnet', requestedModel: 'claude-3-7-sonnet', provider: 'Anthropic', cacheSource: 'UPSTREAM', protocol: 'HTTP /v1', account: 'prod', apiKeyMasked: 'rn_live_...48ac', combo: 'direct', latencyMs: 410, tps: 64, tokens: { prompt: 310, completion: 180, total: 490 }, costUsd: 0.00412, status: '200 OK', statusCode: 200, isSuccess: true, correlationId: 'corr-01821-d' },
+  { id: 'req_01HP8E', time: '14:19:02', model: 'llama-3.3-70b-versatile', requestedModel: 'auto', provider: 'Groq', cacheSource: 'UPSTREAM', protocol: 'HTTP /v1', account: 'default', apiKeyMasked: 'rn_live_...9f2a', combo: 'combo/free-unlimited', latencyMs: 510, tps: 0, tokens: { prompt: 950, completion: 0, total: 950 }, costUsd: 0.00000, status: '429 Rate Limit', statusCode: 429, isSuccess: false, correlationId: 'corr-01820-e' },
+  { id: 'req_01HP8F', time: '14:19:03', model: 'cerebras/llama-3.3-70b', requestedModel: 'auto', provider: 'Cerebras (Fallback)', cacheSource: 'UPSTREAM', protocol: 'HTTP /v1', account: 'free-pool', apiKeyMasked: 'rn_live_...9f2a', combo: 'combo/free-unlimited', latencyMs: 140, tps: 340, tokens: { prompt: 950, completion: 210, total: 1160 }, costUsd: 0.00000, status: '200 OK (Failover)', statusCode: 200, isSuccess: true, correlationId: 'corr-01819-f' },
+  { id: 'req_01HP8G', time: '14:17:44', model: 'llama-3.1-8b-instant', requestedModel: 'auto/fast', provider: 'Groq', cacheSource: 'UPSTREAM', protocol: 'MCP stdio', account: 'default', apiKeyMasked: 'rn_live_...9f2a', combo: 'auto/fast', latencyMs: 72, tps: 420, tokens: { prompt: 85, completion: 94, total: 179 }, costUsd: 0.00000, status: '200 OK', statusCode: 200, isSuccess: true, correlationId: 'corr-01818-g' },
 ];
-
-type SortField = 'time' | 'latencyMs' | 'costUsd' | 'tokens';
 
 export default function RequestLog() {
   const [requests, setRequests] = useState<RequestItem[]>(initialRequests);
-  const [sortField, setSortField] = useState<SortField>('time');
-  const [sortAsc, setSortAsc] = useState<boolean>(false);
-  const [filterText, setFilterText] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isRecording, setIsRecording] = useState(true);
+  const [pipelineLogs, setPipelineLogs] = useState(false);
+  const [searchFilter, setSearchFilter] = useState('');
+  const [correlationFilter, setCorrelationFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
-  const [copiedPayload, setCopiedPayload] = useState(false);
 
-  // Poll live gateway for actual historical requests
-  React.useEffect(() => {
-    async function fetchLiveRequests() {
-      try {
-        const res = await fetch('http://127.0.0.1:3001/v1/usage?recent=20');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.recent_requests && data.recent_requests.length > 0) {
-            const mapped: RequestItem[] = data.recent_requests.map((r: any) => ({
-              id: r.request_id,
-              time: new Date(r.timestamp).toLocaleTimeString(),
-              model: r.model_used,
-              provider: r.provider,
-              latencyMs: r.latency_ms,
-              tokens: {
-                prompt: r.token_usage?.prompt_tokens ?? 0,
-                completion: r.token_usage?.completion_tokens ?? 0,
-                total: r.token_usage?.total_tokens ?? 0,
-              },
-              costUsd: r.cost_estimate?.total_usd ?? 0,
-              status: r.status === 'success' ? '200 OK' : '500 Error',
-              isSuccess: r.status === 'success',
-              provenance: r.cost_estimate?.provenance ?? 'ESTIMATED',
-            }));
-            setRequests([...mapped, ...initialRequests.slice(mapped.length)]);
-          }
-        }
-      } catch {
-        // Fallback silently to initialRequests preview
-      }
-    }
+  // 14 Toggleable Column Pills (matching Screenshot 597)
+  const [columns, setColumns] = useState<Record<string, boolean>>({
+    status: true,
+    cacheSource: true,
+    model: true,
+    requested: true,
+    provider: true,
+    protocol: true,
+    account: true,
+    apiKey: true,
+    combo: true,
+    tokens: true,
+    tps: true,
+    duration: true,
+    time: true,
+    conversation: false,
+  });
 
-    fetchLiveRequests();
-    const interval = setInterval(fetchLiveRequests, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  const columnList = [
+    { id: 'status', label: 'Status' },
+    { id: 'cacheSource', label: 'Cache Source' },
+    { id: 'model', label: 'Model' },
+    { id: 'requested', label: 'Requested' },
+    { id: 'provider', label: 'Provider' },
+    { id: 'protocol', label: 'Request Protocol' },
+    { id: 'account', label: 'Account' },
+    { id: 'apiKey', label: 'API Key' },
+    { id: 'combo', label: 'Combo' },
+    { id: 'tokens', label: 'Tokens' },
+    { id: 'tps', label: 'TPS' },
+    { id: 'duration', label: 'Duration' },
+    { id: 'time', label: 'Time' },
+    { id: 'conversation', label: 'Conversation' },
+  ];
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortField(field);
-      setSortAsc(false);
+  const toggleColumn = (colId: string) => {
+    setColumns((prev) => ({ ...prev, [colId]: !prev[colId] }));
+  };
+
+  const handleCleanHistory = () => {
+    if (confirm('Clean local in-memory request history?')) {
+      setRequests([]);
     }
   };
 
-  const filteredRequests = useMemo(() => {
-    return requests
-      .filter((req) => {
-        const matchesText =
-          req.model.toLowerCase().includes(filterText.toLowerCase()) ||
-          req.provider.toLowerCase().includes(filterText.toLowerCase()) ||
-          req.id.toLowerCase().includes(filterText.toLowerCase());
-
-        const matchesStatus =
-          statusFilter === 'ALL'
-            ? true
-            : statusFilter === 'SUCCESS'
-            ? req.isSuccess
-            : !req.isSuccess;
-
-        return matchesText && matchesStatus;
-      })
-      .sort((a, b) => {
-        let valA: number | string = sortField === 'tokens' ? a.tokens.total : a[sortField];
-        let valB: number | string = sortField === 'tokens' ? b.tokens.total : b[sortField];
-        if (valA < valB) return sortAsc ? -1 : 1;
-        if (valA > valB) return sortAsc ? 1 : -1;
-        return 0;
-      });
-  }, [sortField, sortAsc, filterText, statusFilter]);
-
-  const simulateRefresh = () => {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 300);
+  const handleExport = () => {
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(requests, null, 2));
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute('href', dataStr);
+    dlAnchor.setAttribute('download', `routenex_request_logs_${Date.now()}.json`);
+    dlAnchor.click();
   };
+
+  const filtered = useMemo(() => {
+    return requests.filter((r) => {
+      const matchText =
+        r.model.toLowerCase().includes(searchFilter.toLowerCase()) ||
+        r.provider.toLowerCase().includes(searchFilter.toLowerCase()) ||
+        r.id.toLowerCase().includes(searchFilter.toLowerCase());
+
+      const matchCorr = correlationFilter
+        ? (r.correlationId || '').toLowerCase().includes(correlationFilter.toLowerCase())
+        : true;
+
+      const matchStatus =
+        statusFilter === 'ALL'
+          ? true
+          : statusFilter === 'SUCCESS'
+          ? r.isSuccess
+          : !r.isSuccess;
+
+      return matchText && matchCorr && matchStatus;
+    });
+  }, [requests, searchFilter, correlationFilter, statusFilter]);
 
   return (
-    <div className="rounded-lg border border-hairline bg-elevated shadow-xs overflow-hidden">
-      {/* Controls Bar */}
-      <div className="p-4 border-b border-hairline flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-canvas/30">
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="search"
-            placeholder="Filter model, provider, ID…"
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-            className="h-8 rounded-md border border-hairline bg-elevated px-3 text-xs text-ink placeholder:text-mute focus:outline-none focus-visible:ring-1 focus-visible:ring-ink w-48 sm:w-60"
-            aria-label="Filter requests"
-          />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-8 rounded-md border border-hairline bg-elevated px-2 text-xs text-body focus:outline-none focus-visible:ring-1 focus-visible:ring-ink"
-            aria-label="Filter by status"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="SUCCESS">Success Only</option>
-            <option value="ERROR">Errors / Failovers</option>
-          </select>
+    <div className="space-y-5">
+      {/* Top Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#222738]">
+        <div>
+          <h2 className="text-base font-semibold text-white font-mono tracking-tight">Request Logs & Monitor</h2>
+          <p className="text-xs text-[#8f96a3]">
+            Realtime payload inspection, correlation tracking, and token throughput.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 justify-end">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Recording Toggle */}
           <button
             type="button"
-            onClick={simulateRefresh}
-            disabled={isLoading}
-            className="inline-flex items-center gap-1.5 h-8 rounded-md border border-hairline bg-elevated px-2.5 text-xs font-mono text-body hover:text-ink hover:bg-hairline/40 transition focus-visible:ring-1 focus-visible:ring-ink disabled:opacity-50"
+            onClick={() => setIsRecording(!isRecording)}
+            className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition-colors ${
+              isRecording
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                : 'bg-neutral-800 border-neutral-700 text-neutral-400'
+            }`}
           >
-            <svg className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-            </svg>
-            Refresh
+            <span className={`w-2 h-2 rounded-full ${isRecording ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-500'}`} />
+            {isRecording ? '• Recording' : 'Paused'}
           </button>
-          <span className="font-mono text-[11px] text-mute tabular-nums">{filteredRequests.length} results</span>
+
+          {/* Pipeline Logs Toggle */}
+          <button
+            type="button"
+            onClick={() => setPipelineLogs(!pipelineLogs)}
+            className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-medium transition-colors ${
+              pipelineLogs
+                ? 'bg-purple-500/10 border-purple-500/30 text-purple-300'
+                : 'bg-[#181d2c] border-[#262f44] text-[#8e97ae]'
+            }`}
+          >
+            {pipelineLogs ? '• Pipeline logs on' : '• Pipeline logs off'}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExport}
+            className="px-3 py-1.5 rounded-lg bg-[#181d2c] hover:bg-[#20273c] border border-[#262f44] text-xs font-mono text-white"
+          >
+            Export
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCleanHistory}
+            className="px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 text-xs font-mono text-rose-300"
+          >
+            Clean history
+          </button>
         </div>
       </div>
 
-      {/* Loading State */}
-      {isLoading ? (
-        <div className="p-12 text-center" aria-live="polite">
-          <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-hairline border-t-ink"></div>
-          <p className="mt-2 text-xs font-mono text-mute">Polling gateway request buffer…</p>
+      {/* Filter Row: Search & Correlation */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <input
+          type="text"
+          value={searchFilter}
+          onChange={(e) => setSearchFilter(e.target.value)}
+          placeholder="Search by model, provider, or request ID..."
+          className="bg-[#121622] border border-[#222738] rounded-lg px-3 py-2 text-xs text-white placeholder-[#5a647d] font-mono focus:outline-none focus:border-purple-500"
+        />
+
+        <input
+          type="text"
+          value={correlationFilter}
+          onChange={(e) => setCorrelationFilter(e.target.value)}
+          placeholder="# Correlation ID (e.g. corr-01824)"
+          className="bg-[#121622] border border-[#222738] rounded-lg px-3 py-2 text-xs text-white placeholder-[#5a647d] font-mono focus:outline-none focus:border-purple-500"
+        />
+
+        <div className="flex rounded-lg bg-[#121622] border border-[#222738] p-0.5 text-xs font-mono">
+          {['ALL', 'SUCCESS', 'ERROR'].map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setStatusFilter(s)}
+              className={`flex-1 py-1 rounded transition-colors ${
+                statusFilter === s ? 'bg-purple-600 text-white font-semibold' : 'text-[#7d8597] hover:text-white'
+              }`}
+            >
+              {s}
+            </button>
+          ))}
         </div>
-      ) : filteredRequests.length === 0 ? (
-        /* Empty State */
-        <div className="p-12 text-center">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-canvas text-mute">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <h4 className="mt-3 text-sm font-semibold text-ink">No requests found</h4>
-          <p className="mt-1 text-xs text-mute">Try clearing your filters or issuing a request to localhost:3001.</p>
-          <button
-            type="button"
-            onClick={() => { setFilterText(''); setStatusFilter('ALL'); }}
-            className="mt-4 rounded-md border border-hairline bg-elevated px-3 py-1 text-xs text-ink hover:bg-hairline"
-          >
-            Reset Filters
-          </button>
+      </div>
+
+      {/* 14 Column Toggle Pills (Matching Screenshot 597) */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-[11px] font-mono text-[#7d8597]">
+          <span>TOGGLE COLUMNS (14 AVAILABLE):</span>
         </div>
-      ) : (
-        /* Table */
+        <div className="flex flex-wrap gap-1.5">
+          {columnList.map((col) => (
+            <button
+              key={col.id}
+              type="button"
+              onClick={() => toggleColumn(col.id)}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-mono border transition-all ${
+                columns[col.id]
+                  ? 'bg-purple-600/15 border-purple-500/40 text-purple-300 font-medium'
+                  : 'bg-[#121622] border-[#222738] text-[#636c80]'
+              }`}
+            >
+              {col.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Requests Table */}
+      <div className="rounded-xl border border-[#222738] overflow-hidden bg-[#121622]">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-hairline bg-canvas/60 text-mute font-mono text-[11px]">
-                <th scope="col" className="px-4 py-3 cursor-pointer hover:text-ink transition select-none" onClick={() => handleSort('time')}>
-                  Time {sortField === 'time' && (sortAsc ? '↑' : '↓')}
-                </th>
-                <th scope="col" className="px-4 py-3">Model</th>
-                <th scope="col" className="px-4 py-3">Provider</th>
-                <th scope="col" className="px-4 py-3 cursor-pointer hover:text-ink transition select-none" onClick={() => handleSort('latencyMs')}>
-                  Latency {sortField === 'latencyMs' && (sortAsc ? '↑' : '↓')}
-                </th>
-                <th scope="col" className="px-4 py-3 cursor-pointer hover:text-ink transition select-none" onClick={() => handleSort('tokens')}>
-                  Tokens {sortField === 'tokens' && (sortAsc ? '↑' : '↓')}
-                </th>
-                <th scope="col" className="px-4 py-3 cursor-pointer hover:text-ink transition select-none" onClick={() => handleSort('costUsd')}>
-                  Cost (Est.) {sortField === 'costUsd' && (sortAsc ? '↑' : '↓')}
-                </th>
-                <th scope="col" className="px-4 py-3">Status</th>
-                <th scope="col" className="px-4 py-3 text-right">Inspect</th>
+          <table className="w-full text-left text-xs font-mono">
+            <thead className="bg-[#161b2a] border-b border-[#222738] text-[#8e97ae]">
+              <tr>
+                {columns.status && <th className="py-2.5 px-3 uppercase font-semibold">Status</th>}
+                {columns.cacheSource && <th className="py-2.5 px-3 uppercase font-semibold">Source</th>}
+                {columns.model && <th className="py-2.5 px-3 uppercase font-semibold">Model</th>}
+                {columns.requested && <th className="py-2.5 px-3 uppercase font-semibold">Requested</th>}
+                {columns.provider && <th className="py-2.5 px-3 uppercase font-semibold">Provider</th>}
+                {columns.protocol && <th className="py-2.5 px-3 uppercase font-semibold">Protocol</th>}
+                {columns.account && <th className="py-2.5 px-3 uppercase font-semibold">Account</th>}
+                {columns.apiKey && <th className="py-2.5 px-3 uppercase font-semibold">Key</th>}
+                {columns.combo && <th className="py-2.5 px-3 uppercase font-semibold">Combo</th>}
+                {columns.tokens && <th className="py-2.5 px-3 uppercase font-semibold text-right">Tokens</th>}
+                {columns.tps && <th className="py-2.5 px-3 uppercase font-semibold text-right">TPS</th>}
+                {columns.duration && <th className="py-2.5 px-3 uppercase font-semibold text-right">Duration</th>}
+                {columns.time && <th className="py-2.5 px-3 uppercase font-semibold text-right">Time</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-hairline">
-              {filteredRequests.map((req) => (
+            <tbody className="divide-y divide-[#1b2234]">
+              {filtered.map((r) => (
                 <tr
-                  key={req.id}
-                  onClick={() => setSelectedRequest(req)}
-                  className="hover:bg-canvas/60 cursor-pointer transition-colors"
+                  key={r.id}
+                  onClick={() => setSelectedRequest(r)}
+                  className="hover:bg-[#181d2c] transition-colors cursor-pointer"
                 >
-                  <td className="px-4 py-3 font-mono tabular-nums text-mute whitespace-nowrap">{req.time}</td>
-                  <td className="px-4 py-3 font-mono text-ink font-medium whitespace-nowrap">{req.model}</td>
-                  <td className="px-4 py-3 text-body whitespace-nowrap">{req.provider}</td>
-                  <td className="px-4 py-3 font-mono tabular-nums whitespace-nowrap">
-                    <span className="inline-block px-1.5 py-0.5 rounded text-[11px] font-medium bg-canvas border border-hairline text-ink">
-                      {req.latencyMs}ms
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-mono tabular-nums text-body whitespace-nowrap">{req.tokens.total.toLocaleString()}</td>
-                  <td className="px-4 py-3 font-mono tabular-nums whitespace-nowrap">
-                    <span className="text-ink font-medium">${req.costUsd.toFixed(5)}</span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-mono font-medium ${
-                      req.status === '200 OK'
-                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                        : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
-                    }`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${req.status === '200 OK' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                      {req.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap font-mono text-[11px] text-mute hover:text-ink">
-                    Inspect →
-                  </td>
+                  {columns.status && (
+                    <td className="py-2.5 px-3">
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          r.isSuccess
+                            ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                            : 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
+                        }`}
+                      >
+                        {r.statusCode}
+                      </span>
+                    </td>
+                  )}
+                  {columns.cacheSource && (
+                    <td className="py-2.5 px-3">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#181d2c] text-[#8e97ae] border border-[#262f44]">
+                        {r.cacheSource}
+                      </span>
+                    </td>
+                  )}
+                  {columns.model && <td className="py-2.5 px-3 text-white font-medium">{r.model}</td>}
+                  {columns.requested && <td className="py-2.5 px-3 text-[#7d8597]">{r.requestedModel}</td>}
+                  {columns.provider && <td className="py-2.5 px-3 text-[#a0a8be]">{r.provider}</td>}
+                  {columns.protocol && <td className="py-2.5 px-3 text-[#7d8597]">{r.protocol}</td>}
+                  {columns.account && <td className="py-2.5 px-3 text-[#7d8597]">{r.account}</td>}
+                  {columns.apiKey && <td className="py-2.5 px-3 text-[#7d8597]">{r.apiKeyMasked}</td>}
+                  {columns.combo && <td className="py-2.5 px-3 text-purple-300">{r.combo}</td>}
+                  {columns.tokens && (
+                    <td className="py-2.5 px-3 text-right text-[#a0a8be]">
+                      {r.tokens.total.toLocaleString()}
+                    </td>
+                  )}
+                  {columns.tps && <td className="py-2.5 px-3 text-right text-emerald-400">{r.tps}</td>}
+                  {columns.duration && <td className="py-2.5 px-3 text-right text-sky-400">{r.latencyMs}ms</td>}
+                  {columns.time && <td className="py-2.5 px-3 text-right text-[#7d8597]">{r.time}</td>}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      )}
+      </div>
 
-      {/* Request Inspector Slide-Over Modal */}
+      {/* Inspect Modal Drawer */}
       {selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="relative w-full max-w-2xl rounded-xl border border-hairline bg-elevated p-6 shadow-2xl max-h-[90vh] overflow-y-auto space-y-5">
-            <div className="flex items-center justify-between border-b border-hairline pb-4">
+        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
+          <div className="w-full max-w-xl bg-[#121622] border border-[#222738] rounded-xl p-5 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center pb-3 border-b border-[#1f2638]">
               <div>
-                <span className="font-mono text-xs text-mute uppercase">Request Inspector</span>
-                <h3 className="text-base font-semibold text-ink font-mono mt-0.5">{selectedRequest.id}</h3>
+                <span className="text-[10px] text-[#7d8597] font-mono block">REQUEST INSPECTOR</span>
+                <h3 className="text-sm font-semibold text-white font-mono">{selectedRequest.id}</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedRequest(null)}
-                className="h-8 w-8 rounded-full border border-hairline text-body hover:bg-hairline hover:text-ink flex items-center justify-center text-sm font-semibold transition"
+                className="text-neutral-400 hover:text-white"
               >
                 ✕
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-              <div className="p-3 rounded-lg border border-hairline bg-canvas">
-                <span className="text-mute block text-[10px]">Status</span>
-                <span className="text-ink font-semibold text-xs mt-1 block">{selectedRequest.status}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+              <div className="p-2.5 rounded-lg bg-[#161b28] border border-[#232a3d]">
+                <span className="text-[10px] text-[#7d8597] block">Status</span>
+                <span className="text-white font-bold">{selectedRequest.status}</span>
               </div>
-              <div className="p-3 rounded-lg border border-hairline bg-canvas">
-                <span className="text-mute block text-[10px]">Latency</span>
-                <span className="text-ink font-semibold text-xs mt-1 block">{selectedRequest.latencyMs} ms</span>
+              <div className="p-2.5 rounded-lg bg-[#161b28] border border-[#232a3d]">
+                <span className="text-[10px] text-[#7d8597] block">Duration</span>
+                <span className="text-white font-bold">{selectedRequest.latencyMs}ms</span>
               </div>
-              <div className="p-3 rounded-lg border border-hairline bg-canvas">
-                <span className="text-mute block text-[10px]">Total Tokens</span>
-                <span className="text-ink font-semibold text-xs mt-1 block">{selectedRequest.tokens.total}</span>
+              <div className="p-2.5 rounded-lg bg-[#161b28] border border-[#232a3d]">
+                <span className="text-[10px] text-[#7d8597] block">Tokens</span>
+                <span className="text-white font-bold">{selectedRequest.tokens.total}</span>
               </div>
-              <div className="p-3 rounded-lg border border-hairline bg-canvas">
-                <span className="text-mute block text-[10px]">Est. Cost</span>
-                <span className="text-ink font-semibold text-xs mt-1 block">${selectedRequest.costUsd.toFixed(5)}</span>
-              </div>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between py-1.5 border-b border-hairline">
-                <span className="text-mute">Model Requested</span>
-                <span className="font-mono text-ink font-medium">{selectedRequest.model}</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-hairline">
-                <span className="text-mute">Provider Selected</span>
-                <span className="font-mono text-ink font-medium">{selectedRequest.provider}</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-hairline">
-                <span className="text-mute">Token Breakdown</span>
-                <span className="font-mono text-body">
-                  Prompt: {selectedRequest.tokens.prompt} | Completion: {selectedRequest.tokens.completion}
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-hairline">
-                <span className="text-mute">Cost Provenance</span>
-                <span className="font-mono text-xs px-2 py-0.5 rounded bg-canvas border border-hairline text-ink">
-                  {selectedRequest.provenance}
-                </span>
+              <div className="p-2.5 rounded-lg bg-[#161b28] border border-[#232a3d]">
+                <span className="text-[10px] text-[#7d8597] block">Cost</span>
+                <span className="text-emerald-400 font-bold">${selectedRequest.costUsd.toFixed(5)}</span>
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-mono font-semibold text-ink">Simulated Response Payload:</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(JSON.stringify(selectedRequest, null, 2));
-                    setCopiedPayload(true);
-                    setTimeout(() => setCopiedPayload(false), 2000);
-                  }}
-                  className="text-xs font-mono text-body hover:text-ink underline"
-                >
-                  {copiedPayload ? '✓ Copied' : 'Copy JSON'}
-                </button>
-              </div>
-              <pre className="p-3 rounded-lg border border-hairline bg-canvas text-[11px] font-mono text-body overflow-x-auto max-h-48 leading-relaxed">
-                <code>{JSON.stringify(selectedRequest, null, 2)}</code>
-              </pre>
-            </div>
+            <pre className="p-3 rounded-lg bg-[#161b28] border border-[#232a3d] text-[11px] font-mono text-[#a0a8be] overflow-x-auto max-h-48">
+              <code>{JSON.stringify(selectedRequest, null, 2)}</code>
+            </pre>
           </div>
         </div>
       )}

@@ -1,0 +1,76 @@
+---
+// AgentCards.astro - 36 Coding Agent & Framework Integration Cards
+const agents = [
+  { name: 'Claude Code CLI', type: 'Terminal Agent', command: 'routenex run claude --model auto', badge: '1-Command' },
+  { name: 'Cursor IDE', type: 'AI Editor', command: 'Override Base: http://localhost:3001/v1', badge: 'Popular' },
+  { name: 'Cline (VS Code)', type: 'Autonomous Extension', command: 'OpenAI Compatible · Port 3001', badge: 'Native' },
+  { name: 'Aider CLI', type: 'Terminal Pair Programmer', command: 'routenex run aider --model auto', badge: '1-Command' },
+  { name: 'OpenCode', type: 'Code Interpreter', command: 'routenex run opencode', badge: 'Python' },
+  { name: 'Codex CLI', type: 'CLI Coding Tool', command: 'routenex run codex', badge: 'Terminal' },
+  { name: 'GitHub Copilot', type: 'IDE Autocomplete', command: 'Custom upstream proxy bridge', badge: 'IDE' },
+  { name: 'Continue.dev', type: 'Open-Source IDE Extension', command: 'apiBase: http://localhost:3001/v1', badge: 'Open Source' },
+  { name: 'Windsurf', type: 'Agentic Editor', command: 'Custom OpenAI provider', badge: 'Cascade' },
+  { name: 'Roo Code', type: 'Multi-Role Coding Agent', command: 'OpenAI Compatible mode', badge: 'VS Code' },
+  { name: 'LibreChat', type: 'Self-Hosted AI UI', command: 'Reverse proxy /v1 endpoints', badge: 'Chat' },
+  { name: 'Open WebUI', type: 'Ollama & OpenAI WebUI', command: 'OPENAI_API_BASE_URL=...:3001/v1', badge: 'Self-Hosted' },
+  { name: 'Dify.ai', type: 'LLM App Builder', command: 'Custom model provider', badge: 'Workflow' },
+  { name: 'LangChain', type: 'Agent Framework', command: 'ChatOpenAI(base_url="...:3001/v1")', badge: 'SDK' },
+  { name: 'LlamaIndex', type: 'RAG Framework', command: 'OpenAI(api_base="...:3001/v1")', badge: 'SDK' },
+  { name: 'LiteLLM', type: 'Proxy & Gateway', command: 'Upstream OpenAI endpoint', badge: 'Gateway' },
+  { name: 'CrewAI', type: 'Multi-Agent Orchestrator', command: 'llm = LLM(base_url="...:3001/v1")', badge: 'Multi-Agent' },
+  { name: 'AutoGen', type: 'Multi-Agent Conversations', command: 'config_list: [{"base_url": ...}]', badge: 'Microsoft' },
+  { name: 'vLLM', type: 'High-Throughput Server', command: 'Compatible routing target', badge: 'Inference' },
+  { name: 'Ollama', type: 'Local Daemon', command: 'http://localhost:11434/v1 bridge', badge: 'Local' },
+  { name: 'LM Studio', type: 'Local GUI', command: 'http://localhost:1234/v1 bridge', badge: 'Local' },
+  { name: 'Jan AI', type: 'Desktop AI', command: 'Custom OpenAI server port 3001', badge: 'Offline' },
+  { name: 'LocalAI', type: 'Drop-in REST API', command: 'Upstream gateway adapter', badge: 'Self-Hosted' },
+  { name: 'Flowise', type: 'Drag & Drop AI Agents', command: 'ChatOpenAI Node configuration', badge: 'Low-Code' },
+  { name: 'AnythingLLM', type: 'All-in-One Desktop AI', command: 'Custom LLM endpoint', badge: 'Desktop' },
+  { name: 'Chatbox', type: 'Desktop Chat App', command: 'Custom API host port 3001', badge: 'Desktop' },
+  { name: 'NextChat', type: 'Cross-Platform Client', command: 'Base URL: http://localhost:3001', badge: 'Web' },
+  { name: 'Bolt.new', type: 'In-Browser Full-Stack', command: 'Custom backend AI router', badge: 'Web' },
+  { name: 'Lovable.dev', type: 'Full-Stack Agent', command: 'Standard API proxy target', badge: 'Web' },
+  { name: 'v0.dev', type: 'UI Generation', command: 'Unified model upstream', badge: 'Frontend' },
+  { name: 'Cursor Composer', type: 'Multi-File Agent', command: 'Multi-turn auto-routing', badge: 'IDE' },
+  { name: 'Devin', type: 'Autonomous Software Engineer', command: 'Custom base URL config', badge: 'Agent' },
+  { name: 'Kimi Code CLI', type: 'Moonshot AI CLI', command: 'OAuth 2.0 PKCE browser login', badge: 'OAuth' },
+  { name: 'Amazon Q', type: 'AWS Developer Assistant', command: 'OAuth 2.0 PKCE browser login', badge: 'OAuth' },
+  { name: 'Google Gemini CLI', type: 'Google Cloud Assistant', command: 'OAuth 2.0 PKCE browser login', badge: 'OAuth' },
+  { name: 'Antigravity IDE', type: 'Advanced Agentic Coding', command: 'Built-in auto-discovery bridge', badge: 'Native' },
+];
+---
+
+<section id="agents" class="py-20 sm:py-24 border-t border-hairline bg-canvas">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
+    <div class="text-center max-w-3xl mx-auto space-y-3">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 text-xs font-mono">
+        <span>⚡ 36 Coding Agents & Frameworks Supported</span>
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-ink font-sans">
+        Zero Global Dotfile Pollution
+      </h2>
+      <p class="text-body text-base">
+        RouteNex launches any terminal coding agent or IDE with scoped tokens and proxy URLs injected strictly per-process. Never overwrite your personal <code class="font-mono text-ink">~/.bashrc</code> or <code class="font-mono text-ink">~/.zshrc</code>.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+      {agents.map((agent) => (
+        <div class="p-4 rounded-xl border border-hairline bg-elevated hover:border-purple-500/40 transition-all space-y-2 shadow-xs group">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-semibold text-ink font-mono group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+              {agent.name}
+            </h3>
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-canvas border border-hairline text-mute">
+              {agent.badge}
+            </span>
+          </div>
+          <div class="text-[11px] text-mute">{agent.type}</div>
+          <div class="p-2 rounded-lg bg-canvas border border-hairline text-[10px] font-mono text-body truncate">
+            <code>{agent.command}</code>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,65 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout title="Setup & Quick Start" currentPath="/docs/getting-started/quick-start">
+  <div class="space-y-8 font-mono text-xs">
+    <div>
+      <div class="text-[11px] text-purple-400 font-semibold mb-1">GETTING STARTED</div>
+      <h1 class="text-2xl font-bold text-white font-sans">Setup & Quick Start Guide</h1>
+      <p class="text-[#8f96a3] text-sm font-sans mt-1">Get RouteNex running locally in under 3 minutes with zero configuration.</p>
+    </div>
+
+    {/* Section 1 */}
+    <div class="p-5 rounded-xl bg-[#121622] border border-[#222738] space-y-3">
+      <h2 class="text-sm font-bold text-white font-sans">1. Instant Launch with npx</h2>
+      <p class="text-[#8f96a3] leading-relaxed">
+        RouteNex runs completely standalone with no global dependencies. It automatically boots the local gateway on port 3001, loads free-tier provider pools, and launches Chrome or Edge straight into your authenticated dashboard:
+      </p>
+      <div class="p-3 rounded-lg bg-[#181d2c] border border-[#262f44] text-white">
+        <code>npx routenex</code>
+      </div>
+      <p class="text-[11px] text-[#7d8597]">
+        Zero Cloud Login is required. RouteNex prints your local setup token in magenta and exchanges it for a local session automatically.
+      </p>
+    </div>
+
+    {/* Section 2 */}
+    <div class="p-5 rounded-xl bg-[#121622] border border-[#222738] space-y-3">
+      <h2 class="text-sm font-bold text-white font-sans">2. Test Your First Chat Completion</h2>
+      <p class="text-[#8f96a3] leading-relaxed">
+        Send an OpenAI-compatible request using curl, Python, or TypeScript. Notice you can pass <code class="text-purple-300">model: "auto"</code> to let RouteNex pick the fastest healthy free-tier provider:
+      </p>
+      <div class="p-3 rounded-lg bg-[#181d2c] border border-[#262f44] text-white overflow-x-auto">
+        <pre><code>curl http://localhost:3001/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer rn-local-dev-default" \
+  -d '&#123;
+    "model": "auto",
+    "messages": [
+      &#123; "role": "user", "content": "Explain quantum teleportation in 2 sentences" &#125;
+    ]
+  &#125;'</code></pre>
+      </div>
+    </div>
+
+    {/* Section 3 */}
+    <div class="p-5 rounded-xl bg-[#121622] border border-[#222738] space-y-3">
+      <h2 class="text-sm font-bold text-white font-sans">3. Connect Your Coding Agent CLI</h2>
+      <p class="text-[#8f96a3] leading-relaxed">
+        Use the built-in one-command launcher to launch Claude Code, Cursor, Cline, or Aider with isolated per-process environment variables:
+      </p>
+      <div class="space-y-2">
+        <div class="p-2 rounded bg-[#181d2c] border border-[#262f44] text-purple-300">
+          <code>routenex run claude --model auto</code>
+        </div>
+        <div class="p-2 rounded bg-[#181d2c] border border-[#262f44] text-purple-300">
+          <code>routenex run cursor</code>
+        </div>
+        <div class="p-2 rounded bg-[#181d2c] border border-[#262f44] text-purple-300">
+          <code>routenex run aider --model combo/coding-power</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocsLayout>

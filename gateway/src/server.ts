@@ -109,7 +109,7 @@ export function createApp(appConfig: AppConfig = config) {
  * Starts the HTTP server on configured host and port.
  */
 export function startServer(appConfig: AppConfig = config) {
-  const { app, registry, store, adminStore } = createApp(appConfig);
+  const { app, registry, store, adminStore, engine, circuitBreaker, responseCache } = createApp(appConfig);
 
   const server = serve(
     {
@@ -152,7 +152,7 @@ export function startServer(appConfig: AppConfig = config) {
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 
-  return { app, server, registry, store };
+  return { app, server, registry, store, adminStore, engine, circuitBreaker };
 }
 
 // Auto-start when executed directly as entrypoint

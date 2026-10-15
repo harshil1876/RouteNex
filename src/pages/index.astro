@@ -4,19 +4,50 @@ import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
 import Features from '../components/Features.astro';
 import HowItWorks from '../components/HowItWorks.astro';
+import AgentCards from '../components/AgentCards.astro';
 import CodeExample from '../components/CodeExample.astro';
 import Pricing from '../components/Pricing.astro';
 import Footer from '../components/Footer.astro';
 ---
 
-<Layout title="RouteNex — The Open-Source AI Router">
+<Layout title="RouteNex — The Intelligent Open-Source AI Gateway">
   <Header />
+
+  <!-- Live Local Gateway Detection Banner -->
+  <div id="local-gateway-banner" class="hidden bg-emerald-500/10 border-b border-emerald-500/20 py-2.5 px-4 text-center font-mono text-xs text-emerald-400">
+    <div class="max-w-7xl mx-auto flex items-center justify-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span>Local RouteNex Gateway detected on port 3001!</span>
+      <a href="/dashboard" class="underline font-bold text-white hover:text-emerald-300 ml-1">
+        Jump to Local Dashboard →
+      </a>
+    </div>
+  </div>
+
   <main id="main-content">
     <Hero />
     <Features />
+    <AgentCards />
     <HowItWorks />
     <CodeExample />
     <Pricing />
   </main>
+
   <Footer />
 </Layout>
+
+<script>
+  // Detect if RouteNex local gateway is running on port 3001
+  async function detectLocalGateway() {
+    try {
+      const res = await fetch('http://127.0.0.1:3001/health/live', { signal: AbortSignal.timeout(1500) });
+      if (res.ok) {
+        document.getElementById('local-gateway-banner')?.classList.remove('hidden');
+      }
+    } catch {
+      // Gateway not currently running
+    }
+  }
+
+  detectLocalGateway();
+</script>

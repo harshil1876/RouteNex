@@ -1,0 +1,35 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout title="Docker & VPS Self-Hosting" currentPath="/docs/guides/docker-self-hosting">
+  <div class="space-y-8 font-mono text-xs">
+    <div>
+      <div class="text-[11px] text-purple-400 font-semibold mb-1">DEPLOYMENT</div>
+      <h1 class="text-2xl font-bold text-white font-sans">Docker & VPS Self-Hosting Guide</h1>
+      <p class="text-[#8f96a3] text-sm font-sans mt-1">Deploying RouteNex on Ubuntu, Debian, Hetzner, Coolify, or Railway.</p>
+    </div>
+
+    <div class="p-5 rounded-xl bg-[#121622] border border-[#222738] space-y-3">
+      <h2 class="text-sm font-bold text-white font-sans">Docker Compose Setup</h2>
+      <div class="p-3 rounded-lg bg-[#181d2c] border border-[#262f44] text-[#a0a8be] overflow-x-auto">
+        <pre><code>services:
+  routenex:
+    image: ghcr.io/harshil1876/routenex:latest
+    ports:
+      - "3001:3001"
+    environment:
+      - ROUTENEX_PORT=3001
+      - ROUTENEX_HOST=0.0.0.0
+      - ROUTENEX_PERSISTENCE=true
+      - ROUTENEX_DB_PATH=/data/routenex.sqlite
+    volumes:
+      - routenex_data:/data
+    restart: unless-stopped
+
+volumes:
+  routenex_data:</code></pre>
+      </div>
+    </div>
+  </div>
+</DocsLayout>

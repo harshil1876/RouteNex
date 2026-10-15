@@ -87,13 +87,37 @@ if (args.includes('--mcp')) {
   const token = args[2];
   const { connectRemote } = await import(launcherModuleUrl);
   await connectRemote(remoteUrl, token);
+} else if (args[0] === 'login') {
+  // 5. Open Source Local Login / Browser Launcher
+  const { loginLocal } = await import(launcherModuleUrl);
+  const port = Number(process.env.ROUTENEX_PORT) || 3001;
+  const token = args[1] || process.env.ROUTENEX_ADMIN_TOKEN;
+  await loginLocal(port, token);
+} else if (args[0] === 'auth' && args[1] === 'login') {
+  // 6. Provider OAuth Login
+  const provider = args[2];
+  if (!provider) {
+    console.error('\x1b[31mError: Provider required.\x1b[0m');
+    console.log('Usage: routenex auth login <openrouter|google|github|antigravity|kimi|amazonq|claude>');
+    process.exit(1);
+  }
+  const { loginOAuthProvider } = await import(launcherModuleUrl);
+  const port = Number(process.env.ROUTENEX_PORT) || 3001;
+  await loginOAuthProvider(provider, port);
+} else if (args[0] === 'cloud' && args[1] === 'login') {
+  // 7. RouteNex Cloud Supabase Login
+  const { loginCloud } = await import(launcherModuleUrl);
+  await loginCloud(args[2]);
 } else if (args.includes('--help') || args.includes('-h')) {
-  // 5. Help banner
+  // 8. Help banner
   console.log(`
 RouteNex v${pkg.version} — High-Performance AI Router & Agent Gateway
 
 Usage:
   routenex [options]                                Start the gateway server
+  routenex login [token]                            Launch local dashboard with zero cloud login
+  routenex auth login <provider>                    Connect OAuth provider in Chrome/Edge
+  routenex cloud login [url]                        Sign in to RouteNex Cloud Edition (Supabase)
   routenex run <agent> [--model <slug>]             Spawn agent with RouteNex injected per-process
   routenex configure <tool>                         Interactive config guide (claude, cursor, cline, aider)
   routenex connect <remote-url> [token]             Drive remote RouteNex instance with scoped token
@@ -109,7 +133,7 @@ Server Options:
   --port, -p <number>    Port to listen on (default: 3001 or ROUTENEX_PORT)
   --host <string>        Host address to bind to (default: 127.0.0.1)
   --api-key <string>     Master gateway key required for auth (optional)
-  --open, -o             Open Web Dashboard in default browser on launch
+  --no-open              Do not automatically launch Chrome/Edge on startup
   --version, -v          Print RouteNex version and exit
   --help, -h             Show this help screen
 `);
@@ -118,7 +142,7 @@ Server Options:
   console.log(`RouteNex v${pkg.version}`);
   process.exit(0);
 } else {
-  // 6. Default Server Mode
+  // 9. Default Server Mode
   console.log(`
   \x1b[36m____             _       _   _\x1b[0m           
  \x1b[36m|  _ \\ ___  _   _| |_ ___| \\ | | _____  __\x1b[0m
@@ -147,7 +171,7 @@ Server Options:
 
   const { startServer } = await import(serverModuleUrl);
 
-  startServer({
+  const serverInstance = startServer({
     port,
     host,
     apiKey: process.env.ROUTENEX_API_KEY,
@@ -168,10 +192,22 @@ Server Options:
     persistenceEnabled: true,
   });
 
-  const dashboardUrl = `http://${host}:${port}/dashboard`;
+  const setupToken = `rn_local_${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+  if (serverInstance && (serverInstance as any).adminStore) {
+    (serverInstance as any).adminStore.setAdminToken?.(setupToken);
+  }
+
+  const autoLoginUrl = `http://${host}:${port}/dashboard?auto_token=${setupToken}`;
+
+  console.log(`\x1b[35m┌────────────────────────────────────────────────────────────────────────┐\x1b[0m`);
+  console.log(`\x1b[35m│\x1b[0m  \x1b[1m\x1b[35m✨ RouteNex Open-Source Local Setup (Zero Cloud Login)\x1b[0m                 \x1b[35m│\x1b[0m`);
+  console.log(`\x1b[35m│\x1b[0m  Token: \x1b[33m${setupToken}\x1b[0m                           \x1b[35m│\x1b[0m`);
+  console.log(`\x1b[35m│\x1b[0m  URL:   \x1b[36m${autoLoginUrl}\x1b[0m     \x1b[35m│\x1b[0m`);
+  console.log(`\x1b[35m│\x1b[0m  Zero Cloud Auth Required • 100% Offline & Self-Hosted                 \x1b[35m│\x1b[0m`);
+  console.log(`\x1b[35m└────────────────────────────────────────────────────────────────────────┘\x1b[0m\n`);
 
   console.log(`\x1b[32m✔ Gateway Ready for Coding Agents & Client Applications:\x1b[0m`);
-  console.log(`  • Web Dashboard: \x1b[1m\x1b[34m${dashboardUrl}\x1b[0m (100% Offline Standalone)`);
+  console.log(`  • Web Dashboard: \x1b[1m\x1b[34mhttp://${host}:${port}/dashboard\x1b[0m (100% Offline Standalone)`);
   console.log(`  • Base URL:      \x1b[1mhttp://${host}:${port}/v1\x1b[0m`);
   console.log(`  • MCP Endpoint:  \x1b[1mhttp://${host}:${port}/v1/mcp\x1b[0m`);
   console.log(`  • Health Check:  http://${host}:${port}/health/live`);
@@ -181,10 +217,11 @@ Server Options:
   console.log(`  • Free Combos:   combo/free-unlimited, combo/coding-power`);
   console.log(`\n\x1b[2mPress Ctrl+C to terminate gateway.\x1b[0m\n`);
 
-  if (args.includes('--open') || args.includes('-o')) {
-    import('node:child_process').then(({ exec }) => {
-      const startCmd = process.platform === 'win32' ? `start ${dashboardUrl}` : process.platform === 'darwin' ? `open ${dashboardUrl}` : `xdg-open ${dashboardUrl}`;
-      exec(startCmd);
-    }).catch(() => {});
+  const shouldOpen = !args.includes('--no-open') && process.env.ROUTENEX_NO_OPEN !== 'true';
+  if (shouldOpen) {
+    const { openBrowser } = await import(pathToFileURL(path.resolve(__dirname, '../gateway/dist/cli/open-browser.js')).href).catch(() => ({ openBrowser: null }));
+    if (openBrowser) {
+      openBrowser(autoLoginUrl).catch(() => {});
+    }
   }
 }

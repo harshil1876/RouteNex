@@ -1,0 +1,156 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  currentPath?: string;
+}
+
+const { title, description = 'RouteNex Documentation Portal', currentPath = '' } = Astro.props;
+
+const docNav = [
+  {
+    category: 'Getting Started',
+    items: [
+      { href: '/docs', label: 'Docs Home' },
+      { href: '/docs/getting-started/quick-start', label: 'Setup & Quick Start' },
+      { href: '/docs/guides/user-guide', label: 'Complete User Guide' },
+    ],
+  },
+  {
+    category: 'Routing & Optimization',
+    items: [
+      { href: '/docs/guides/auto-combo', label: 'Auto-Combo & 19 Strategies' },
+      { href: '/docs/guides/providers', label: 'Providers & OAuth Redirect' },
+      { href: '/docs/guides/thinking-budget', label: 'Thinking Budget & Modality' },
+      { href: '/docs/guides/free-provider-rankings', label: 'Free Provider Rankings (1.62B)' },
+    ],
+  },
+  {
+    category: 'Integrations & Agents',
+    items: [
+      { href: '/docs/guides/cli-integrations', label: 'Claude, Cursor, Cline & Codex' },
+      { href: '/docs/guides/cloud-supabase-auth', label: 'Cloud & Supabase Auth' },
+      { href: '/docs/guides/cost-spend-tracking', label: 'Cost, Quota & Spend Tracking' },
+    ],
+  },
+  {
+    category: 'System & Architecture',
+    items: [
+      { href: '/docs/guides/docker-self-hosting', label: 'Docker & VPS Self-Hosting' },
+      { href: '/docs/guides/features-gallery', label: 'Dashboard Features Gallery' },
+      { href: '/docs/guides/architecture-api', label: 'Architecture & API Reference' },
+    ],
+  },
+];
+---
+
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} — RouteNex Docs</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/src/styles/global.css" />
+  </head>
+  <body class="bg-[#0b0d13] text-[#e0e2ec] font-sans antialiased min-h-screen flex flex-col selection:bg-purple-600 selection:text-white">
+    <!-- Dark Grid Pattern -->
+    <div class="fixed inset-0 bg-[linear-gradient(to_right,#1f243015_1px,transparent_1px),linear-gradient(to_bottom,#1f243015_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none -z-10"></div>
+
+    <!-- Top Navigation Bar -->
+    <header class="h-14 border-b border-[#1f2433] bg-[#0c0f18]/90 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40">
+      <div class="flex items-center gap-4">
+        <a href="/" class="flex items-center gap-2 group">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform font-mono">
+            ⚡
+          </div>
+          <span class="text-sm font-bold tracking-tight text-white font-mono">RouteNex<span class="text-purple-400">/docs</span></span>
+        </a>
+      </div>
+
+      <div class="flex items-center gap-3 font-mono text-xs">
+        <a
+          href="/dashboard"
+          class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium shadow-md shadow-purple-600/20 transition-all"
+        >
+          <span>Open Dashboard</span>
+          <span>→</span>
+        </a>
+
+        <a
+          href="https://github.com/harshil1876/RouteNex"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="px-2.5 py-1.5 rounded-lg border border-[#222738] bg-[#141824] hover:bg-[#1a2030] text-white transition-colors"
+        >
+          GitHub ↗
+        </a>
+      </div>
+    </header>
+
+    <!-- Docs Shell: Left Sidebar + Article + Right Scrollspy -->
+    <div class="flex-1 max-w-7xl w-full mx-auto flex min-h-[calc(100vh-3.5rem)]">
+      <!-- Left Sidebar (Matching Screenshot 601) -->
+      <aside class="w-64 border-r border-[#1f2433] p-4 hidden md:flex flex-col justify-between shrink-0 font-mono text-xs">
+        <div class="space-y-4">
+          <!-- Back to Dashboard Pill -->
+          <a
+            href="/dashboard"
+            class="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#141824] hover:bg-[#1c2234] border border-[#23293c] text-purple-300 font-semibold transition-all group"
+          >
+            <span class="group-hover:-translate-x-0.5 transition-transform">←</span>
+            <span>Back to Dashboard</span>
+          </a>
+
+          <!-- Quick Search -->
+          <div class="relative">
+            <input
+              type="text"
+              placeholder="Search docs (Ctrl K)..."
+              class="w-full bg-[#121622] border border-[#222738] rounded-lg px-3 py-1.5 text-xs text-white placeholder-[#5a647d] focus:outline-none focus:border-purple-500"
+            />
+          </div>
+
+          <!-- Category Trees -->
+          <div class="space-y-4 pt-1">
+            {docNav.map((cat) => (
+              <div class="space-y-1">
+                <span class="text-[10px] font-semibold text-[#6e778d] uppercase tracking-wider block px-2">
+                  {cat.category}
+                </span>
+                <div class="space-y-0.5">
+                  {cat.items.map((item) => {
+                    const isActive = currentPath === item.href || (item.href === '/docs' && currentPath === '');
+                    return (
+                      <a
+                        href={item.href}
+                        class={`block px-2.5 py-1.5 rounded-lg transition-colors truncate ${
+                          isActive
+                            ? 'bg-purple-600/15 text-purple-300 font-semibold border border-purple-500/30'
+                            : 'text-[#8e97ae] hover:text-white hover:bg-[#141926]'
+                        }`}
+                      >
+                        {item.label}
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-[#1b202e] text-[11px] text-[#636c80] space-y-1">
+          <div>RouteNex v0.2.0 Docs</div>
+          <div>MIT OR Apache-2.0</div>
+        </div>
+      </aside>
+
+      <!-- Main Document Content -->
+      <main class="flex-1 min-w-0 p-6 sm:p-10 max-w-4xl mx-auto space-y-8">
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>

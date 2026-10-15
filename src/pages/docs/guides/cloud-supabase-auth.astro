@@ -1,0 +1,28 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout title="Cloud & Supabase Auth Guide" currentPath="/docs/guides/cloud-supabase-auth">
+  <div class="space-y-8 font-mono text-xs">
+    <div>
+      <div class="text-[11px] text-purple-400 font-semibold mb-1">CLOUD EDITION</div>
+      <h1 class="text-2xl font-bold text-white font-sans">RouteNex Cloud & Supabase Authentication</h1>
+      <p class="text-[#8f96a3] text-sm font-sans mt-1">Multi-tenant authentication, workspace RBAC, and Supabase RLS migrations.</p>
+    </div>
+
+    <div class="p-5 rounded-xl bg-[#121622] border border-[#222738] space-y-3">
+      <h2 class="text-sm font-bold text-white font-sans">Dual-Edition Model</h2>
+      <div class="space-y-2 text-[#8f96a3]">
+        <div>• <strong class="text-white">RouteNex Open Source:</strong> 100% self-hosted, offline, and zero-cloud authentication required. Launches locally with direct terminal setup tokens.</div>
+        <div>• <strong class="text-white">RouteNex Cloud:</strong> Multi-tenant managed platform powered by Supabase Auth with GitHub/Google OAuth, Magic Links, team RBAC, and centralized billing.</div>
+      </div>
+    </div>
+
+    <div class="p-5 rounded-xl bg-[#121622] border border-[#222738] space-y-3">
+      <h2 class="text-sm font-bold text-white font-sans">Database Migration & Row-Level Security</h2>
+      <p class="text-[#8f96a3] leading-relaxed">
+        Apply <code class="text-purple-300">cloud/supabase-migration.sql</code> to your PostgreSQL instance to create the required tables (<code class="text-white">cloud_users</code>, <code class="text-white">organizations</code>, <code class="text-white">workspaces</code>, <code class="text-white">cloud_api_keys</code>, <code class="text-white">spend_accounting</code>) with strict RLS policies.
+      </p>
+    </div>
+  </div>
+</DocsLayout>

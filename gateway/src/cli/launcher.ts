@@ -3,6 +3,7 @@ import readline from 'node:readline';
 import fs from 'node:fs';
 import path from 'node:path';
 import { handleMcpJsonRpc } from '../routes/mcp.js';
+import { openBrowser, openLocalDashboard } from './open-browser.js';
 import type { RoutingEngine } from '../router/engine.js';
 import type { ProviderRegistry } from '../providers/registry.js';
 import type { CircuitBreaker } from '../router/circuit-breaker.js';
@@ -212,4 +213,39 @@ export function startMcpStdio(
       process.stdout.write(JSON.stringify(errRes) + '\n');
     }
   });
+}
+
+/**
+ * Automatically launches default browser for local RouteNex Open Source dashboard login.
+ * Zero Cloud Auth required.
+ */
+export async function loginLocal(port: number = 3001, token?: string): Promise<void> {
+  const url = `http://127.0.0.1:${port}/dashboard${token ? `?auto_token=${encodeURIComponent(token)}` : ''}`;
+  console.log(`\x1b[35m┌────────────────────────────────────────────────────────────────────────┐\x1b[0m`);
+  console.log(`\x1b[35m│\x1b[0m  \x1b[1m\x1b[35m✨ RouteNex Open-Source Local Setup (Zero Cloud Login)\x1b[0m                 \x1b[35m│\x1b[0m`);
+  console.log(`\x1b[35m│\x1b[0m  Launching default browser (Chrome/Edge/Safari)...                      \x1b[35m│\x1b[0m`);
+  console.log(`\x1b[35m│\x1b[0m  Dashboard: \x1b[36mhttp://127.0.0.1:${port}/dashboard\x1b[0m                           \x1b[35m│\x1b[0m`);
+  console.log(`\x1b[35m└────────────────────────────────────────────────────────────────────────┘\x1b[0m`);
+  await openBrowser(url);
+}
+
+/**
+ * Initiates an OAuth login flow for a provider and launches Chrome/Edge.
+ */
+export async function loginOAuthProvider(provider: string, port: number = 3001): Promise<void> {
+  const oauthStartUrl = `http://127.0.0.1:${port}/v1/admin/providers/${encodeURIComponent(provider)}/oauth/start?open_browser=true`;
+  console.log(`\x1b[36m⚡ Opening Chrome/Edge for ${provider.toUpperCase()} OAuth authentication...\x1b[0m`);
+  console.log(`  • OAuth endpoint: ${oauthStartUrl}`);
+  console.log(`  • Waiting for callback on http://127.0.0.1:${port}/v1/admin/providers/${provider}/oauth/callback`);
+  await openBrowser(oauthStartUrl);
+}
+
+/**
+ * Launches the RouteNex Cloud Supabase authentication page.
+ */
+export async function loginCloud(cloudUrl: string = 'http://127.0.0.1:3001/login'): Promise<void> {
+  console.log(`\x1b[36m⚡ RouteNex Cloud Edition Login\x1b[0m`);
+  console.log(`  • Opening Cloud Auth portal in default browser: \x1b[34m${cloudUrl}\x1b[0m`);
+  console.log(`  • Supports Email/Password, Magic Link OTP, GitHub & Google OAuth.`);
+  await openBrowser(cloudUrl);
 }

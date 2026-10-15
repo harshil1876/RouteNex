@@ -1,0 +1,88 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+const rankings = [
+  { rank: 1, provider: 'Mistral AI (La Plateforme)', models: 'Codestral, Mistral Small', monthlyPool: '1,000,000,000 Tokens', tps: '140 tps', elo: 1248, badge: 'Best Coding FIM' },
+  { rank: 2, provider: 'Cerebras Cloud CS-3', models: 'Llama 3.3 70B', monthlyPool: '30,000,000 Tokens (1M/day)', tps: '2,100 tps', elo: 1210, badge: 'World Speed Record' },
+  { rank: 3, provider: 'Groq Cloud LPU', models: 'Llama 3.3 70B, Llama 3.1 8B', monthlyPool: '432,000 Requests/mo', tps: '380 tps', elo: 1215, badge: 'Lowest TTFT' },
+  { rank: 4, provider: 'Pollinations AI', models: 'OpenAI, Qwen 2.5, Mistral', monthlyPool: 'Unlimited Anonymous', tps: '85 tps', elo: 1180, badge: 'Zero-Key Required' },
+  { rank: 5, provider: 'Google AI Studio', models: 'Gemini 2.5 Flash Lite', monthlyPool: '45,000 Requests/mo', tps: '180 tps', elo: 1220, badge: '1M Context Free' },
+  { rank: 6, provider: 'SiliconFlow Cloud', models: 'DeepSeek-V3, Qwen', monthlyPool: '20,000,000 Tokens (Bonus)', tps: '95 tps', elo: 1205, badge: 'DeepSeek Reasoning' },
+  { rank: 7, provider: 'Zhipu AI (GLM)', models: 'GLM-4-Flash', monthlyPool: 'Unlimited Free Tier', tps: '110 tps', elo: 1175, badge: 'High Concurrency' },
+];
+---
+
+<Layout title="Free-Tier AI Rankings (~1.62B Tokens/Mo) — RouteNex">
+  <Header />
+
+  <main class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-10">
+    <div class="text-center max-w-3xl mx-auto space-y-3">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
+        <span>🏆 1.62 Billion Tokens / Month Total Free Allowance</span>
+      </div>
+      <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-ink font-sans">
+        Free AI Provider Leaderboard
+      </h1>
+      <p class="text-body text-base">
+        Benchmark ratings and monthly token capacity across top zero-cost AI provider tiers. RouteNex pools them into <code class="text-purple-600 dark:text-purple-400 font-mono">combo/free-unlimited</code> for uninterrupted zero-dollar developer access.
+      </p>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <div class="rounded-2xl border border-hairline bg-elevated overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono">
+          <thead class="bg-canvas border-b border-hairline text-mute">
+            <tr>
+              <th class="py-3 px-4 font-semibold uppercase w-12 text-center">Rank</th>
+              <th class="py-3 px-4 font-semibold uppercase">Provider & Models</th>
+              <th class="py-3 px-4 font-semibold uppercase">Free Capacity</th>
+              <th class="py-3 px-4 font-semibold uppercase">Inference Speed</th>
+              <th class="py-3 px-4 font-semibold uppercase">Arena ELO</th>
+              <th class="py-3 px-4 font-semibold uppercase text-right">Badge</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-hairline">
+            {rankings.map((r) => (
+              <tr class="hover:bg-canvas transition-colors">
+                <td class="py-4 px-4 text-center font-bold text-ink">#{r.rank}</td>
+                <td class="py-4 px-4">
+                  <div class="font-semibold text-ink text-sm font-sans">{r.provider}</div>
+                  <div class="text-xs text-mute mt-0.5">{r.models}</div>
+                </td>
+                <td class="py-4 px-4 text-purple-600 dark:text-purple-400 font-semibold">{r.monthlyPool}</td>
+                <td class="py-4 px-4 text-emerald-600 dark:text-emerald-400 font-bold">{r.tps}</td>
+                <td class="py-4 px-4 font-bold text-ink">{r.elo}</td>
+                <td class="py-4 px-4 text-right">
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-canvas border border-hairline text-body font-semibold">
+                    {r.badge}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Quick Callout -->
+    <div class="p-6 rounded-2xl bg-gradient-to-r from-purple-900/10 via-indigo-900/10 to-transparent border border-purple-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>
+        <h3 class="text-base font-semibold text-ink font-sans">Use All Free Tiers in One Endpoint</h3>
+        <p class="text-xs text-body mt-1">
+          RouteNex combines all 7 free tiers above with automatic circuit-breaker failover. If one provider hits an RPM limit, traffic switches instantly to the next in &lt;10ms.
+        </p>
+      </div>
+      <a
+        href="/dashboard?view=combos"
+        class="px-5 py-2.5 rounded-full bg-ink text-white dark:bg-white dark:text-black font-medium text-xs shadow-md shrink-0 transition-transform hover:scale-105"
+      >
+        Configure Free Combo →
+      </a>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

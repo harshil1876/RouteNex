@@ -28,6 +28,7 @@ import { DeepSeekProviderAdapter } from '../providers/deepseek.js';
 import { MistralProviderAdapter } from '../providers/mistral.js';
 import { SiliconFlowProviderAdapter } from '../providers/siliconflow.js';
 import { PromptCompressor, type CompressionOptions } from '../router/compression.js';
+import { openBrowser } from '../cli/open-browser.js';
 
 export function createAdminRoutes(
   adminStore: AdminStore,
@@ -286,8 +287,8 @@ export function createAdminRoutes(
     });
   });
 
-  // 8a. POST /v1/admin/providers/:id/oauth/start - Initiate OAuth 2.0 PKCE / Device Flow
-  router.post('/providers/:id/oauth/start', async (c) => {
+  // 8a. POST/GET /v1/admin/providers/:id/oauth/start - Initiate OAuth 2.0 PKCE / Device Flow
+  const handleOAuthStart = async (c: any) => {
     const providerId = c.req.param('id');
     const p = registry.getProvider(providerId);
     if (!p) {
@@ -297,16 +298,30 @@ export function createAdminRoutes(
     const verifier = `rn_pkce_${nanoid(32)}`;
     const challenge = hashToken(verifier);
     const state = `state_${Date.now()}_${nanoid(8)}`;
+    const redirectUri = `http://${config.host || '127.0.0.1'}:${config.port}/v1/admin/providers/${providerId}/oauth/callback`;
 
     const authEndpoints: Record<string, string> = {
       openrouter: 'https://openrouter.ai/auth',
       google: 'https://accounts.google.com/o/oauth2/v2/auth',
       gemini: 'https://accounts.google.com/o/oauth2/v2/auth',
       github: 'https://github.com/login/oauth/authorize',
+      antigravity: 'https://antigravity.google.com/oauth/authorize',
+      kimi: 'https://platform.moonshot.cn/oauth/authorize',
+      amazonq: 'https://aws.amazon.com/oauth/authorize',
+      claude: 'https://anthropic.com/oauth/authorize',
     };
 
     const endpoint = authEndpoints[providerId] || `https://auth.${providerId}.com/oauth/authorize`;
-    const authUrl = `${endpoint}?response_type=code&client_id=routenex-local&state=${state}&code_challenge=${challenge}&code_challenge_method=S256`;
+    const authUrl = `${endpoint}?response_type=code&client_id=routenex-local&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&code_challenge=${challenge}&code_challenge_method=S256`;
+
+    const query = c.req.query();
+    const shouldOpen = query.open_browser === 'true' || query.redirect === 'true';
+    if (shouldOpen) {
+      openBrowser(authUrl);
+      if (query.redirect === 'true') {
+        return c.redirect(authUrl);
+      }
+    }
 
     return c.json({
       success: true,
@@ -318,20 +333,36 @@ export function createAdminRoutes(
       verificationUri: authUrl,
       expiresIn: 600,
     });
-  });
+  };
 
-  // 8b. POST /v1/admin/providers/:id/oauth/callback - Complete OAuth PKCE and save encrypted token
-  router.post('/providers/:id/oauth/callback', async (c) => {
+  router.post('/providers/:id/oauth/start', handleOAuthStart);
+  router.get('/providers/:id/oauth/start', handleOAuthStart);
+
+  // 8b. POST/GET /v1/admin/providers/:id/oauth/callback - Complete OAuth PKCE and save encrypted token
+  const handleOAuthCallback = async (c: any) => {
     const providerId = c.req.param('id');
-    const body = await c.req.json().catch(() => ({}));
-    const { code } = body;
+    let code: string | undefined;
+
+    if (c.req.method === 'POST') {
+      const body = await c.req.json().catch(() => ({}));
+      code = body.code;
+    } else {
+      code = c.req.query('code') || c.req.query('token');
+    }
 
     if (!code) {
+      if (c.req.method === 'GET') {
+        return c.redirect(`/dashboard?view=providers&oauth_error=no_code`);
+      }
       return c.json({ error: 'Authorization code is required' }, 400);
     }
 
     const mockAccessToken = `rn_oauth_${providerId}_${code.slice(0, 10)}_${Date.now()}`;
     adminStore.setProviderKey(providerId, mockAccessToken);
+
+    if (c.req.method === 'GET') {
+      return c.redirect(`/dashboard?view=providers&oauth_success=${providerId}`);
+    }
 
     return c.json({
       success: true,
@@ -341,7 +372,10 @@ export function createAdminRoutes(
       expiresIn: 3600,
       refreshTokenStored: true,
     });
-  });
+  };
+
+  router.post('/providers/:id/oauth/callback', handleOAuthCallback);
+  router.get('/providers/:id/oauth/callback', handleOAuthCallback);
 
   // 8c. POST /v1/admin/providers/:id/oauth/refresh - Refresh provider OAuth access token
   router.post('/providers/:id/oauth/refresh', async (c) => {
