@@ -255,7 +255,8 @@ main();`,
                   <th className="py-2.5 px-4 font-semibold">Speed (TPS)</th>
                   <th className="py-2.5 px-4 font-semibold">Uptime</th>
                   <th className="py-2.5 px-4 font-semibold">Quantization</th>
-                  <th className="py-2.5 px-4 font-semibold text-right">ZDR</th>
+                  <th className="py-2.5 px-4 font-semibold">ZDR</th>
+                  <th className="py-2.5 px-4 font-semibold text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#222226]">
@@ -276,12 +277,20 @@ main();`,
                     <td className="py-3 px-4 text-zinc-200">{h.tps}</td>
                     <td className="py-3 px-4 text-emerald-400">{h.uptime}</td>
                     <td className="py-3 px-4 text-zinc-400">{h.quant}</td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4">
                       {h.zdr ? (
                         <span className="text-zinc-300 font-bold" title="Zero Data Retention Verified">🛡️ Yes</span>
                       ) : (
                         <span className="text-zinc-600">No</span>
                       )}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <a
+                        href={`/dashboard?view=providers&provider=${encodeURIComponent(h.slug)}`}
+                        className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-[11px] font-sans inline-block whitespace-nowrap transition"
+                      >
+                        Connect / Configure Provider →
+                      </a>
                     </td>
                   </tr>
                 ))}

@@ -52,7 +52,7 @@ export default function AgentSetupHub() {
             onClick={() => setSelectedAgent(tab.id as AgentType)}
             className={`px-3 py-1.5 rounded-full border transition flex items-center gap-1.5 whitespace-nowrap ${
               selectedAgent === tab.id
-                ? 'bg-ink text-white border-ink font-semibold'
+                ? 'bg-zinc-100 dark:bg-white !text-zinc-950 font-semibold border-zinc-200 dark:border-white shadow-xs'
                 : 'bg-elevated text-mute border-hairline hover:text-ink hover:border-neutral-400'
             }`}
           >

@@ -522,6 +522,21 @@ export default function ProviderDetailView({
                       >
                         ⚙
                       </button>
+                      <a
+                        href={`/models/${providerId}/${m.id.includes('/') ? m.id.split('/')[1] : m.id}`}
+                        className="px-1.5 py-1 rounded bg-[#09090b] border border-[#222226] text-zinc-300 hover:text-white text-[10px] inline-flex items-center gap-1"
+                        title="View 8-Tab Model Comparison & Analytics"
+                      >
+                        📊 Compare
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('playground')}
+                        className="px-1.5 py-1 rounded bg-[#09090b] border border-[#222226] text-zinc-300 hover:text-white text-[10px] inline-flex items-center gap-1"
+                        title="Load in inline Playground"
+                      >
+                        ▶ Run
+                      </button>
                     </div>
                   </div>
 

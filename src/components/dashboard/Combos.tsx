@@ -279,7 +279,7 @@ export default function Combos() {
         <button
           type="button"
           onClick={() => setShowModal(true)}
-          className="rounded-full bg-ink text-white px-4 py-2 text-xs font-medium hover:opacity-90 transition flex items-center gap-1.5 whitespace-nowrap"
+          className="rounded-full bg-zinc-100 hover:bg-white !text-zinc-950 font-semibold px-4 py-2 text-xs border border-zinc-200 shadow-xs transition flex items-center gap-1.5 whitespace-nowrap"
         >
           <span>＋</span> Create Combo
         </button>
@@ -490,13 +490,13 @@ export default function Combos() {
                         }}
                         className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded text-left font-mono transition ${
                           isSelected
-                            ? 'bg-ink text-white font-semibold'
+                            ? 'bg-zinc-100 dark:bg-white !text-zinc-950 font-semibold'
                             : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-body'
                         }`}
                       >
                         <span>{opt}</span>
                         {isSelected && (
-                          <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">
+                          <span className="text-[10px] bg-zinc-900/10 dark:bg-zinc-900/20 text-zinc-950 px-1.5 py-0.5 rounded font-bold">
                             #{orderIdx + 1}
                           </span>
                         )}
@@ -561,7 +561,7 @@ export default function Combos() {
                 <button
                   type="submit"
                   disabled={selectedTargets.length === 0 || !name}
-                  className="rounded bg-ink text-white px-5 py-2 font-medium hover:opacity-90 transition disabled:opacity-50"
+                  className="rounded bg-zinc-100 hover:bg-white !text-zinc-950 font-semibold px-5 py-2 transition disabled:opacity-50 shadow-xs"
                 >
                   Save Combo
                 </button>

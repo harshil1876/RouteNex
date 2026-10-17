@@ -1,60 +1,19 @@
 [
   {
-    "id": "nvidia",
-    "name": "NVIDIA NIM",
-    "baseUrl": "https://integrate.api.nvidia.com/v1",
-    "envKey": "NVIDIA_API_KEY",
-    "category": "FREE",
-    "freeTier": true,
-    "badge": "1,000 Free Credits / NIM Microservices",
-    "models": [
-      {
-        "id": "nvidia/meta/llama-3.1-405b-instruct",
-        "provider": "nvidia",
-        "capabilities": {
-          "chat": true,
-          "streaming": true,
-          "tool_calls": true,
-          "vision": false,
-          "json_mode": true
-        },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
-      },
-      {
-        "id": "nvidia/nvidia/nemotron-4-340b-instruct",
-        "provider": "nvidia",
-        "capabilities": {
-          "chat": true,
-          "streaming": true,
-          "tool_calls": true,
-          "vision": false,
-          "json_mode": true
-        },
-        "context_length": 4096,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
-      }
-    ],
-    "tos_status": "official"
-  },
-  {
     "id": "openrouter",
     "name": "OpenRouter",
+    "category": "OAUTH",
     "baseUrl": "https://openrouter.ai/api/v1",
     "envKey": "OPENROUTER_API_KEY",
-    "category": "FREE",
     "freeTier": true,
-    "badge": ":free Models Available",
+    "badge": "OAuth PKCE / Aggregator",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "embedding"
+    ],
+    "supportsOAuth": true,
     "models": [
       {
         "id": "openrouter/auto",
@@ -66,25 +25,590 @@
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": null,
-          "completion_per_million": null,
-          "provenance": "UNKNOWN",
-          "updated_at": null
-        }
-      },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "gemini",
+    "name": "Google AI Studio",
+    "category": "OAUTH",
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+    "envKey": "GEMINI_API_KEY",
+    "freeTier": true,
+    "badge": "OAuth 2.0 PKCE",
+    "modalities": [
+      "text",
+      "vision",
+      "tools",
+      "embedding"
+    ],
+    "supportsOAuth": true,
+    "models": [
       {
-        "id": "openrouter/meta-llama/llama-3.1-8b-instruct:free",
-        "provider": "openrouter",
+        "id": "gemini/gemini-2.5-flash",
+        "provider": "gemini",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      }
+    ]
+  },
+  {
+    "id": "github-copilot",
+    "name": "GitHub Copilot",
+    "category": "OAUTH",
+    "baseUrl": "https://api.githubcopilot.com",
+    "envKey": "GITHUB_TOKEN",
+    "freeTier": false,
+    "badge": "GitHub Device Flow",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "github-copilot/gpt-4o",
+        "provider": "github-copilot",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 131072,
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "cursor-auth",
+    "name": "Cursor IDE Auth",
+    "category": "OAUTH",
+    "baseUrl": "https://api.cursor.sh/v1",
+    "envKey": "CURSOR_AUTH_TOKEN",
+    "freeTier": false,
+    "badge": "Cursor Browser OAuth",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "cursor/claude-3-7-sonnet",
+        "provider": "cursor-auth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      }
+    ]
+  },
+  {
+    "id": "qwen-oauth",
+    "name": "Qwen / Alibaba Cloud",
+    "category": "OAUTH",
+    "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "envKey": "DASHSCOPE_API_KEY",
+    "freeTier": true,
+    "badge": "Alibaba Cloud OAuth",
+    "modalities": [
+      "text",
+      "vision",
+      "tools",
+      "embedding"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "qwen/qwen-2.5-coder-32b",
+        "provider": "qwen-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "huggingface-oauth",
+    "name": "HuggingFace Hub",
+    "category": "OAUTH",
+    "baseUrl": "https://api-inference.huggingface.co/v1",
+    "envKey": "HF_TOKEN",
+    "freeTier": true,
+    "badge": "HF OAuth 2.0 Token",
+    "modalities": [
+      "text",
+      "image",
+      "tools",
+      "embedding"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "hf/meta-llama/Llama-3.3-70B-Instruct",
+        "provider": "huggingface-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "cloudflare-oauth",
+    "name": "Cloudflare Workers AI",
+    "category": "OAUTH",
+    "baseUrl": "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1",
+    "envKey": "CLOUDFLARE_API_TOKEN",
+    "freeTier": true,
+    "badge": "Cloudflare API Token",
+    "modalities": [
+      "text",
+      "image",
+      "tools",
+      "embedding"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "cloudflare/@cf/meta/llama-3.3-70b-instruct",
+        "provider": "cloudflare-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "replicate-oauth",
+    "name": "Replicate API",
+    "category": "OAUTH",
+    "baseUrl": "https://api.replicate.com/v1",
+    "envKey": "REPLICATE_API_TOKEN",
+    "freeTier": false,
+    "badge": "Replicate OAuth Token",
+    "modalities": [
+      "text",
+      "image",
+      "video",
+      "music"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "replicate/flux-1.1-pro",
+        "provider": "replicate-oauth",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 4096
+      }
+    ]
+  },
+  {
+    "id": "together-oauth",
+    "name": "Together AI (OAuth)",
+    "category": "OAUTH",
+    "baseUrl": "https://api.together.xyz/v1",
+    "envKey": "TOGETHER_API_KEY",
+    "freeTier": true,
+    "badge": "Together OAuth Flow",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "embedding"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "together/deepseek-ai/DeepSeek-R1",
+        "provider": "together-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 160000
+      }
+    ]
+  },
+  {
+    "id": "mistral-oauth",
+    "name": "Mistral La Plateforme",
+    "category": "OAUTH",
+    "baseUrl": "https://api.mistral.ai/v1",
+    "envKey": "MISTRAL_API_KEY",
+    "freeTier": true,
+    "badge": "Mistral SSO OAuth",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "embedding"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "mistral/codestral-2501",
+        "provider": "mistral-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 256000
+      }
+    ]
+  },
+  {
+    "id": "perplexity-oauth",
+    "name": "Perplexity AI (OAuth)",
+    "category": "OAUTH",
+    "baseUrl": "https://api.perplexity.ai",
+    "envKey": "PERPLEXITY_API_KEY",
+    "freeTier": false,
+    "badge": "Perplexity OAuth 2.0",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "perplexity/sonar-reasoning",
+        "provider": "perplexity-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "cohere-oauth",
+    "name": "Cohere Platform",
+    "category": "OAUTH",
+    "baseUrl": "https://api.cohere.com/v2",
+    "envKey": "COHERE_API_KEY",
+    "freeTier": true,
+    "badge": "Cohere Enterprise SSO",
+    "modalities": [
+      "text",
+      "tools",
+      "embedding"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "cohere/command-r-plus",
+        "provider": "cohere-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "scale-oauth",
+    "name": "Scale AI / SGP",
+    "category": "OAUTH",
+    "baseUrl": "https://api.scale.com/v1",
+    "envKey": "SCALE_API_KEY",
+    "freeTier": false,
+    "badge": "Scale AI Enterprise OAuth",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "scale/llama-3.3-70b-scale",
+        "provider": "scale-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "deepinfra-oauth",
+    "name": "DeepInfra (OAuth)",
+    "category": "OAUTH",
+    "baseUrl": "https://api.deepinfra.com/v1/openai",
+    "envKey": "DEEPINFRA_TOKEN",
+    "freeTier": true,
+    "badge": "DeepInfra PKCE Flow",
+    "modalities": [
+      "text",
+      "tools",
+      "image",
+      "embedding"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct",
+        "provider": "deepinfra-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "baseten-oauth",
+    "name": "Baseten Platform",
+    "category": "OAUTH",
+    "baseUrl": "https://bridge.baseten.co/v1",
+    "envKey": "BASETEN_API_KEY",
+    "freeTier": false,
+    "badge": "Baseten SSO OAuth",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "baseten/deepseek-r1-baseten",
+        "provider": "baseten-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "modal-oauth",
+    "name": "Modal Labs",
+    "category": "OAUTH",
+    "baseUrl": "https://api.modal.com/v1",
+    "envKey": "MODAL_TOKEN_ID",
+    "freeTier": false,
+    "badge": "Modal Cloud Auth",
+    "modalities": [
+      "text",
+      "tools",
+      "image"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "modal/vllm-serve",
+        "provider": "modal-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "groq-oauth",
+    "name": "Groq Cloud (OAuth)",
+    "category": "OAUTH",
+    "baseUrl": "https://api.groq.com/openai/v1",
+    "envKey": "GROQ_API_KEY",
+    "freeTier": true,
+    "badge": "Groq LPU OAuth 2.0",
+    "modalities": [
+      "text",
+      "tools",
+      "stt"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "groq/llama-3.3-70b-versatile",
+        "provider": "groq-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "cerebras-oauth",
+    "name": "Cerebras Cloud (OAuth)",
+    "category": "OAUTH",
+    "baseUrl": "https://api.cerebras.ai/v1",
+    "envKey": "CEREBRAS_API_KEY",
+    "freeTier": true,
+    "badge": "Cerebras WSE OAuth",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "cerebras/llama-3.3-70b",
+        "provider": "cerebras-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 8192
+      }
+    ]
+  },
+  {
+    "id": "sambanova-oauth",
+    "name": "SambaNova (OAuth)",
+    "category": "OAUTH",
+    "baseUrl": "https://api.sambanova.ai/v1",
+    "envKey": "SAMBANOVA_API_KEY",
+    "freeTier": true,
+    "badge": "SambaNova SN40L Auth",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "sambanova/Meta-Llama-3.3-70B-Instruct",
+        "provider": "sambanova-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "fireworks-oauth",
+    "name": "Fireworks AI (OAuth)",
+    "category": "OAUTH",
+    "baseUrl": "https://api.fireworks.ai/inference/v1",
+    "envKey": "FIREWORKS_API_KEY",
+    "freeTier": false,
+    "badge": "Fireworks SSO Flow",
+    "modalities": [
+      "text",
+      "tools",
+      "image",
+      "embedding"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "fireworks/accounts/fireworks/models/deepseek-r1",
+        "provider": "fireworks-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 160000
+      }
+    ]
+  },
+  {
+    "id": "cursor",
+    "name": "Cursor IDE Native",
+    "category": "IDE",
+    "baseUrl": "http://127.0.0.1:3001/v1",
+    "envKey": "ROUTENEX_VIRTUAL_KEY",
+    "freeTier": true,
+    "badge": "Cursor Rules & Hooks",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "cursor/core-model",
+        "provider": "cursor",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
         "pricing": {
           "prompt_per_million": 0,
           "completion_per_million": 0,
@@ -92,16 +616,2869 @@
           "updated_at": "2026-01-01T00:00:00Z"
         }
       }
+    ]
+  },
+  {
+    "id": "continue",
+    "name": "Continue.dev",
+    "category": "IDE",
+    "baseUrl": "http://127.0.0.1:3001/v1",
+    "envKey": "ROUTENEX_VIRTUAL_KEY",
+    "freeTier": true,
+    "badge": "VSCode / JetBrains Extension",
+    "modalities": [
+      "text",
+      "tools"
     ],
-    "tos_status": "official"
+    "models": [
+      {
+        "id": "continue/core-model",
+        "provider": "continue",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "cline",
+    "name": "Cline Extension",
+    "category": "IDE",
+    "baseUrl": "http://127.0.0.1:3001/v1",
+    "envKey": "ROUTENEX_VIRTUAL_KEY",
+    "freeTier": true,
+    "badge": "Autonomous VSCode Agent",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "cline/core-model",
+        "provider": "cline",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "aider",
+    "name": "Aider Pair Programmer",
+    "category": "IDE",
+    "baseUrl": "http://127.0.0.1:3001/v1",
+    "envKey": "ROUTENEX_VIRTUAL_KEY",
+    "freeTier": true,
+    "badge": "Git-Aware Terminal Pair",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "aider/core-model",
+        "provider": "aider",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "pollinations",
+    "name": "Pollinations AI",
+    "category": "FREE",
+    "baseUrl": "https://text.pollinations.ai/openai",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero-Key Free Tier",
+    "modalities": [
+      "text",
+      "image",
+      "vision"
+    ],
+    "freeLimit": "Unlimited / Anonymous",
+    "models": [
+      {
+        "id": "pollinations/core-model",
+        "provider": "pollinations",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "duckduckgo",
+    "name": "DuckDuckGo AI Chat",
+    "category": "FREE",
+    "baseUrl": "https://duckduckgo.com/duckchat/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero-Key Anonymous",
+    "modalities": [
+      "text"
+    ],
+    "freeLimit": "Unlimited / Anonymous",
+    "tos_status": "caution",
+    "models": [
+      {
+        "id": "duckduckgo/core-model",
+        "provider": "duckduckgo",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "groq",
+    "name": "Groq Cloud LPU",
+    "category": "FREE",
+    "baseUrl": "https://api.groq.com/openai/v1",
+    "envKey": "GROQ_API_KEY",
+    "freeTier": true,
+    "badge": "Free Tier (30 RPM)",
+    "modalities": [
+      "text",
+      "tools",
+      "stt"
+    ],
+    "freeLimit": "14,400 req/day free",
+    "models": [
+      {
+        "id": "groq/core-model",
+        "provider": "groq",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "cerebras",
+    "name": "Cerebras Cloud",
+    "category": "FREE",
+    "baseUrl": "https://api.cerebras.ai/v1",
+    "envKey": "CEREBRAS_API_KEY",
+    "freeTier": true,
+    "badge": "Fast Free Tier (2,000 tok/s)",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "1,000,000 tokens/day free",
+    "models": [
+      {
+        "id": "cerebras/core-model",
+        "provider": "cerebras",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "mistral",
+    "name": "Mistral AI",
+    "category": "FREE",
+    "baseUrl": "https://api.mistral.ai/v1",
+    "envKey": "MISTRAL_API_KEY",
+    "freeTier": true,
+    "badge": "1B Free Tokens/Mo",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "embedding"
+    ],
+    "freeLimit": "1 Billion tokens/mo free",
+    "models": [
+      {
+        "id": "mistral/core-model",
+        "provider": "mistral",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "siliconflow",
+    "name": "SiliconFlow Cloud",
+    "category": "FREE",
+    "baseUrl": "https://api.siliconflow.cn/v1",
+    "envKey": "SILICONFLOW_API_KEY",
+    "freeTier": true,
+    "badge": "DeepSeek Reasoning Free",
+    "modalities": [
+      "text",
+      "tools",
+      "image"
+    ],
+    "freeLimit": "20M tokens signup free",
+    "models": [
+      {
+        "id": "siliconflow/core-model",
+        "provider": "siliconflow",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "nvidia",
+    "name": "NVIDIA NIM",
+    "category": "FREE",
+    "baseUrl": "https://integrate.api.nvidia.com/v1",
+    "envKey": "NVIDIA_API_KEY",
+    "freeTier": true,
+    "badge": "1,000 Free Credits",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "freeLimit": "1,000 NIM Microservices credits",
+    "models": [
+      {
+        "id": "nvidia/meta/llama-3.1-405b-instruct",
+        "provider": "nvidia",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "openrouter-free",
+    "name": "OpenRouter Free Tier",
+    "category": "FREE",
+    "baseUrl": "https://openrouter.ai/api/v1",
+    "envKey": "OPENROUTER_API_KEY",
+    "freeTier": true,
+    "badge": ":free Endpoints",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "freeLimit": "Aggregated free models",
+    "models": [
+      {
+        "id": "openrouter-free/core-model",
+        "provider": "openrouter-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "zhipu",
+    "name": "Zhipu AI (GLM)",
+    "category": "FREE",
+    "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
+    "envKey": "ZHIPU_API_KEY",
+    "freeTier": true,
+    "badge": "GLM-4-Flash 100% Free",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "freeLimit": "Unlimited free coding/reasoning",
+    "models": [
+      {
+        "id": "zhipu/glm-4-flash",
+        "provider": "zhipu",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "sambanova",
+    "name": "SambaNova Systems",
+    "category": "FREE",
+    "baseUrl": "https://api.sambanova.ai/v1",
+    "envKey": "SAMBANOVA_API_KEY",
+    "freeTier": true,
+    "badge": "Free Fast Tier",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Llama 3.3 70B serverless free",
+    "models": [
+      {
+        "id": "sambanova/core-model",
+        "provider": "sambanova",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "gemini-free",
+    "name": "Google Gemini Free",
+    "category": "FREE",
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+    "envKey": "GEMINI_API_KEY",
+    "freeTier": true,
+    "badge": "Free Tier (15 RPM)",
+    "modalities": [
+      "text",
+      "vision",
+      "tools",
+      "embedding"
+    ],
+    "freeLimit": "1,500 req/day free",
+    "models": [
+      {
+        "id": "gemini-free/core-model",
+        "provider": "gemini-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "cohere-free",
+    "name": "Cohere Coral Free",
+    "category": "FREE",
+    "baseUrl": "https://api.cohere.com/v2",
+    "envKey": "COHERE_API_KEY",
+    "freeTier": true,
+    "badge": "Coral Free Tier",
+    "modalities": [
+      "text",
+      "tools",
+      "embedding"
+    ],
+    "freeLimit": "1,000 free API calls/mo",
+    "models": [
+      {
+        "id": "cohere-free/core-model",
+        "provider": "cohere-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "huggingface-free",
+    "name": "HuggingFace Free API",
+    "category": "FREE",
+    "baseUrl": "https://api-inference.huggingface.co/v1",
+    "envKey": "HF_TOKEN",
+    "freeTier": true,
+    "badge": "Serverless Inference Free",
+    "modalities": [
+      "text",
+      "image",
+      "embedding"
+    ],
+    "freeLimit": "Rate limited free community models",
+    "models": [
+      {
+        "id": "huggingface-free/core-model",
+        "provider": "huggingface-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "cloudflare-free",
+    "name": "Cloudflare Workers Free",
+    "category": "FREE",
+    "baseUrl": "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1",
+    "envKey": "CLOUDFLARE_API_TOKEN",
+    "freeTier": true,
+    "badge": "10k Neurons/Day Free",
+    "modalities": [
+      "text",
+      "image",
+      "embedding"
+    ],
+    "freeLimit": "10,000 free neurons daily",
+    "models": [
+      {
+        "id": "cloudflare-free/core-model",
+        "provider": "cloudflare-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "deepinfra-free",
+    "name": "DeepInfra Free Pool",
+    "category": "FREE",
+    "baseUrl": "https://api.deepinfra.com/v1/openai",
+    "envKey": "DEEPINFRA_TOKEN",
+    "freeTier": true,
+    "badge": "Free Public Models",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Select open models free",
+    "models": [
+      {
+        "id": "deepinfra-free/core-model",
+        "provider": "deepinfra-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "github-models",
+    "name": "GitHub Models",
+    "category": "FREE",
+    "baseUrl": "https://models.inference.ai.azure.com",
+    "envKey": "GITHUB_TOKEN",
+    "freeTier": true,
+    "badge": "Free Playground API",
+    "modalities": [
+      "text",
+      "vision",
+      "tools",
+      "embedding"
+    ],
+    "freeLimit": "150 req/day free preview",
+    "models": [
+      {
+        "id": "github-models/core-model",
+        "provider": "github-models",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "hyperbolic",
+    "name": "Hyperbolic AI Free",
+    "category": "FREE",
+    "baseUrl": "https://api.hyperbolic.xyz/v1",
+    "envKey": "HYPERBOLIC_API_KEY",
+    "freeTier": true,
+    "badge": "Free Compute Credits",
+    "modalities": [
+      "text",
+      "image"
+    ],
+    "freeLimit": "$10 free compute on signup",
+    "models": [
+      {
+        "id": "hyperbolic/core-model",
+        "provider": "hyperbolic",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "novita",
+    "name": "Novita AI Free",
+    "category": "FREE",
+    "baseUrl": "https://api.novita.ai/v3/openai",
+    "envKey": "NOVITA_API_KEY",
+    "freeTier": true,
+    "badge": "Free Starter Credits",
+    "modalities": [
+      "text",
+      "image",
+      "tools"
+    ],
+    "freeLimit": "$5 free starter tier",
+    "models": [
+      {
+        "id": "novita/core-model",
+        "provider": "novita",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "together-free",
+    "name": "Together AI Free Tier",
+    "category": "FREE",
+    "baseUrl": "https://api.together.xyz/v1",
+    "envKey": "TOGETHER_API_KEY",
+    "freeTier": true,
+    "badge": "Free Trial Pool",
+    "modalities": [
+      "text",
+      "image"
+    ],
+    "freeLimit": "$5 free trial balance",
+    "models": [
+      {
+        "id": "together-free/core-model",
+        "provider": "together-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "scaleway",
+    "name": "Scaleway Free AI",
+    "category": "FREE",
+    "baseUrl": "https://api.scaleway.ai/v1",
+    "envKey": "SCW_SECRET_KEY",
+    "freeTier": true,
+    "badge": "Scaleway Free Tier",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Free monthly credits",
+    "models": [
+      {
+        "id": "scaleway/core-model",
+        "provider": "scaleway",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "modelscope",
+    "name": "Alibaba ModelScope",
+    "category": "FREE",
+    "baseUrl": "https://api-inference.modelscope.cn/v1",
+    "envKey": "MODELSCOPE_API_TOKEN",
+    "freeTier": true,
+    "badge": "Community Free Pool",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Free community inference",
+    "models": [
+      {
+        "id": "modelscope/core-model",
+        "provider": "modelscope",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "qianfan",
+    "name": "Baidu Qianfan Free",
+    "category": "FREE",
+    "baseUrl": "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat",
+    "envKey": "QIANFAN_ACCESS_KEY",
+    "freeTier": true,
+    "badge": "Speed Models Free",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "ERNIE-Speed & Lite 100% free",
+    "models": [
+      {
+        "id": "qianfan/core-model",
+        "provider": "qianfan",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "hunyuan",
+    "name": "Tencent Hunyuan Free",
+    "category": "FREE",
+    "baseUrl": "https://api.hunyuan.cloud.tencent.com/v1",
+    "envKey": "HUNYUAN_SECRET_KEY",
+    "freeTier": true,
+    "badge": "Hunyuan-Lite Free",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Hunyuan Lite free quota",
+    "models": [
+      {
+        "id": "hunyuan/core-model",
+        "provider": "hunyuan",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "doubao",
+    "name": "ByteDance Doubao Free",
+    "category": "FREE",
+    "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+    "envKey": "VOLCENGINE_API_KEY",
+    "freeTier": true,
+    "badge": "Volcengine Free Tier",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "500,000 free tokens pool",
+    "models": [
+      {
+        "id": "doubao/core-model",
+        "provider": "doubao",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "spark",
+    "name": "iFlytek Spark Lite",
+    "category": "FREE",
+    "baseUrl": "https://spark-api-open.xf-yun.com/v1",
+    "envKey": "SPARK_API_PASSWORD",
+    "freeTier": true,
+    "badge": "Spark Lite 100% Free",
+    "modalities": [
+      "text"
+    ],
+    "freeLimit": "Unlimited free queries",
+    "models": [
+      {
+        "id": "spark/core-model",
+        "provider": "spark",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "moonshot",
+    "name": "Moonshot AI (Kimi)",
+    "category": "FREE",
+    "baseUrl": "https://api.moonshot.cn/v1",
+    "envKey": "MOONSHOT_API_KEY",
+    "freeTier": true,
+    "badge": "Free Starter Credits",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "15M free tokens on signup",
+    "models": [
+      {
+        "id": "moonshot/core-model",
+        "provider": "moonshot",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "minimax",
+    "name": "MiniMax AI",
+    "category": "FREE",
+    "baseUrl": "https://api.minimax.chat/v1",
+    "envKey": "MINIMAX_API_KEY",
+    "freeTier": true,
+    "badge": "Starter Bonus",
+    "modalities": [
+      "text",
+      "audioSpeech",
+      "tools"
+    ],
+    "freeLimit": "Free trial tokens balance",
+    "models": [
+      {
+        "id": "minimax/core-model",
+        "provider": "minimax",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "stepfun",
+    "name": "StepFun AI",
+    "category": "FREE",
+    "baseUrl": "https://api.stepfun.com/v1",
+    "envKey": "STEPFUN_API_KEY",
+    "freeTier": true,
+    "badge": "Step-1 Free Quota",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "freeLimit": "Free starter tier",
+    "models": [
+      {
+        "id": "stepfun/core-model",
+        "provider": "stepfun",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "yi-01",
+    "name": "01.AI (Yi Series)",
+    "category": "FREE",
+    "baseUrl": "https://api.lingyiwanwu.com/v1",
+    "envKey": "YI_API_KEY",
+    "freeTier": true,
+    "badge": "Yi Free Credits",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "freeLimit": "Free signup balance",
+    "models": [
+      {
+        "id": "yi-01/core-model",
+        "provider": "yi-01",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "deepseek-free",
+    "name": "DeepSeek Starter",
+    "category": "FREE",
+    "baseUrl": "https://api.deepseek.com/v1",
+    "envKey": "DEEPSEEK_API_KEY",
+    "freeTier": true,
+    "badge": "5M Free Tokens",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "5M tokens free on registration",
+    "models": [
+      {
+        "id": "deepseek-free/core-model",
+        "provider": "deepseek-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "lepton",
+    "name": "Lepton AI",
+    "category": "FREE",
+    "baseUrl": "https://api.lepton.ai/v1",
+    "envKey": "LEPTON_API_KEY",
+    "freeTier": true,
+    "badge": "Serverless Free Sandbox",
+    "modalities": [
+      "text",
+      "image"
+    ],
+    "freeLimit": "Free monthly inference allowance",
+    "models": [
+      {
+        "id": "lepton/core-model",
+        "provider": "lepton",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "glama",
+    "name": "Glama AI Free",
+    "category": "FREE",
+    "baseUrl": "https://glama.ai/api/gateway/openai/v1",
+    "envKey": "GLAMA_API_KEY",
+    "freeTier": true,
+    "badge": "Free Aggregator Tier",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Free tier proxy",
+    "models": [
+      {
+        "id": "glama/core-model",
+        "provider": "glama",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "ai360",
+    "name": "360 Brain AI",
+    "category": "FREE",
+    "baseUrl": "https://api.360.cn/v1",
+    "envKey": "AI360_API_KEY",
+    "freeTier": true,
+    "badge": "Daily Free Allowance",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Daily free queries",
+    "models": [
+      {
+        "id": "ai360/core-model",
+        "provider": "ai360",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "openfreeai",
+    "name": "OpenFreeAI Gateway",
+    "category": "FREE",
+    "baseUrl": "https://openfreeai.com/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Public Free Pool",
+    "modalities": [
+      "text"
+    ],
+    "freeLimit": "Community sponsored free gateway",
+    "models": [
+      {
+        "id": "openfreeai/core-model",
+        "provider": "openfreeai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "freegpt",
+    "name": "FreeGPT Gateway",
+    "category": "FREE",
+    "baseUrl": "https://freegpt.one/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "No-Key Free AI",
+    "modalities": [
+      "text"
+    ],
+    "freeLimit": "Public free tier",
+    "models": [
+      {
+        "id": "freegpt/core-model",
+        "provider": "freegpt",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "pawan",
+    "name": "Pawan.krd Free",
+    "category": "FREE",
+    "baseUrl": "https://api.pawan.krd/v1",
+    "envKey": "PAWAN_KEY",
+    "freeTier": true,
+    "badge": "Free Reverse Proxy",
+    "modalities": [
+      "text"
+    ],
+    "freeLimit": "Free reverse proxy pool",
+    "models": [
+      {
+        "id": "pawan/core-model",
+        "provider": "pawan",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "puter",
+    "name": "Puter.js AI",
+    "category": "FREE",
+    "baseUrl": "https://api.puter.com/drivers/express/chat",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Free Cloud Hosting",
+    "modalities": [
+      "text"
+    ],
+    "freeLimit": "Free browser/cloud AI calls",
+    "models": [
+      {
+        "id": "puter/core-model",
+        "provider": "puter",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "chathub",
+    "name": "ChatHub Public",
+    "category": "FREE",
+    "baseUrl": "https://chathub.gg/api/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Free Public Endpoint",
+    "modalities": [
+      "text"
+    ],
+    "freeLimit": "Public pool",
+    "models": [
+      {
+        "id": "chathub/core-model",
+        "provider": "chathub",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "blackbox",
+    "name": "Blackbox AI Free",
+    "category": "FREE",
+    "baseUrl": "https://useblackbox.io/chat-request-v4",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Free Code Autocomplete",
+    "modalities": [
+      "text"
+    ],
+    "freeLimit": "Free coding queries",
+    "models": [
+      {
+        "id": "blackbox/core-model",
+        "provider": "blackbox",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "neuro-free",
+    "name": "Neuroengine Free",
+    "category": "FREE",
+    "baseUrl": "https://api.neuroengine.ai/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Free Llama 3 Cluster",
+    "modalities": [
+      "text"
+    ],
+    "freeLimit": "Free community compute",
+    "models": [
+      {
+        "id": "neuro-free/core-model",
+        "provider": "neuro-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "pollinations-noauth",
+    "name": "Pollinations Zero-Auth",
+    "category": "NO_AUTH",
+    "baseUrl": "https://text.pollinations.ai/openai",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text",
+      "image",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "pollinations-noauth/core-model",
+        "provider": "pollinations-noauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "ddg-noauth",
+    "name": "DuckDuckGo No-Auth",
+    "category": "NO_AUTH",
+    "baseUrl": "https://duckduckgo.com/duckchat/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "tos_status": "caution",
+    "models": [
+      {
+        "id": "ddg-noauth/core-model",
+        "provider": "ddg-noauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "freegpt-noauth",
+    "name": "FreeGPT Mirror",
+    "category": "NO_AUTH",
+    "baseUrl": "https://freegpt.one/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "freegpt-noauth/core-model",
+        "provider": "freegpt-noauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "pawan-noauth",
+    "name": "Pawan Public Proxy",
+    "category": "NO_AUTH",
+    "baseUrl": "https://api.pawan.krd/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "pawan-noauth/core-model",
+        "provider": "pawan-noauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "puter-noauth",
+    "name": "Puter Free Serverless",
+    "category": "NO_AUTH",
+    "baseUrl": "https://api.puter.com/drivers/express/chat",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "puter-noauth/core-model",
+        "provider": "puter-noauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "chathub-noauth",
+    "name": "ChatHub Anonymous",
+    "category": "NO_AUTH",
+    "baseUrl": "https://chathub.gg/api/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "chathub-noauth/core-model",
+        "provider": "chathub-noauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "blackbox-noauth",
+    "name": "Blackbox Code Free",
+    "category": "NO_AUTH",
+    "baseUrl": "https://useblackbox.io/chat-request-v4",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "blackbox-noauth/core-model",
+        "provider": "blackbox-noauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "deepinfra-public",
+    "name": "DeepInfra Public Demo",
+    "category": "NO_AUTH",
+    "baseUrl": "https://api.deepinfra.com/v1/openai",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "deepinfra-public/core-model",
+        "provider": "deepinfra-public",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "localai-demo",
+    "name": "LocalAI Public Demo",
+    "category": "NO_AUTH",
+    "baseUrl": "https://demo.localai.io/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "localai-demo/core-model",
+        "provider": "localai-demo",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "huggingface-serverless",
+    "name": "HuggingFace Public",
+    "category": "NO_AUTH",
+    "baseUrl": "https://api-inference.huggingface.co/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "huggingface-serverless/core-model",
+        "provider": "huggingface-serverless",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "ollama-local",
+    "name": "Ollama Local Instance",
+    "category": "NO_AUTH",
+    "baseUrl": "http://localhost:11434/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth (Localhost)",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "embedding"
+    ],
+    "models": [
+      {
+        "id": "ollama-local/core-model",
+        "provider": "ollama-local",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "webllm",
+    "name": "WebLLM Browser WebGPU",
+    "category": "NO_AUTH",
+    "baseUrl": "webllm://in-browser",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth (Client GPU)",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "webllm/core-model",
+        "provider": "webllm",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "jan-local",
+    "name": "Jan.ai Local Runtime",
+    "category": "NO_AUTH",
+    "baseUrl": "http://localhost:1337/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth (Localhost)",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "jan-local/core-model",
+        "provider": "jan-local",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "chatgpt-web",
+    "name": "ChatGPT Web UI",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://chatgpt.com/backend-api",
+    "envKey": "CHATGPT_SESSION_COOKIE",
+    "freeTier": true,
+    "badge": "Session Cookie Auth",
+    "modalities": [
+      "text",
+      "vision",
+      "tools",
+      "image"
+    ],
+    "models": [
+      {
+        "id": "chatgpt-web/core-model",
+        "provider": "chatgpt-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "claude-web",
+    "name": "Claude.ai Web UI",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://claude.ai/api",
+    "envKey": "CLAUDE_SESSION_KEY",
+    "freeTier": true,
+    "badge": "sessionKey Cookie",
+    "modalities": [
+      "text",
+      "vision",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "claude-web/core-model",
+        "provider": "claude-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "gemini-web",
+    "name": "Google Gemini Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://gemini.google.com/app",
+    "envKey": "GEMINI_1PSID",
+    "freeTier": true,
+    "badge": "1PSID Cookie",
+    "modalities": [
+      "text",
+      "vision",
+      "tools",
+      "image"
+    ],
+    "models": [
+      {
+        "id": "gemini-web/core-model",
+        "provider": "gemini-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "copilot-web",
+    "name": "Microsoft Copilot Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://copilot.microsoft.com",
+    "envKey": "COPILOT_COOKIE",
+    "freeTier": true,
+    "badge": "Bing/Copilot Cookie",
+    "modalities": [
+      "text",
+      "vision",
+      "image"
+    ],
+    "models": [
+      {
+        "id": "copilot-web/core-model",
+        "provider": "copilot-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "perplexity-web",
+    "name": "Perplexity Web Chat",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://www.perplexity.ai/api",
+    "envKey": "PERPLEXITY_SESSION",
+    "freeTier": true,
+    "badge": "Web Cookie Session",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "perplexity-web/core-model",
+        "provider": "perplexity-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "poe-web",
+    "name": "Quora Poe Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://poe.com/api",
+    "envKey": "POE_P_B_COOKIE",
+    "freeTier": true,
+    "badge": "p-b Session Cookie",
+    "modalities": [
+      "text",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "poe-web/core-model",
+        "provider": "poe-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "you-web",
+    "name": "You.com Web Chat",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://you.com/api",
+    "envKey": "YOU_SESSION_COOKIE",
+    "freeTier": true,
+    "badge": "Web Session Cookie",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "you-web/core-model",
+        "provider": "you-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "lechat-web",
+    "name": "Mistral Le Chat Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://chat.mistral.ai/api",
+    "envKey": "LECHAT_COOKIE",
+    "freeTier": true,
+    "badge": "LeChat Cookie",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "lechat-web/core-model",
+        "provider": "lechat-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "deepseek-web",
+    "name": "DeepSeek Chat Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://chat.deepseek.com/api",
+    "envKey": "DEEPSEEK_WEB_TOKEN",
+    "freeTier": true,
+    "badge": "Web Token Session",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "deepseek-web/core-model",
+        "provider": "deepseek-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "qwen-web",
+    "name": "Qwen Chat Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://chat.qwenlm.ai/api",
+    "envKey": "QWEN_WEB_COOKIE",
+    "freeTier": true,
+    "badge": "Qwen Web Cookie",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "qwen-web/core-model",
+        "provider": "qwen-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "kimi-web",
+    "name": "Kimi Moonshot Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://kimi.moonshot.cn/api",
+    "envKey": "KIMI_WEB_COOKIE",
+    "freeTier": true,
+    "badge": "Kimi Session Cookie",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "kimi-web/core-model",
+        "provider": "kimi-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "doubao-web",
+    "name": "ByteDance Doubao Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://www.doubao.com/api",
+    "envKey": "DOUBAO_COOKIE",
+    "freeTier": true,
+    "badge": "Doubao Session Cookie",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "doubao-web/core-model",
+        "provider": "doubao-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "hunyuan-web",
+    "name": "Tencent Hunyuan Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://hunyuan.tencent.com/bot",
+    "envKey": "HUNYUAN_COOKIE",
+    "freeTier": true,
+    "badge": "Hunyuan Web Cookie",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "hunyuan-web/core-model",
+        "provider": "hunyuan-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "glm-web",
+    "name": "Zhipu GLM Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://chatglm.cn/api",
+    "envKey": "CHATGLM_COOKIE",
+    "freeTier": true,
+    "badge": "GLM Web Session",
+    "modalities": [
+      "text",
+      "tools",
+      "image"
+    ],
+    "models": [
+      {
+        "id": "glm-web/core-model",
+        "provider": "glm-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "character-ai",
+    "name": "Character.ai Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://character.ai/api",
+    "envKey": "CAI_SESSION_TOKEN",
+    "freeTier": true,
+    "badge": "Session Token",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "character-ai/core-model",
+        "provider": "character-ai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "pi-ai",
+    "name": "Inflection Pi.ai Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://pi.ai/api",
+    "envKey": "PI_SESSION_COOKIE",
+    "freeTier": true,
+    "badge": "Pi Session Cookie",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "pi-ai/core-model",
+        "provider": "pi-ai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "phind-web",
+    "name": "Phind Pro Search Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://www.phind.com/api",
+    "envKey": "PHIND_SESSION",
+    "freeTier": true,
+    "badge": "Phind Web Session",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "phind-web/core-model",
+        "provider": "phind-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "grok-web",
+    "name": "xAI Grok Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://x.com/i/grok",
+    "envKey": "X_AUTH_TOKEN",
+    "freeTier": true,
+    "badge": "X.com auth_token",
+    "modalities": [
+      "text",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "grok-web/core-model",
+        "provider": "grok-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "liner-web",
+    "name": "Liner AI Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://getliner.com/api",
+    "envKey": "LINER_COOKIE",
+    "freeTier": true,
+    "badge": "Liner Workspace Cookie",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "liner-web/core-model",
+        "provider": "liner-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "coral-web",
+    "name": "Cohere Coral Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://coral.cohere.com/api",
+    "envKey": "CORAL_COOKIE",
+    "freeTier": true,
+    "badge": "Coral Web Cookie",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "coral-web/core-model",
+        "provider": "coral-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "claude-pro-web",
+    "name": "Claude 3.7 Pro Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://claude.ai/api",
+    "envKey": "CLAUDE_PRO_KEY",
+    "freeTier": false,
+    "badge": "Claude Pro Session",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "claude-pro-web/core-model",
+        "provider": "claude-pro-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "chatgpt-plus-web",
+    "name": "ChatGPT Plus Web (o1/o3)",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://chatgpt.com/backend-api",
+    "envKey": "CHATGPT_PLUS_COOKIE",
+    "freeTier": false,
+    "badge": "Plus/Team Session",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "chatgpt-plus-web/core-model",
+        "provider": "chatgpt-plus-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "perplexity-pro-web",
+    "name": "Perplexity Pro Web",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://www.perplexity.ai/api",
+    "envKey": "PERPLEXITY_PRO_COOKIE",
+    "freeTier": false,
+    "badge": "Pro Search Session",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "perplexity-pro-web/core-model",
+        "provider": "perplexity-pro-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "genspark-web",
+    "name": "Genspark Super Agent",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://www.genspark.ai/api",
+    "envKey": "GENSPARK_COOKIE",
+    "freeTier": true,
+    "badge": "Genspark Web Cookie",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "genspark-web/core-model",
+        "provider": "genspark-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "monica-web",
+    "name": "Monica AI Copilot",
+    "category": "WEB_COOKIE",
+    "baseUrl": "https://monica.im/api",
+    "envKey": "MONICA_COOKIE",
+    "freeTier": true,
+    "badge": "Monica Web Cookie",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "monica-web/core-model",
+        "provider": "monica-web",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "openai",
+    "name": "OpenAI API",
+    "category": "API_KEY",
+    "baseUrl": "https://api.openai.com/v1",
+    "envKey": "OPENAI_API_KEY",
+    "freeTier": false,
+    "badge": "Frontier o1/o3/GPT-4o",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "embedding",
+      "image",
+      "tts",
+      "stt"
+    ],
+    "models": [
+      {
+        "id": "openai/core-model",
+        "provider": "openai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "anthropic",
+    "name": "Anthropic Claude",
+    "category": "API_KEY",
+    "baseUrl": "https://api.anthropic.com/v1",
+    "envKey": "ANTHROPIC_API_KEY",
+    "freeTier": false,
+    "badge": "Claude 3.7 Sonnet Hybrid",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "anthropic/core-model",
+        "provider": "anthropic",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "deepseek",
+    "name": "DeepSeek Official API",
+    "category": "API_KEY",
+    "baseUrl": "https://api.deepseek.com/v1",
+    "envKey": "DEEPSEEK_API_KEY",
+    "freeTier": false,
+    "badge": "V3 & R1 Frontier",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "deepseek/core-model",
+        "provider": "deepseek",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "xai",
+    "name": "xAI Grok",
+    "category": "API_KEY",
+    "baseUrl": "https://api.x.ai/v1",
+    "envKey": "XAI_API_KEY",
+    "freeTier": false,
+    "badge": "Grok-2 Frontier Reasoning",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "image"
+    ],
+    "models": [
+      {
+        "id": "xai/grok-2",
+        "provider": "xai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
   },
   {
     "id": "together",
     "name": "Together AI",
+    "category": "API_KEY",
     "baseUrl": "https://api.together.xyz/v1",
     "envKey": "TOGETHER_API_KEY",
-    "category": "API_KEY",
+    "freeTier": false,
     "badge": "High Throughput Serverless",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "image",
+      "embedding"
+    ],
     "models": [
       {
         "id": "together/meta-llama/Llama-3.3-70B-Instruct-Turbo",
@@ -113,42 +3490,25 @@
           "vision": false,
           "json_mode": true
         },
-        "context_length": 131072,
-        "pricing": {
-          "prompt_per_million": 0.88,
-          "completion_per_million": 0.88,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
-      },
-      {
-        "id": "together/Qwen/Qwen2.5-Coder-32B-Instruct",
-        "provider": "together",
-        "capabilities": {
-          "chat": true,
-          "streaming": true,
-          "tool_calls": true,
-          "vision": false,
-          "json_mode": true
-        },
-        "context_length": 32768,
-        "pricing": {
-          "prompt_per_million": 0.8,
-          "completion_per_million": 0.8,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 131072
       }
-    ],
-    "tos_status": "official"
+    ]
   },
   {
     "id": "fireworks",
     "name": "Fireworks AI",
+    "category": "API_KEY",
     "baseUrl": "https://api.fireworks.ai/inference/v1",
     "envKey": "FIREWORKS_API_KEY",
-    "category": "API_KEY",
+    "freeTier": false,
     "badge": "Sub-100ms Inference",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "image",
+      "embedding"
+    ],
     "models": [
       {
         "id": "fireworks/accounts/fireworks/models/llama-v3p3-70b-instruct",
@@ -160,29 +3520,26 @@
           "vision": false,
           "json_mode": true
         },
-        "context_length": 131072,
-        "pricing": {
-          "prompt_per_million": 0.9,
-          "completion_per_million": 0.9,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 131072
       }
-    ],
-    "tos_status": "official"
+    ]
   },
   {
-    "id": "sambanova",
-    "name": "SambaNova Systems",
-    "baseUrl": "https://api.sambanova.ai/v1",
-    "envKey": "SAMBANOVA_API_KEY",
-    "category": "FREE",
-    "freeTier": true,
-    "badge": "Free Tier Available",
+    "id": "perplexity",
+    "name": "Perplexity AI",
+    "category": "API_KEY",
+    "baseUrl": "https://api.perplexity.ai",
+    "envKey": "PERPLEXITY_API_KEY",
+    "freeTier": false,
+    "badge": "Live Web Grounding",
+    "modalities": [
+      "text",
+      "tools"
+    ],
     "models": [
       {
-        "id": "sambanova/Meta-Llama-3.3-70B-Instruct",
-        "provider": "sambanova",
+        "id": "perplexity/core-model",
+        "provider": "perplexity",
         "capabilities": {
           "chat": true,
           "streaming": true,
@@ -190,27 +3547,510 @@
           "vision": false,
           "json_mode": true
         },
-        "context_length": 65536,
+        "context_length": 128000,
         "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
           "updated_at": "2026-01-01T00:00:00Z"
         }
       }
+    ]
+  },
+  {
+    "id": "cohere",
+    "name": "Cohere Platform",
+    "category": "API_KEY",
+    "baseUrl": "https://api.cohere.com/v2",
+    "envKey": "COHERE_API_KEY",
+    "freeTier": false,
+    "badge": "Command R+ & Embed v3",
+    "modalities": [
+      "text",
+      "tools",
+      "embedding"
     ],
-    "tos_status": "official"
+    "models": [
+      {
+        "id": "cohere/core-model",
+        "provider": "cohere",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "mistral-enterprise",
+    "name": "Mistral Enterprise",
+    "category": "API_KEY",
+    "baseUrl": "https://api.mistral.ai/v1",
+    "envKey": "MISTRAL_API_KEY",
+    "freeTier": false,
+    "badge": "Mistral Large 2 Dedicated",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "embedding"
+    ],
+    "models": [
+      {
+        "id": "mistral-enterprise/core-model",
+        "provider": "mistral-enterprise",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "ai21",
+    "name": "AI21 Labs",
+    "category": "API_KEY",
+    "baseUrl": "https://api.ai21.com/studio/v1",
+    "envKey": "AI21_API_KEY",
+    "freeTier": false,
+    "badge": "Jamba 1.5 SSM/MoE Hybrid",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "ai21/core-model",
+        "provider": "ai21",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "aws-bedrock",
+    "name": "AWS Bedrock",
+    "category": "API_KEY",
+    "baseUrl": "https://bedrock-runtime.us-east-1.amazonaws.com",
+    "envKey": "AWS_ACCESS_KEY_ID",
+    "freeTier": false,
+    "badge": "AWS Managed LLMs",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "embedding"
+    ],
+    "models": [
+      {
+        "id": "aws-bedrock/core-model",
+        "provider": "aws-bedrock",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "azure-openai",
+    "name": "Azure OpenAI",
+    "category": "API_KEY",
+    "baseUrl": "https://{resource}.openai.azure.com/openai",
+    "envKey": "AZURE_OPENAI_API_KEY",
+    "freeTier": false,
+    "badge": "Enterprise SLA & Security",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "embedding"
+    ],
+    "models": [
+      {
+        "id": "azure-openai/core-model",
+        "provider": "azure-openai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "google-vertex",
+    "name": "Google Cloud Vertex AI",
+    "category": "API_KEY",
+    "baseUrl": "https://us-central1-aiplatform.googleapis.com/v1",
+    "envKey": "GCP_SERVICE_ACCOUNT_KEY",
+    "freeTier": false,
+    "badge": "Vertex AI Enterprise",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "embedding"
+    ],
+    "models": [
+      {
+        "id": "google-vertex/core-model",
+        "provider": "google-vertex",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "groq-enterprise",
+    "name": "Groq Enterprise SLA",
+    "category": "API_KEY",
+    "baseUrl": "https://api.groq.com/openai/v1",
+    "envKey": "GROQ_API_KEY",
+    "freeTier": false,
+    "badge": "Dedicated LPU Throughput",
+    "modalities": [
+      "text",
+      "tools",
+      "stt"
+    ],
+    "models": [
+      {
+        "id": "groq-enterprise/core-model",
+        "provider": "groq-enterprise",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "cerebras-enterprise",
+    "name": "Cerebras Dedicated WSE",
+    "category": "API_KEY",
+    "baseUrl": "https://api.cerebras.ai/v1",
+    "envKey": "CEREBRAS_API_KEY",
+    "freeTier": false,
+    "badge": "Wafer-Scale Inference",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "cerebras-enterprise/core-model",
+        "provider": "cerebras-enterprise",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "sambanova-enterprise",
+    "name": "SambaNova Enterprise",
+    "category": "API_KEY",
+    "baseUrl": "https://api.sambanova.ai/v1",
+    "envKey": "SAMBANOVA_API_KEY",
+    "freeTier": false,
+    "badge": "SN40L Dataflow Acceleration",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "sambanova-enterprise/core-model",
+        "provider": "sambanova-enterprise",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "nvidia-enterprise",
+    "name": "NVIDIA NIM Enterprise",
+    "category": "API_KEY",
+    "baseUrl": "https://integrate.api.nvidia.com/v1",
+    "envKey": "NVIDIA_API_KEY",
+    "freeTier": false,
+    "badge": "Production Microservices",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "nvidia-enterprise/core-model",
+        "provider": "nvidia-enterprise",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "anyscale",
+    "name": "Anyscale Ray LLM",
+    "category": "API_KEY",
+    "baseUrl": "https://api.endpoints.anyscale.com/v1",
+    "envKey": "ANYSCALE_API_KEY",
+    "freeTier": false,
+    "badge": "Distributed Ray Serving",
+    "modalities": [
+      "text",
+      "tools",
+      "embedding"
+    ],
+    "models": [
+      {
+        "id": "anyscale/core-model",
+        "provider": "anyscale",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "octoai",
+    "name": "OctoAI Inference",
+    "category": "API_KEY",
+    "baseUrl": "https://text.octoai.run/v1",
+    "envKey": "OCTOAI_TOKEN",
+    "freeTier": false,
+    "badge": "Inference Acceleration",
+    "modalities": [
+      "text",
+      "image",
+      "embedding"
+    ],
+    "models": [
+      {
+        "id": "octoai/core-model",
+        "provider": "octoai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "baseten",
+    "name": "Baseten Production",
+    "category": "API_KEY",
+    "baseUrl": "https://bridge.baseten.co/v1",
+    "envKey": "BASETEN_API_KEY",
+    "freeTier": false,
+    "badge": "Dedicated Truss Endpoints",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "baseten/core-model",
+        "provider": "baseten",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "replicate",
+    "name": "Replicate Enterprise",
+    "category": "API_KEY",
+    "baseUrl": "https://api.replicate.com/v1",
+    "envKey": "REPLICATE_API_TOKEN",
+    "freeTier": false,
+    "badge": "Serverless Predictions",
+    "modalities": [
+      "text",
+      "image",
+      "video",
+      "music"
+    ],
+    "models": [
+      {
+        "id": "replicate/core-model",
+        "provider": "replicate",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
   },
   {
     "id": "deepinfra",
-    "name": "DeepInfra",
-    "baseUrl": "https://api.deepinfra.com/v1/openai",
-    "envKey": "DEEPINFRA_API_KEY",
+    "name": "DeepInfra Production",
     "category": "API_KEY",
-    "badge": "Cost Efficient Inference",
+    "baseUrl": "https://api.deepinfra.com/v1/openai",
+    "envKey": "DEEPINFRA_TOKEN",
+    "freeTier": false,
+    "badge": "Low-Latency Serverless",
+    "modalities": [
+      "text",
+      "tools",
+      "image",
+      "embedding"
+    ],
     "models": [
       {
-        "id": "deepinfra/meta-llama/Meta-Llama-3.1-8B-Instruct",
+        "id": "deepinfra/core-model",
         "provider": "deepinfra",
         "capabilities": {
           "chat": true,
@@ -221,121 +4061,196 @@
         },
         "context_length": 128000,
         "pricing": {
-          "prompt_per_million": 0.05,
-          "completion_per_million": 0.08,
-          "provenance": "OFFICIAL",
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
           "updated_at": "2026-01-01T00:00:00Z"
         }
       }
-    ],
-    "tos_status": "official"
+    ]
   },
   {
-    "id": "xai",
-    "name": "xAI (Grok)",
-    "baseUrl": "https://api.x.ai/v1",
-    "envKey": "XAI_API_KEY",
+    "id": "predibase",
+    "name": "Predibase LoRA Gateway",
     "category": "API_KEY",
-    "badge": "Frontier Reasoning & Vision",
+    "baseUrl": "https://serving.predibase.com/v1",
+    "envKey": "PREDIBASE_API_TOKEN",
+    "freeTier": false,
+    "badge": "Dynamic LoRA Adapters",
+    "modalities": [
+      "text",
+      "tools"
+    ],
     "models": [
       {
-        "id": "xai/grok-2-1212",
-        "provider": "xai",
+        "id": "predibase/core-model",
+        "provider": "predibase",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": true,
-          "vision": true,
+          "vision": false,
           "json_mode": true
         },
-        "context_length": 131072,
-        "pricing": {
-          "prompt_per_million": 2,
-          "completion_per_million": 10,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
-      },
-      {
-        "id": "xai/grok-2-vision-1212",
-        "provider": "xai",
-        "capabilities": {
-          "chat": true,
-          "streaming": true,
-          "tool_calls": true,
-          "vision": true,
-          "json_mode": true
-        },
-        "context_length": 32768,
-        "pricing": {
-          "prompt_per_million": 2,
-          "completion_per_million": 10,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
-      }
-    ],
-    "tos_status": "official"
-  },
-  {
-    "id": "perplexity",
-    "name": "Perplexity AI",
-    "baseUrl": "https://api.perplexity.ai",
-    "envKey": "PERPLEXITY_API_KEY",
-    "category": "API_KEY",
-    "badge": "Live Web Search & Grounding",
-    "models": [
-      {
-        "id": "perplexity/sonar-pro",
-        "provider": "perplexity",
-        "capabilities": {
-          "chat": true,
-          "streaming": true,
-          "tool_calls": false,
-          "vision": false,
-          "json_mode": false
-        },
-        "context_length": 127072,
-        "pricing": {
-          "prompt_per_million": 3,
-          "completion_per_million": 15,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
-      },
-      {
-        "id": "perplexity/sonar",
-        "provider": "perplexity",
-        "capabilities": {
-          "chat": true,
-          "streaming": true,
-          "tool_calls": false,
-          "vision": false,
-          "json_mode": false
-        },
-        "context_length": 127072,
+        "context_length": 128000,
         "pricing": {
           "prompt_per_million": 1,
-          "completion_per_million": 1,
-          "provenance": "OFFICIAL",
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
           "updated_at": "2026-01-01T00:00:00Z"
         }
       }
-    ],
-    "tos_status": "official"
+    ]
   },
   {
-    "id": "zhipu",
-    "name": "Zhipu AI (GLM)",
-    "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
-    "envKey": "ZHIPU_API_KEY",
-    "category": "FREE",
-    "freeTier": true,
-    "badge": "GLM-4-Flash 100% Free",
+    "id": "runpod",
+    "name": "RunPod Serverless",
+    "category": "API_KEY",
+    "baseUrl": "https://api.runpod.ai/v2/{endpoint_id}/openai/v1",
+    "envKey": "RUNPOD_API_KEY",
+    "freeTier": false,
+    "badge": "Dedicated GPU Workers",
+    "modalities": [
+      "text",
+      "tools"
+    ],
     "models": [
       {
-        "id": "zhipu/glm-4-flash",
-        "provider": "zhipu",
+        "id": "runpod/core-model",
+        "provider": "runpod",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "lambdalabs",
+    "name": "Lambda Labs Hyperplane",
+    "category": "API_KEY",
+    "baseUrl": "https://api.lambdalabs.com/v1",
+    "envKey": "LAMBDA_API_KEY",
+    "freeTier": false,
+    "badge": "NVIDIA H100 Clusters",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "lambdalabs/core-model",
+        "provider": "lambdalabs",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "databricks",
+    "name": "Databricks Mosaic AI",
+    "category": "API_KEY",
+    "baseUrl": "https://{databricks-instance}/serving-endpoints",
+    "envKey": "DATABRICKS_TOKEN",
+    "freeTier": false,
+    "badge": "Mosaic AI Model Serving",
+    "modalities": [
+      "text",
+      "tools",
+      "embedding"
+    ],
+    "models": [
+      {
+        "id": "databricks/core-model",
+        "provider": "databricks",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "perplexity-sonar",
+    "name": "Perplexity Sonar Search",
+    "category": "SEARCH",
+    "baseUrl": "https://api.perplexity.ai",
+    "envKey": "PERPLEXITY_API_KEY",
+    "freeTier": false,
+    "badge": "Live Grounded Citations",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "perplexity-sonar/core-model",
+        "provider": "perplexity-sonar",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "tavily",
+    "name": "Tavily Search API",
+    "category": "SEARCH",
+    "baseUrl": "https://api.tavily.com",
+    "envKey": "TAVILY_API_KEY",
+    "freeTier": true,
+    "badge": "AI-Native Research Search",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "tavily/core-model",
+        "provider": "tavily",
         "capabilities": {
           "chat": true,
           "streaming": true,
@@ -351,28 +4266,32 @@
           "updated_at": "2026-01-01T00:00:00Z"
         }
       }
-    ],
-    "tos_status": "official"
+    ]
   },
   {
-    "id": "lmstudio",
-    "name": "LM Studio Local",
-    "baseUrl": "http://localhost:1234/v1",
-    "category": "LOCAL",
+    "id": "exa",
+    "name": "Exa.ai Neural Search",
+    "category": "SEARCH",
+    "baseUrl": "https://api.exa.ai",
+    "envKey": "EXA_API_KEY",
     "freeTier": true,
-    "badge": "100% Private Local",
+    "badge": "Semantic Embeddings Search",
+    "modalities": [
+      "text",
+      "tools"
+    ],
     "models": [
       {
-        "id": "lmstudio/local-model",
-        "provider": "lmstudio",
+        "id": "exa/core-model",
+        "provider": "exa",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 32768,
+        "context_length": 128000,
         "pricing": {
           "prompt_per_million": 0,
           "completion_per_million": 0,
@@ -380,19 +4299,1063 @@
           "updated_at": "2026-01-01T00:00:00Z"
         }
       }
+    ]
+  },
+  {
+    "id": "brave-search",
+    "name": "Brave Search API",
+    "category": "SEARCH",
+    "baseUrl": "https://api.search.brave.com/res/v1/web/search",
+    "envKey": "BRAVE_SEARCH_API_KEY",
+    "freeTier": true,
+    "badge": "Independent Web Index",
+    "modalities": [
+      "text"
     ],
-    "tos_status": "official"
+    "models": [
+      {
+        "id": "brave-search/core-model",
+        "provider": "brave-search",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "serper",
+    "name": "Serper.dev Google API",
+    "category": "SEARCH",
+    "baseUrl": "https://google.serper.dev/search",
+    "envKey": "SERPER_API_KEY",
+    "freeTier": true,
+    "badge": "2,500 Free Google Queries",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "serper/core-model",
+        "provider": "serper",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "ddg-search",
+    "name": "DuckDuckGo Instant Search",
+    "category": "SEARCH",
+    "baseUrl": "https://api.duckduckgo.com",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero-Key Free Search",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "ddg-search/core-model",
+        "provider": "ddg-search",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "bing-search",
+    "name": "Microsoft Bing Search",
+    "category": "SEARCH",
+    "baseUrl": "https://api.bing.microsoft.com/v7.0/search",
+    "envKey": "BING_SEARCH_API_KEY",
+    "freeTier": false,
+    "badge": "Azure Cognitive Search",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "bing-search/core-model",
+        "provider": "bing-search",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "google-custom-search",
+    "name": "Google Custom Search",
+    "category": "SEARCH",
+    "baseUrl": "https://www.googleapis.com/customsearch/v1",
+    "envKey": "GOOGLE_SEARCH_API_KEY",
+    "freeTier": true,
+    "badge": "100 Free Queries/Day",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "google-custom-search/core-model",
+        "provider": "google-custom-search",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "you-search",
+    "name": "You.com Search API",
+    "category": "SEARCH",
+    "baseUrl": "https://api.ydc-index.io/search",
+    "envKey": "YDC_API_KEY",
+    "freeTier": true,
+    "badge": "Live News & Web Index",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "you-search/core-model",
+        "provider": "you-search",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "kagi-search",
+    "name": "Kagi FastGPT Search",
+    "category": "SEARCH",
+    "baseUrl": "https://kagi.com/api/v0/fastgpt",
+    "envKey": "KAGI_API_KEY",
+    "freeTier": false,
+    "badge": "Ad-Free High Quality Index",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "kagi-search/core-model",
+        "provider": "kagi-search",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "searchapi",
+    "name": "SearchApi.io Engine",
+    "category": "SEARCH",
+    "baseUrl": "https://www.searchapi.io/api/v1/search",
+    "envKey": "SEARCHAPI_API_KEY",
+    "freeTier": true,
+    "badge": "Multi-Engine SERP Scraper",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "searchapi/core-model",
+        "provider": "searchapi",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "serpapi",
+    "name": "SerpApi Real-Time",
+    "category": "SEARCH",
+    "baseUrl": "https://serpapi.com/search",
+    "envKey": "SERPAPI_API_KEY",
+    "freeTier": true,
+    "badge": "100 Free Searches/Mo",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "serpapi/core-model",
+        "provider": "serpapi",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "websearch-free",
+    "name": "RouteNex Free Search",
+    "category": "SEARCH",
+    "baseUrl": "http://127.0.0.1:3001/v1/search",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Native Free Web Grounding",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "websearch-free/core-model",
+        "provider": "websearch-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "firecrawl-search",
+    "name": "Firecrawl Search & Scrape",
+    "category": "SEARCH",
+    "baseUrl": "https://api.firecrawl.dev/v1/search",
+    "envKey": "FIRECRAWL_API_KEY",
+    "freeTier": true,
+    "badge": "Deep Web Scraper Search",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "firecrawl-search/core-model",
+        "provider": "firecrawl-search",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "jina-reader",
+    "name": "Jina Reader (r.jina.ai)",
+    "category": "WEB_FETCH",
+    "baseUrl": "https://r.jina.ai",
+    "envKey": "JINA_API_KEY",
+    "freeTier": true,
+    "badge": "Markdown Web Extraction",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "jina-reader/core-model",
+        "provider": "jina-reader",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "firecrawl-reader",
+    "name": "Firecrawl Reader",
+    "category": "WEB_FETCH",
+    "baseUrl": "https://api.firecrawl.dev/v1/scrape",
+    "envKey": "FIRECRAWL_API_KEY",
+    "freeTier": true,
+    "badge": "Clean Markdown & LLM Ready",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "firecrawl-reader/core-model",
+        "provider": "firecrawl-reader",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "scrapingbee",
+    "name": "ScrapingBee Browser",
+    "category": "WEB_FETCH",
+    "baseUrl": "https://app.scrapingbee.com/api/v1",
+    "envKey": "SCRAPINGBEE_API_KEY",
+    "freeTier": true,
+    "badge": "1,000 Free API Calls",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "scrapingbee/core-model",
+        "provider": "scrapingbee",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "zyte",
+    "name": "Zyte Smart Browser",
+    "category": "WEB_FETCH",
+    "baseUrl": "https://api.zyte.com/v1/extract",
+    "envKey": "ZYTE_API_KEY",
+    "freeTier": false,
+    "badge": "Anti-Bot Web Extraction",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "zyte/core-model",
+        "provider": "zyte",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "brightdata",
+    "name": "Bright Data Web Unlocker",
+    "category": "WEB_FETCH",
+    "baseUrl": "https://api.brightdata.com/zone",
+    "envKey": "BRIGHTDATA_API_KEY",
+    "freeTier": false,
+    "badge": "Residential Proxy Fetch",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "brightdata/core-model",
+        "provider": "brightdata",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "routenex-fetch",
+    "name": "RouteNex Native Fetch",
+    "category": "WEB_FETCH",
+    "baseUrl": "http://127.0.0.1:3001/v1/fetch",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Local Headless Markdown",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "routenex-fetch/core-model",
+        "provider": "routenex-fetch",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "elevenlabs",
+    "name": "ElevenLabs Voice AI",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://api.elevenlabs.io/v1",
+    "envKey": "ELEVENLABS_API_KEY",
+    "freeTier": true,
+    "badge": "High-Fidelity Neural TTS",
+    "modalities": [
+      "tts",
+      "stt"
+    ],
+    "models": [
+      {
+        "id": "elevenlabs/core-model",
+        "provider": "elevenlabs",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "cartesia",
+    "name": "Cartesia Sonic AI",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://api.cartesia.ai",
+    "envKey": "CARTESIA_API_KEY",
+    "freeTier": true,
+    "badge": "<100ms Ultra-Fast TTS",
+    "modalities": [
+      "tts"
+    ],
+    "models": [
+      {
+        "id": "cartesia/core-model",
+        "provider": "cartesia",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "deepgram",
+    "name": "Deepgram Nova-3",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://api.deepgram.com/v1",
+    "envKey": "DEEPGRAM_API_KEY",
+    "freeTier": true,
+    "badge": "$200 Free Credit STT",
+    "modalities": [
+      "stt",
+      "tts"
+    ],
+    "models": [
+      {
+        "id": "deepgram/core-model",
+        "provider": "deepgram",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "whisper-openai",
+    "name": "OpenAI Whisper v3",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://api.openai.com/v1/audio",
+    "envKey": "OPENAI_API_KEY",
+    "freeTier": false,
+    "badge": "High Accuracy Multilingual",
+    "modalities": [
+      "stt"
+    ],
+    "models": [
+      {
+        "id": "whisper-openai/core-model",
+        "provider": "whisper-openai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "suno",
+    "name": "Suno Music v3.5",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://api.suno.ai/v1",
+    "envKey": "SUNO_API_KEY",
+    "freeTier": true,
+    "badge": "High-Fidelity AI Music",
+    "modalities": [
+      "music"
+    ],
+    "models": [
+      {
+        "id": "suno/core-model",
+        "provider": "suno",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "udio",
+    "name": "Udio Music Engine",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://api.udio.com/v1",
+    "envKey": "UDIO_API_KEY",
+    "freeTier": true,
+    "badge": "Stereo AI Music Generation",
+    "modalities": [
+      "music"
+    ],
+    "models": [
+      {
+        "id": "udio/core-model",
+        "provider": "udio",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "playht",
+    "name": "PlayHT 2.0 Turbo",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://api.play.ht/api/v2",
+    "envKey": "PLAYHT_API_KEY",
+    "freeTier": true,
+    "badge": "Real-Time Voice Cloning",
+    "modalities": [
+      "tts"
+    ],
+    "models": [
+      {
+        "id": "playht/core-model",
+        "provider": "playht",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "speechify",
+    "name": "Speechify Voice API",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://api.sws.speechify.com/v1",
+    "envKey": "SPEECHIFY_API_KEY",
+    "freeTier": false,
+    "badge": "Celebrity & Studio TTS",
+    "modalities": [
+      "tts"
+    ],
+    "models": [
+      {
+        "id": "speechify/core-model",
+        "provider": "speechify",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "replicate-audio",
+    "name": "Replicate Audio Suite",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://api.replicate.com/v1",
+    "envKey": "REPLICATE_API_TOKEN",
+    "freeTier": false,
+    "badge": "AudioLDM & MusicGen",
+    "modalities": [
+      "music",
+      "tts"
+    ],
+    "models": [
+      {
+        "id": "replicate-audio/core-model",
+        "provider": "replicate-audio",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "fal-audio",
+    "name": "Fal.ai Fast Audio",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://fal.run",
+    "envKey": "FAL_KEY",
+    "freeTier": true,
+    "badge": "Low-Latency Sound Effects",
+    "modalities": [
+      "tts",
+      "music"
+    ],
+    "models": [
+      {
+        "id": "fal-audio/core-model",
+        "provider": "fal-audio",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "resemble-ai",
+    "name": "Resemble AI Voice",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://app.resemble.ai/api/v2",
+    "envKey": "RESEMBLE_API_KEY",
+    "freeTier": false,
+    "badge": "Real-Time Voice Cloning",
+    "modalities": [
+      "tts"
+    ],
+    "models": [
+      {
+        "id": "resemble-ai/core-model",
+        "provider": "resemble-ai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "ESTIMATED",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "neets-ai",
+    "name": "Neets.ai TTS",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://api.neets.ai/v1",
+    "envKey": "NEETS_API_KEY",
+    "freeTier": true,
+    "badge": "Fast Budget Speech",
+    "modalities": [
+      "tts"
+    ],
+    "models": [
+      {
+        "id": "neets-ai/core-model",
+        "provider": "neets-ai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "ollama",
+    "name": "Ollama Daemon",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:11434/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 11434 / 100% Offline",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "embedding"
+    ],
+    "models": [
+      {
+        "id": "ollama/core-model",
+        "provider": "ollama",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "lmstudio",
+    "name": "LM Studio Server",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:1234/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 1234 / Local GGUF",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "lmstudio/core-model",
+        "provider": "lmstudio",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "localai",
+    "name": "LocalAI Self-Hosted",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:8080/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 8080 / Drop-in OpenAI",
+    "modalities": [
+      "text",
+      "image",
+      "tts",
+      "stt",
+      "embedding"
+    ],
+    "models": [
+      {
+        "id": "localai/core-model",
+        "provider": "localai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
   },
   {
     "id": "vllm",
-    "name": "vLLM High-Performance Local",
-    "baseUrl": "http://localhost:8000/v1",
+    "name": "vLLM PagedAttention",
     "category": "LOCAL",
+    "baseUrl": "http://localhost:8000/v1",
+    "envKey": "",
     "freeTier": true,
-    "badge": "PagedAttention Engine",
+    "badge": "Port 8000 / High Throughput",
+    "modalities": [
+      "text",
+      "tools"
+    ],
     "models": [
       {
-        "id": "vllm/default",
+        "id": "vllm/core-model",
         "provider": "vllm",
         "capabilities": {
           "chat": true,
@@ -401,7 +5364,7 @@
           "vision": false,
           "json_mode": true
         },
-        "context_length": 65536,
+        "context_length": 128000,
         "pricing": {
           "prompt_per_million": 0,
           "completion_per_million": 0,
@@ -409,7 +5372,465 @@
           "updated_at": "2026-01-01T00:00:00Z"
         }
       }
+    ]
+  },
+  {
+    "id": "llamacpp",
+    "name": "llama.cpp Server",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:8080/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 8080 / Lightweight C++",
+    "modalities": [
+      "text"
     ],
-    "tos_status": "official"
+    "models": [
+      {
+        "id": "llamacpp/core-model",
+        "provider": "llamacpp",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "jan",
+    "name": "Jan.ai Desktop",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:1337/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 1337 / Cortex Engine",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "jan/core-model",
+        "provider": "jan",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "text-gen-webui",
+    "name": "Oobabooga WebUI",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:5000/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 5000 / Multi-Backend",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "text-gen-webui/core-model",
+        "provider": "text-gen-webui",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "koboldcpp",
+    "name": "KoboldCPP Server",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:5001/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 5001 / GGUF Server",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "koboldcpp/core-model",
+        "provider": "koboldcpp",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "exo",
+    "name": "Exo Cluster",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:52415/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 52415 / Distributed P2P",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "exo/core-model",
+        "provider": "exo",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "aphrodite",
+    "name": "Aphrodite Engine",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:2242/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 2242 / Multi-GPU Engine",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "aphrodite/core-model",
+        "provider": "aphrodite",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "tabby",
+    "name": "Tabby Code Assistant",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:8080/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 8080 / Self-Hosted Copilot",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "tabby/core-model",
+        "provider": "tabby",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "fastchat",
+    "name": "FastChat Controller",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:8000/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 8000 / Distributed Serving",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "fastchat/core-model",
+        "provider": "fastchat",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "open-webui",
+    "name": "Open WebUI Backend",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:3000/api",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 3000 / WebUI Gateway",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "open-webui/core-model",
+        "provider": "open-webui",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "tgi",
+    "name": "HuggingFace TGI",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:80/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Port 80 / Docker Container",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "tgi/core-model",
+        "provider": "tgi",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "claude-code",
+    "name": "Claude Code Agent",
+    "category": "CLOUD_AGENT",
+    "baseUrl": "http://127.0.0.1:3001",
+    "envKey": "ANTHROPIC_BASE_URL",
+    "freeTier": true,
+    "badge": "Auto Anthropic Messages Hook",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "claude-code/core-model",
+        "provider": "claude-code",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "cursor-agent",
+    "name": "Cursor Agent Composer",
+    "category": "CLOUD_AGENT",
+    "baseUrl": "http://127.0.0.1:3001/v1",
+    "envKey": "OPENAI_BASE_URL",
+    "freeTier": true,
+    "badge": "Multi-File Edit Agent",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "cursor-agent/core-model",
+        "provider": "cursor-agent",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "cline-agent",
+    "name": "Cline Background Agent",
+    "category": "CLOUD_AGENT",
+    "baseUrl": "http://127.0.0.1:3001/v1",
+    "envKey": "OPENAI_BASE_URL",
+    "freeTier": true,
+    "badge": "MCP & Terminal Runner",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "cline-agent/core-model",
+        "provider": "cline-agent",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "id": "aider-agent",
+    "name": "Aider Architect Agent",
+    "category": "CLOUD_AGENT",
+    "baseUrl": "http://127.0.0.1:3001/v1",
+    "envKey": "OPENAI_BASE_URL",
+    "freeTier": true,
+    "badge": "Git Auto-Commit Pair",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "aider-agent/core-model",
+        "provider": "aider-agent",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ]
   }
 ]

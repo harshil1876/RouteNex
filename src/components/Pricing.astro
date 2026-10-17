@@ -111,7 +111,7 @@ const matrixRows = [
               <h3 class="text-lg font-semibold text-ink">{tier.name}</h3>
               <span class={`rounded px-2.5 py-0.5 font-mono text-xs ${
                 tier.featured 
-                  ? 'bg-ink text-white dark:bg-white dark:text-black font-medium' 
+                  ? 'bg-zinc-950 text-white dark:bg-zinc-100 dark:!text-zinc-950 font-semibold' 
                   : 'bg-canvas text-mute border border-hairline-soft'
               }`}>
                 {tier.badge}
@@ -144,9 +144,9 @@ const matrixRows = [
           <div class="mt-8 pt-4">
             <a
               href={tier.ctaLink}
-              class={`w-full inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium transition ${
+              class={`w-full inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold transition ${
                 tier.ctaVariant === 'primary'
-                  ? 'bg-ink text-white dark:bg-white dark:text-black hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ink'
+                  ? 'bg-zinc-950 text-white dark:bg-zinc-100 dark:!text-zinc-950 hover:opacity-90 shadow-xs'
                   : 'border border-hairline bg-elevated text-ink hover:bg-hairline focus:outline-none focus:ring-2 focus:ring-neutral-400'
               }`}
             >

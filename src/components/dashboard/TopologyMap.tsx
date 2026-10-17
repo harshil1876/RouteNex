@@ -133,7 +133,7 @@ export default function TopologyMap() {
                 }}
                 className={`rounded-full px-3 py-1 text-xs font-mono transition border ${
                   selectedModel === p.val
-                    ? 'bg-ink text-white border-ink'
+                    ? 'bg-zinc-100 dark:bg-white !text-zinc-950 font-semibold border-zinc-200 dark:border-white shadow-xs'
                     : 'bg-elevated text-body border-hairline hover:border-neutral-400'
                 }`}
               >
@@ -158,7 +158,7 @@ export default function TopologyMap() {
             type="button"
             disabled={simulating}
             onClick={() => runSimulation(selectedModel)}
-            className="rounded-lg bg-ink text-white px-5 py-2 text-xs font-medium hover:opacity-90 disabled:opacity-50 transition shrink-0 flex items-center justify-center gap-2"
+            className="rounded-lg bg-zinc-100 hover:bg-white !text-zinc-950 font-semibold px-5 py-2 text-xs border border-zinc-200 shadow-xs hover:opacity-90 disabled:opacity-50 transition shrink-0 flex items-center justify-center gap-2"
           >
             {simulating ? (
               <>

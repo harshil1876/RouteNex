@@ -5,6 +5,7 @@ export type ActiveTab =
   | 'endpoints'
   | 'keys'
   | 'providers'
+  | 'models'
   | 'services'
   | 'combos'
   | 'quota'
@@ -95,7 +96,8 @@ export default function Sidebar({
       items: [
         { id: 'endpoints', label: 'Endpoints & Tunnels', tooltip: 'HTTP /v1, MCP, A2A & LAN IP' },
         { id: 'keys', label: 'API Keys Manager', tooltip: 'Virtual hashed keys and spend limits' },
-        { id: 'providers', label: 'Providers Hub', tooltip: '347+ Providers, 12 Categories', badge: '347' },
+        { id: 'providers', label: 'Providers Hub', tooltip: '120+ Providers, 12 Categories', badge: '120+' },
+        { id: 'models', label: 'Models Explorer', tooltip: '350+ Providers / 1,400+ Models Catalog', badge: '1,400+' },
         { id: 'services', label: 'Embedded Services', tooltip: 'CLIProxyAPI, 9Router, Mux' },
         { id: 'combos', label: 'Combos & Studio', tooltip: 'Auto-Routing Templates & Cascades' },
         { id: 'quota', label: 'Provider Quota', tooltip: 'Quota Headroom & Reset Windows' },

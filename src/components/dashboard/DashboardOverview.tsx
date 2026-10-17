@@ -22,6 +22,7 @@ import MemoryPanel from './MemoryPanel';
 import GamificationProfile from './GamificationProfile';
 import StorageSettings from './StorageSettings';
 import AiAssistantDrawer from './AiAssistantDrawer';
+import ModelCatalogExplorer from '../models/ModelCatalogExplorer';
 
 interface RecentRequestRow {
   model: string;
@@ -510,6 +511,7 @@ export default function DashboardOverview() {
               onSelectProvider={setSelectedProviderId}
             />
           )}
+          {activeTab === 'models' && <ModelCatalogExplorer />}
           {activeTab === 'services' && <EmbeddedServices />}
           {activeTab === 'combos' && <Combos />}
           {activeTab === 'quota' && <QuotaTracker />}

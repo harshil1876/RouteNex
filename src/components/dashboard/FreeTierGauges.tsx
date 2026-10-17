@@ -203,7 +203,7 @@ export default function FreeTierGauges() {
             type="button"
             onClick={handleProbeAll}
             disabled={probing}
-            className="rounded-full bg-ink text-white px-5 py-2 text-xs font-mono font-medium hover:opacity-90 transition disabled:opacity-50 shrink-0 flex items-center gap-2 shadow-xs"
+            className="rounded-full bg-zinc-100 hover:bg-white !text-zinc-950 font-semibold px-5 py-2 text-xs font-mono transition disabled:opacity-50 shrink-0 flex items-center gap-2 border border-zinc-200 shadow-xs"
           >
             <span>{probing ? '⏳' : '▶'}</span>
             <span>{probing ? 'Probing...' : 'Test All Free Pools'}</span>

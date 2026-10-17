@@ -79,3 +79,42 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Global Defensive Contrast Protection: Light backgrounds must ALWAYS have high-contrast dark text */
+.bg-white,
+.bg-zinc-50,
+.bg-zinc-100,
+.bg-zinc-200,
+.bg-neutral-50,
+.bg-neutral-100,
+.bg-neutral-200,
+button.bg-white,
+button.bg-zinc-50,
+button.bg-zinc-100,
+button.bg-zinc-200,
+a.bg-white,
+a.bg-zinc-50,
+a.bg-zinc-100,
+a.bg-zinc-200 {
+  color: #09090b !important;
+}
+
+button.bg-white *,
+button.bg-zinc-50 *,
+button.bg-zinc-100 *,
+button.bg-zinc-200 *,
+a.bg-white *,
+a.bg-zinc-50 *,
+a.bg-zinc-100 *,
+a.bg-zinc-200 * {
+  color: #09090b !important;
+}
+
+/* In dark mode, if any element or button uses bg-ink (#ededed), enforce dark text */
+html.dark .bg-ink,
+html.dark button.bg-ink,
+html.dark a.bg-ink,
+html.dark button.bg-ink *,
+html.dark a.bg-ink * {
+  color: #09090b !important;
+}

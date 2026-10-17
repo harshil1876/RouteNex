@@ -15,16 +15,17 @@
     "test:live": "tsx src/scripts/live-smoke-test.ts"
   },
   "dependencies": {
-    "hono": "^4.7.0",
     "@hono/node-server": "^1.14.0",
-    "zod": "^3.24.0",
+    "eventsource-parser": "^3.0.0",
+    "hono": "^4.7.0",
     "nanoid": "^5.1.0",
-    "eventsource-parser": "^3.0.0"
+    "routenex": "file:..",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
-    "typescript": "^5.8.0",
+    "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
-    "vitest": "^3.2.0",
-    "@types/node": "^22.0.0"
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
   }
 }

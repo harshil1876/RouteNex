@@ -140,7 +140,7 @@ export default function Playground() {
                       onClick={() => setStrategy(s)}
                       className={`rounded border py-1.5 text-xs font-mono transition ${
                         strategy === s
-                          ? 'border-ink bg-ink text-white font-medium'
+                          ? 'border-zinc-300 dark:border-white bg-zinc-100 dark:bg-white !text-zinc-950 font-semibold shadow-xs'
                           : 'border-hairline bg-canvas text-body hover:border-neutral-400'
                       }`}
                     >
