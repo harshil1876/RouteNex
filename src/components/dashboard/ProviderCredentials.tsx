@@ -1,4 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import ProviderBrandIcon from './ProviderBrandIcon';
+import ProviderDetailView from './ProviderDetailView';
+
+interface ProviderCredentialsProps {
+  selectedProviderId?: string | null;
+  onSelectProvider?: (id: string | null) => void;
+}
 
 type CategoryFilter = 'ALL' | 'FREE' | 'API_KEY' | 'LOCAL';
 
@@ -253,7 +260,15 @@ const INITIAL_PROVIDERS: ProviderCardState[] = [
   freeOnly: false,
 }));
 
-export default function ProviderCredentials() {
+export default function ProviderCredentials({ selectedProviderId, onSelectProvider }: ProviderCredentialsProps = {}) {
+  const [activeDetailProviderId, setActiveDetailProviderId] = useState<string | null>(selectedProviderId || null);
+
+  useEffect(() => {
+    if (selectedProviderId !== undefined) {
+      setActiveDetailProviderId(selectedProviderId);
+    }
+  }, [selectedProviderId]);
+
   const [filter, setFilter] = useState<CategoryFilter>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [isTestingAll, setIsTestingAll] = useState(false);
@@ -528,6 +543,23 @@ export default function ProviderCredentials() {
   const configuredCount = providers.filter((p) => p.isConfigured).length;
   const freeCount = providers.filter((p) => p.category === 'FREE').length;
 
+  if (activeDetailProviderId) {
+    const activeProv = providers.find((p) => p.id === activeDetailProviderId) || {
+      id: activeDetailProviderId,
+      name: activeDetailProviderId.toUpperCase(),
+    };
+    return (
+      <ProviderDetailView
+        providerId={activeProv.id}
+        providerName={activeProv.name}
+        onBack={() => {
+          setActiveDetailProviderId(null);
+          onSelectProvider?.(null);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Top Header & Toolbar */}
@@ -653,7 +685,8 @@ export default function ProviderCredentials() {
           >
             <div>
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
+                  <ProviderBrandIcon id={p.id} className="w-5 h-5 shrink-0" />
                   <h3 className="font-semibold text-ink text-sm">{p.name}</h3>
                   <span
                     className={`rounded px-2 py-0.5 font-mono text-[10px] font-medium ${
@@ -847,6 +880,18 @@ export default function ProviderCredentials() {
               </div>
 
               <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveDetailProviderId(p.id);
+                    onSelectProvider?.(p.id);
+                  }}
+                  className="rounded-full border border-hairline bg-canvas px-3 py-1 text-xs font-medium text-body hover:bg-hairline hover:text-ink transition flex items-center gap-1 font-mono"
+                  title="View full provider controls, models, accounts, and param filters"
+                >
+                  Manage Details →
+                </button>
+
                 {p.supportsOAuth && (
                   <button
                     type="button"

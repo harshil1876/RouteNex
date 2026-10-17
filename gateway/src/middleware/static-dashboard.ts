@@ -35,6 +35,15 @@ export function mountStaticDashboard(app: Hono, staticRoot: string): void {
       return next();
     }
 
+    // In Open Source mode (Port 3001), root '/' strictly bypasses the marketing homepage
+    // and redirects directly to the Local Gateway Console (/dashboard)
+    if (pathname === '/' || pathname === '') {
+      return c.redirect(`/dashboard${url.search}`);
+    }
+    if (pathname === '/pricing' || pathname === '/signup') {
+      return c.redirect(`/dashboard`);
+    }
+
     let relPath = pathname.replace(/^\//, '');
     if (!relPath || relPath.endsWith('/')) {
       relPath += 'index.html';

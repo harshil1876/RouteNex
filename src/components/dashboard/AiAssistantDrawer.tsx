@@ -5,7 +5,7 @@ export default function AiAssistantDrawer() {
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([
     {
       role: 'assistant',
-      content: 'Hello! I am RouteNex AI Assistant. Ask me how to route requests, configure free tiers, diagnose latency, or optimize prompt compression.',
+      content: 'Hello! I am your local RouteNex Assistant. Ask me how to route requests, configure free tiers, diagnose latency, or optimize prompt compression.',
     },
   ]);
   const [input, setInput] = useState('');
@@ -61,104 +61,79 @@ export default function AiAssistantDrawer() {
 
   return (
     <>
-      {/* Floating Purple Button on Right Edge */}
+      {/* Floating Button on Right Edge */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-gradient-to-l from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white p-2.5 rounded-l-xl shadow-2xl shadow-purple-500/30 flex items-center gap-1.5 transition-all group"
-        title="Open RouteNex AI Brain Assistant"
+        className="fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 p-2.5 rounded-l-lg border-l border-t border-b border-zinc-700 shadow-xl flex items-center gap-1.5 transition-all group font-mono"
+        title="Open RouteNex AI Assistant"
       >
-        <span className="text-sm animate-pulse">⚡</span>
-        <span className="text-[11px] font-mono font-medium tracking-tight pr-1 hidden group-hover:inline transition-all">
-          AI Assistant
+        <span className="text-xs text-emerald-400">⚡</span>
+        <span className="text-[11px] font-medium tracking-tight pr-1 hidden group-hover:inline transition-all text-zinc-200">
+          Assistant
         </span>
       </button>
 
       {/* Slide-Over Drawer */}
       {isOpen && (
-        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#0e111a] border-l border-[#222738] shadow-2xl flex flex-col backdrop-blur-xl">
+        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#09090b] border-l border-[#222226] shadow-2xl flex flex-col font-mono">
           {/* Drawer Header */}
-          <div className="p-4 border-b border-[#222738] flex items-center justify-between bg-[#121622]">
+          <div className="p-4 border-b border-[#222226] flex items-center justify-between bg-[#111113]">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs text-white font-bold shadow-md shadow-purple-500/20">
-                ⚡
+              <div className="w-6 h-6 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs text-zinc-200 font-bold">
+                RN
               </div>
               <div>
-                <h3 className="text-xs font-semibold text-white tracking-tight font-mono">RouteNex AI Assistant</h3>
-                <span className="text-[10px] text-emerald-400 font-mono">● Online · Auto-Routing v0.2.0</span>
+                <h3 className="text-xs font-semibold text-zinc-100 tracking-tight">RouteNex Assistant</h3>
+                <span className="text-[10px] text-emerald-400">● Online · Port 3001</span>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="p-1 rounded-md text-[#7d8597] hover:text-white hover:bg-[#1f2536] transition-colors"
+              className="p-1 rounded text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
             >
               ✕
             </button>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 font-sans text-xs">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs font-sans">
             {messages.map((m, idx) => (
               <div
                 key={idx}
                 className={`p-3 rounded-lg leading-relaxed ${
                   m.role === 'user'
-                    ? 'bg-purple-600/15 border border-purple-500/30 text-purple-100 ml-6'
-                    : 'bg-[#161a27] border border-[#23293c] text-[#cfd4e3] mr-6'
+                    ? 'bg-zinc-800 border border-zinc-700 text-zinc-100 ml-6'
+                    : 'bg-[#111113] border border-[#222226] text-zinc-300 mr-6'
                 }`}
               >
-                <div className="text-[10px] font-mono text-[#7d8597] mb-1">
+                <div className="text-[10px] font-mono text-zinc-500 mb-1">
                   {m.role === 'user' ? 'YOU' : 'ROUTENEX AI'}
                 </div>
                 {m.content}
               </div>
             ))}
             {loading && (
-              <div className="p-3 rounded-lg bg-[#161a27] border border-[#23293c] text-[#7d8597] text-xs font-mono animate-pulse">
+              <div className="p-3 rounded-lg bg-[#111113] border border-[#222226] text-zinc-500 text-xs font-mono animate-pulse">
                 Consulting routing engine...
               </div>
             )}
           </div>
 
-          {/* Quick Prompts */}
-          <div className="p-2 border-t border-[#1d2232] bg-[#10131d] flex gap-1.5 overflow-x-auto text-[10px] font-mono">
-            <button
-              type="button"
-              onClick={() => setInput('Explain current routing strategy')}
-              className="px-2 py-1 rounded bg-[#181d2c] hover:bg-[#20273a] text-[#8e97ae] hover:text-white shrink-0 border border-[#283046]"
-            >
-              Strategy
-            </button>
-            <button
-              type="button"
-              onClick={() => setInput('What free tier pools are available?')}
-              className="px-2 py-1 rounded bg-[#181d2c] hover:bg-[#20273a] text-[#8e97ae] hover:text-white shrink-0 border border-[#283046]"
-            >
-              Free Tiers
-            </button>
-            <button
-              type="button"
-              onClick={() => setInput('How do I run with Claude Code CLI?')}
-              className="px-2 py-1 rounded bg-[#181d2c] hover:bg-[#20273a] text-[#8e97ae] hover:text-white shrink-0 border border-[#283046]"
-            >
-              Claude CLI
-            </button>
-          </div>
-
-          {/* Input Box */}
-          <form onSubmit={handleSend} className="p-3 border-t border-[#222738] bg-[#121622] flex gap-2">
+          {/* Input Form */}
+          <form onSubmit={handleSend} className="p-3 border-t border-[#222226] bg-[#111113] flex gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything about routing, models, or config..."
-              className="flex-1 bg-[#181d2c] border border-[#283046] rounded-lg px-3 py-2 text-xs text-white placeholder-[#5a647d] focus:outline-none focus:border-purple-500 font-mono"
+              placeholder="Ask RouteNex assistant..."
+              className="flex-1 bg-[#09090b] border border-[#222226] rounded px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium text-xs shadow-md shadow-purple-600/20 font-mono"
+              className="px-3 py-2 rounded bg-zinc-100 text-zinc-950 font-medium text-xs hover:bg-white disabled:opacity-50 transition"
             >
               Send
             </button>

@@ -20,17 +20,11 @@ export type ActiveTab =
   | 'gamification'
   | 'storage'
   | 'doctor'
-  | 'aliases'
-  | 'cloud-team'
-  | 'cloud-budgets';
-
-export type EditionMode = 'oss' | 'cloud';
+  | 'aliases';
 
 interface SidebarProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
-  edition: EditionMode;
-  setEdition: (edition: EditionMode) => void;
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
   mobileOpen: boolean;
@@ -57,8 +51,6 @@ interface AccordionCategory {
 export default function Sidebar({
   activeTab,
   setActiveTab,
-  edition,
-  setEdition,
   collapsed,
   setCollapsed,
   mobileOpen,
@@ -74,7 +66,6 @@ export default function Sidebar({
     tools: true,
     other: false,
     config: false,
-    help: false,
   });
 
   const [syncActive, setSyncActive] = useState(true);
@@ -92,15 +83,15 @@ export default function Sidebar({
     {
       id: 'home',
       title: 'HOME',
-      icon: '🏠',
+      icon: '⚡',
       items: [
-        { id: 'overview', label: 'Home Overview', tooltip: 'Topology & Recent Requests' },
+        { id: 'overview', label: 'Home Overview', tooltip: 'Topology & Live Requests' },
       ],
     },
     {
       id: 'proxy',
-      title: 'ROUTENEX PROXY',
-      icon: '⚡',
+      title: 'ROUTENEX GATEWAY',
+      icon: '🌐',
       items: [
         { id: 'endpoints', label: 'Endpoints & Tunnels', tooltip: 'HTTP /v1, MCP, A2A & LAN IP' },
         { id: 'keys', label: 'API Keys Manager', tooltip: 'Virtual hashed keys and spend limits' },
@@ -139,7 +130,7 @@ export default function Sidebar({
     },
     {
       id: 'tools',
-      title: 'TOOLS & AGENTIC',
+      title: 'TOOLS & AGENTS',
       icon: '🤖',
       items: [
         { id: 'agents', label: 'Coding Agent Hub', tooltip: 'Claude, Cursor, Cline Presets' },
@@ -149,10 +140,10 @@ export default function Sidebar({
     },
     {
       id: 'other',
-      title: 'OTHER FEATURES',
+      title: 'DEVELOPER PROFILE',
       icon: '🏆',
       items: [
-        { id: 'gamification', label: 'Gamification & Badges', tooltip: 'Level 2 & 23 Badges', badge: '23' },
+        { id: 'gamification', label: 'Achievements & Badges', tooltip: 'Live Token Milestones & Badges', badge: '23' },
       ],
     },
     {
@@ -172,70 +163,44 @@ export default function Sidebar({
       {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs md:hidden"
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-xs md:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed md:sticky top-0 left-0 z-50 h-screen shrink-0 border-r border-[#1f2433] bg-[#0c0f17] text-[#c3c8d4] transition-all duration-300 ease-in-out flex flex-col justify-between font-mono ${
+        className={`fixed md:sticky top-0 left-0 z-50 h-screen shrink-0 border-r border-[#222226] bg-[#09090b] text-zinc-300 transition-all duration-200 ease-in-out flex flex-col justify-between font-mono ${
           collapsed ? 'w-16' : 'w-64'
         } ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
       >
         {/* Top Header / Branding */}
-        <div className="p-3 border-b border-[#1b202e] flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform">
-              ⚡
+        <div className="p-3 border-b border-[#222226] flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-zinc-100 text-zinc-950 flex items-center justify-center font-bold text-xs shadow-xs">
+              RN
             </div>
             {!collapsed && (
               <div className="leading-tight">
-                <span className="text-sm font-bold text-white tracking-tight">RouteNex</span>
-                <span className="block text-[10px] text-[#7d8597]">
-                  {edition === 'oss' ? 'OSS Local (0 Cloud Auth)' : 'Cloud Managed'}
+                <span className="text-xs font-semibold text-zinc-100 tracking-tight">RouteNex</span>
+                <span className="block text-[10px] text-zinc-500">
+                  Local Gateway Daemon
                 </span>
               </div>
             )}
-          </a>
+          </div>
 
           {!collapsed && (
             <button
               type="button"
               onClick={() => setCollapsed(true)}
-              className="text-[#6c7487] hover:text-white p-1 rounded hover:bg-[#181d2a]"
+              className="text-zinc-500 hover:text-zinc-200 p-1 rounded hover:bg-zinc-800 transition"
               title="Collapse Sidebar"
             >
               ◂
             </button>
           )}
         </div>
-
-        {/* Edition Switcher Pill */}
-        {!collapsed && (
-          <div className="px-3 pt-2 pb-1">
-            <div className="flex p-0.5 rounded-lg bg-[#141824] border border-[#222838] text-[10px]">
-              <button
-                type="button"
-                onClick={() => setEdition('oss')}
-                className={`flex-1 py-1 rounded transition-colors text-center font-semibold ${
-                  edition === 'oss' ? 'bg-purple-600 text-white' : 'text-[#7d8597] hover:text-white'
-                }`}
-              >
-                Local OSS
-              </button>
-              <button
-                type="button"
-                onClick={() => setEdition('cloud')}
-                className={`flex-1 py-1 rounded transition-colors text-center font-semibold ${
-                  edition === 'cloud' ? 'bg-sky-600 text-white' : 'text-[#7d8597] hover:text-white'
-                }`}
-              >
-                Cloud SaaS
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Navigation Categories Scroll Area */}
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-2 text-xs">
@@ -248,7 +213,7 @@ export default function Sidebar({
                   <button
                     type="button"
                     onClick={() => toggleSection(cat.id)}
-                    className="w-full flex items-center justify-between px-2 py-1.5 rounded text-[11px] font-semibold text-[#6f788c] hover:text-white transition-colors"
+                    className="w-full flex items-center justify-between px-2 py-1.5 rounded text-[11px] font-medium text-zinc-500 hover:text-zinc-300 transition-colors"
                   >
                     <span className="flex items-center gap-1.5">
                       <span>{cat.icon}</span>
@@ -257,7 +222,7 @@ export default function Sidebar({
                     <span className="text-[10px]">{isOpen ? '▾' : '▸'}</span>
                   </button>
                 ) : (
-                  <div className="text-center py-1 text-sm text-[#7d8597]">{cat.icon}</div>
+                  <div className="text-center py-1 text-sm text-zinc-500">{cat.icon}</div>
                 )}
 
                 {(isOpen || collapsed) && (
@@ -270,16 +235,16 @@ export default function Sidebar({
                           key={item.id}
                           type="button"
                           onClick={() => handleSelectTab(item.id)}
-                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all ${
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded text-left transition-all text-xs ${
                             isActive
-                              ? 'bg-purple-600/20 text-white font-semibold border border-purple-500/30'
-                              : 'text-[#8e97ae] hover:text-white hover:bg-[#141926]'
+                              ? 'bg-zinc-800 text-zinc-100 font-medium border border-zinc-700 shadow-xs'
+                              : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900'
                           } ${collapsed ? 'justify-center' : ''}`}
                           title={item.tooltip}
                         >
                           <span className="truncate">{!collapsed ? item.label : item.label.slice(0, 3)}</span>
                           {!collapsed && item.badge && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300">
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-zinc-800 border border-zinc-700 text-zinc-300">
                               {item.badge}
                             </span>
                           )}
@@ -294,16 +259,16 @@ export default function Sidebar({
 
           {/* Docs Direct Jump Link */}
           {!collapsed && (
-            <div className="pt-2 border-t border-[#1b202e]">
+            <div className="pt-2 border-t border-[#222226]">
               <a
                 href="/docs"
-                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[#8e97ae] hover:text-white hover:bg-[#141926] transition-colors text-xs"
+                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors text-xs"
               >
                 <span className="flex items-center gap-1.5">
                   <span>📖</span>
-                  <span>Full Docs (/docs)</span>
+                  <span>Documentation</span>
                 </span>
-                <span className="text-[10px] text-purple-400">→</span>
+                <span className="text-[10px] text-zinc-500">→</span>
               </a>
             </div>
           )}
@@ -311,18 +276,18 @@ export default function Sidebar({
 
         {/* Bottom Process Control Bar (OmniRoute Pattern) */}
         {!collapsed && (
-          <div className="p-3 border-t border-[#1b202e] bg-[#0a0c13] space-y-2">
-            <div className="flex items-center justify-between text-[11px] text-[#7d8597]">
+          <div className="p-3 border-t border-[#222226] bg-[#0c0c0e] space-y-2">
+            <div className="flex items-center justify-between text-[11px] text-zinc-400">
               <span className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${isGatewayConnected ? 'bg-emerald-400' : 'bg-neutral-500'}`} />
-                <span>Sync {syncActive ? 'On' : 'Off'}</span>
+                <span className={`w-2 h-2 rounded-full ${isGatewayConnected ? 'bg-emerald-400 shadow-xs shadow-emerald-400/50' : 'bg-zinc-600'}`} />
+                <span>Gateway {isGatewayConnected ? 'Online' : 'Offline'}</span>
               </span>
               <button
                 type="button"
                 onClick={() => setSyncActive(!syncActive)}
-                className="text-[10px] text-purple-400 hover:text-purple-300"
+                className="text-[10px] text-zinc-400 hover:text-zinc-200"
               >
-                Toggle
+                Sync {syncActive ? 'On' : 'Off'}
               </button>
             </div>
 
@@ -330,7 +295,7 @@ export default function Sidebar({
               <button
                 type="button"
                 onClick={() => alert('Restarting RouteNex local daemon...')}
-                className="py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition-colors"
+                className="py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition"
               >
                 Restart
               </button>
@@ -341,7 +306,7 @@ export default function Sidebar({
                     alert('Shutdown signal sent to gateway daemon.');
                   }
                 }}
-                className="py-1 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition-colors"
+                className="py-1 rounded bg-red-950/30 hover:bg-red-900/40 text-red-400 border border-red-900/40 transition"
               >
                 Shutdown
               </button>
@@ -351,11 +316,11 @@ export default function Sidebar({
 
         {/* Collapsed Expand Button */}
         {collapsed && (
-          <div className="p-2 border-t border-[#1b202e] text-center">
+          <div className="p-2 border-t border-[#222226] text-center">
             <button
               type="button"
               onClick={() => setCollapsed(false)}
-              className="text-[#7d8597] hover:text-white p-1 rounded"
+              className="text-zinc-500 hover:text-zinc-200 p-1 rounded"
               title="Expand Sidebar"
             >
               ▸

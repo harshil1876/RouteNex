@@ -2,102 +2,27 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-
-const featuredModels = [
-  { id: 'groq/llama-3.3-70b-versatile', provider: 'Groq', context: '128K', promptPrice: '$0.00 / M', compPrice: '$0.00 / M', speed: '380 tps', freeTier: true, modality: 'Text · Code' },
-  { id: 'cerebras/llama-3.3-70b', provider: 'Cerebras', context: '8K', promptPrice: '$0.00 / M', compPrice: '$0.00 / M', speed: '2,100 tps', freeTier: true, modality: 'Text · Code' },
-  { id: 'mistral/codestral-2501', provider: 'Mistral', context: '256K', promptPrice: '$0.00 / M', compPrice: '$0.00 / M', speed: '140 tps', freeTier: true, modality: 'Code · FIM' },
-  { id: 'pollinations/openai', provider: 'Pollinations', context: '128K', promptPrice: '$0.00 / M', compPrice: '$0.00 / M', speed: '85 tps', freeTier: true, modality: 'Text · Vision' },
-  { id: 'anthropic/claude-3-7-sonnet', provider: 'Anthropic', context: '200K', promptPrice: '$3.00 / M', compPrice: '$15.00 / M', speed: '65 tps', freeTier: false, modality: 'Text · Vision · Thinking' },
-  { id: 'openai/gpt-4o', provider: 'OpenAI', context: '128K', promptPrice: '$2.50 / M', compPrice: '$10.00 / M', speed: '90 tps', freeTier: false, modality: 'Text · Vision · Audio' },
-  { id: 'deepseek/deepseek-r1', provider: 'DeepSeek', context: '64K', promptPrice: '$0.55 / M', compPrice: '$2.19 / M', speed: '45 tps', freeTier: false, modality: 'Reasoning · Math' },
-  { id: 'google/gemini-2.5-flash', provider: 'Google', context: '1,000K', promptPrice: '$0.00 / M', compPrice: '$0.00 / M', speed: '180 tps', freeTier: true, modality: 'Multimodal 1M' },
-  { id: 'nvidia/meta/llama-3.1-405b-instruct', provider: 'NVIDIA NIM', context: '128K', promptPrice: '$0.00 / M', compPrice: '$0.00 / M', speed: '75 tps', freeTier: true, modality: 'Frontier 405B' },
-  { id: 'openrouter/auto', provider: 'OpenRouter', context: '128K', promptPrice: 'Dynamic', compPrice: 'Dynamic', speed: '120 tps', freeTier: true, modality: 'Auto-Routing' },
-  { id: 'zhipu/glm-4-flash', provider: 'Zhipu AI', context: '128K', promptPrice: '$0.00 / M', compPrice: '$0.00 / M', speed: '110 tps', freeTier: true, modality: 'Text · Code' },
-  { id: 'siliconflow/deepseek-ai/DeepSeek-V3', provider: 'SiliconFlow', context: '64K', promptPrice: '$0.00 / M', compPrice: '$0.00 / M', speed: '95 tps', freeTier: true, modality: 'Reasoning V3' },
-];
+import ModelCatalogExplorer from '../components/models/ModelCatalogExplorer';
 ---
 
 <Layout title="AI Model Catalog (1,400+ Models) — RouteNex">
   <Header />
 
-  <main class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-10">
-    <div class="text-center max-w-3xl mx-auto space-y-3">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-mono">
+  <main class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 space-y-8 font-sans">
+    <div class="space-y-2">
+      <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono">
         <span>⚡ 347 Providers · 1,400+ Standardized Endpoints</span>
       </div>
-      <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-ink font-sans">
-        Unified AI Model Explorer
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-ink font-sans">
+        Models Explorer & Performance Benchmarks
       </h1>
-      <p class="text-body text-base">
-        Browse verified pricing, speed benchmarks, context windows, and zero-cost free tiers. Call any model through one single OpenAI-compatible base URL.
+      <p class="text-body text-sm max-w-2xl">
+        Explore live latency benchmarks, context windows, zero-cost free-tier quotas, and provider hosting options. Call any model through RouteNex with deterministic fallback.
       </p>
     </div>
 
-    <!-- Quick Search & Filter Controls -->
-    <div class="p-4 rounded-2xl border border-hairline bg-elevated shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
-      <input
-        type="text"
-        id="model-search"
-        placeholder="Search 1,400+ models by slug, provider, or architecture..."
-        class="w-full sm:w-96 bg-canvas border border-hairline rounded-xl px-4 py-2.5 text-xs text-ink font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
-      />
-
-      <div class="flex flex-wrap gap-2 text-xs font-mono">
-        <button class="px-3 py-1.5 rounded-lg bg-ink text-white font-semibold">All Models</button>
-        <button class="px-3 py-1.5 rounded-lg border border-hairline bg-canvas text-body hover:text-ink">Free ($0/M)</button>
-        <button class="px-3 py-1.5 rounded-lg border border-hairline bg-canvas text-body hover:text-ink">Vision</button>
-        <button class="px-3 py-1.5 rounded-lg border border-hairline bg-canvas text-body hover:text-ink">Reasoning</button>
-        <button class="px-3 py-1.5 rounded-lg border border-hairline bg-canvas text-body hover:text-ink">Code FIM</button>
-      </div>
-    </div>
-
-    <!-- Models Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="models-container">
-      {featuredModels.map((m) => (
-        <div class="p-5 rounded-xl border border-hairline bg-elevated hover:border-purple-500/40 transition-all space-y-4 shadow-xs group">
-          <div class="flex items-start justify-between">
-            <div>
-              <span class="text-[10px] font-mono text-mute uppercase">{m.provider}</span>
-              <h3 class="text-sm font-semibold text-ink font-mono group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                {m.id}
-              </h3>
-            </div>
-            {m.freeTier && (
-              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                $0 Free
-              </span>
-            )}
-          </div>
-
-          <div class="grid grid-cols-3 gap-2 py-2 border-y border-hairline text-center text-xs font-mono">
-            <div>
-              <span class="text-[10px] text-mute block">Context</span>
-              <span class="font-semibold text-ink">{m.context}</span>
-            </div>
-            <div>
-              <span class="text-[10px] text-mute block">Speed</span>
-              <span class="font-semibold text-purple-600 dark:text-purple-400">{m.speed}</span>
-            </div>
-            <div>
-              <span class="text-[10px] text-mute block">Price (In)</span>
-              <span class="font-semibold text-ink">{m.promptPrice}</span>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between text-xs font-mono">
-            <span class="text-[11px] text-mute">{m.modality}</span>
-            <a
-              href={`/dashboard?model=${encodeURIComponent(m.id)}`}
-              class="text-purple-600 dark:text-purple-400 font-semibold hover:underline"
-            >
-              Test Model →
-            </a>
-          </div>
-        </div>
-      ))}
-    </div>
+    <!-- Interactive Model Explorer with Left Filter Rail & Modality Tabs (Screenshot 613) -->
+    <ModelCatalogExplorer client:load />
   </main>
 
   <Footer />

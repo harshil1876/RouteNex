@@ -41,7 +41,8 @@ export function createApp(appConfig: AppConfig = config) {
     circuitBreaker,
     appConfig,
     (m) => adminStore.resolveAlias(m),
-    (m) => adminStore.findCombo(m)
+    (m) => adminStore.findCombo(m),
+    adminStore
   );
 
   // 2. Global Middleware

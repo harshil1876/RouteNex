@@ -69,6 +69,7 @@ export interface AdminSettings {
   defaultStrategy: 'cost' | 'latency' | 'balanced' | 'explicit';
   providerKeys: Record<string, string>; // providerId -> AES-256-GCM encrypted string
   providerPools?: Record<string, ProviderPoolEntry>;
+  providerBlockedParams?: Record<string, string[]>;
 }
 
 export class AdminStore {
@@ -466,5 +467,19 @@ export class AdminStore {
     const changed = this.settings.combos.length !== initialLen;
     if (changed) this.save();
     return changed;
+  }
+
+  public getProviderBlockedParams(provider: string): string[] {
+    return this.settings.providerBlockedParams?.[provider] || [];
+  }
+
+  public addProviderBlockedParam(provider: string, param: string): void {
+    if (!this.settings.providerBlockedParams) this.settings.providerBlockedParams = {};
+    if (!this.settings.providerBlockedParams[provider]) this.settings.providerBlockedParams[provider] = [];
+    const normalized = param.toLowerCase().trim();
+    if (!this.settings.providerBlockedParams[provider].includes(normalized)) {
+      this.settings.providerBlockedParams[provider].push(normalized);
+      this.save();
+    }
   }
 }

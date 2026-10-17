@@ -1,0 +1,62 @@
+---
+import SettingsLayout from '../../layouts/SettingsLayout.astro';
+---
+
+<SettingsLayout title="Preferences" currentPath="/settings/preferences">
+  <div class="space-y-6 font-sans">
+    <div class="border-b border-[#222226] pb-4">
+      <h1 class="text-xl font-bold text-zinc-100 tracking-tight">Routing & System Preferences</h1>
+      <p class="text-xs text-zinc-500 mt-1">Configure workspace routing defaults, compression presets, and data retention policies.</p>
+    </div>
+
+    <div class="space-y-5">
+      <div>
+        <label class="block text-xs font-mono text-zinc-400 mb-1">Default Routing Mode</label>
+        <select class="w-full sm:w-80 bg-[#09090b] border border-[#222226] rounded-lg px-3 py-2 text-xs text-zinc-100 font-mono focus:outline-none">
+          <option value="balanced">Balanced (Cost 60% + Latency 40%)</option>
+          <option value="nitro">Nitro (Lowest Latency & Sub-100ms TTFT)</option>
+          <option value="floor">Floor (Lowest Price / Free First)</option>
+          <option value="headroom">Headroom Maximized (Quota-Aware)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-mono text-zinc-400 mb-1">Default Token Compression Preset</label>
+        <select class="w-full sm:w-80 bg-[#09090b] border border-[#222226] rounded-lg px-3 py-2 text-xs text-zinc-100 font-mono focus:outline-none">
+          <option value="none">Disabled (Raw Uncompressed Prompts)</option>
+          <option value="lite">Lite (Whitespace & JSON Normalization)</option>
+          <option value="caveman" selected>Caveman 10-Pack (-38% Average Reduction)</option>
+        </select>
+      </div>
+
+      <div class="p-4 rounded-xl bg-[#09090b] border border-[#222226] space-y-3 font-mono text-xs">
+        <label class="flex items-center justify-between cursor-pointer">
+          <div>
+            <span class="text-zinc-100 font-semibold block font-sans">Enforce Zero Data Retention (ZDR) Globally</span>
+            <span class="text-zinc-500 text-[11px] font-sans">Route exclusively through providers with certified zero-training and zero-log retention guarantees.</span>
+          </div>
+          <input type="checkbox" checked class="rounded border-zinc-700 bg-zinc-900" />
+        </label>
+      </div>
+
+      <div class="p-4 rounded-xl bg-[#09090b] border border-[#222226] space-y-3 font-mono text-xs">
+        <label class="flex items-center justify-between cursor-pointer">
+          <div>
+            <span class="text-zinc-100 font-semibold block font-sans">Global Training Opt-Out</span>
+            <span class="text-zinc-500 text-[11px] font-sans">Injects training-opt-out request headers into all upstream provider adapters.</span>
+          </div>
+          <input type="checkbox" checked class="rounded border-zinc-700 bg-zinc-900" />
+        </label>
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <button
+          type="button"
+          class="px-4 py-2 rounded-lg bg-zinc-100 text-zinc-950 font-semibold text-xs hover:bg-white transition font-sans"
+        >
+          Save Preferences
+        </button>
+      </div>
+    </div>
+  </div>
+</SettingsLayout>

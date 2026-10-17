@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 export interface RequestItem {
   id: string;
@@ -22,18 +22,8 @@ export interface RequestItem {
   conversationId?: string;
 }
 
-export const initialRequests: RequestItem[] = [
-  { id: 'req_01HP8A', time: '14:23:08', model: 'llama-3.3-70b-versatile', requestedModel: 'auto', provider: 'Groq', cacheSource: 'UPSTREAM', protocol: 'HTTP /v1', account: 'default', apiKeyMasked: 'rn_live_...9f2a', combo: 'combo/coding-power', latencyMs: 98, tps: 289, tokens: { prompt: 142, completion: 284, total: 426 }, costUsd: 0.00000, status: '200 OK', statusCode: 200, isSuccess: true, correlationId: 'corr-01824-a', conversationId: 'conv-dev-3' },
-  { id: 'req_01HP8B', time: '14:22:51', model: 'gpt-4o-mini', requestedModel: 'auto', provider: 'OpenAI', cacheSource: 'SEMANTIC_CACHE', protocol: 'HTTP /v1', account: 'prod', apiKeyMasked: 'rn_live_...14b2', combo: 'default', latencyMs: 14, tps: 840, tokens: { prompt: 512, completion: 120, total: 632 }, costUsd: 0.00000, status: '200 OK', statusCode: 200, isSuccess: true, correlationId: 'corr-01823-b' },
-  { id: 'req_01HP8C', time: '14:21:40', model: 'gemini-2.5-flash', requestedModel: 'gemini-2.5-flash', provider: 'Google Gemini', cacheSource: 'UPSTREAM', protocol: 'HTTP /v1', account: 'alex@dev', apiKeyMasked: 'rn_live_...9f2a', combo: 'combo/free-unlimited', latencyMs: 245, tps: 182, tokens: { prompt: 820, completion: 410, total: 1230 }, costUsd: 0.00000, status: '200 OK', statusCode: 200, isSuccess: true, correlationId: 'corr-01822-c' },
-  { id: 'req_01HP8D', time: '14:20:15', model: 'claude-3-7-sonnet', requestedModel: 'claude-3-7-sonnet', provider: 'Anthropic', cacheSource: 'UPSTREAM', protocol: 'HTTP /v1', account: 'prod', apiKeyMasked: 'rn_live_...48ac', combo: 'direct', latencyMs: 410, tps: 64, tokens: { prompt: 310, completion: 180, total: 490 }, costUsd: 0.00412, status: '200 OK', statusCode: 200, isSuccess: true, correlationId: 'corr-01821-d' },
-  { id: 'req_01HP8E', time: '14:19:02', model: 'llama-3.3-70b-versatile', requestedModel: 'auto', provider: 'Groq', cacheSource: 'UPSTREAM', protocol: 'HTTP /v1', account: 'default', apiKeyMasked: 'rn_live_...9f2a', combo: 'combo/free-unlimited', latencyMs: 510, tps: 0, tokens: { prompt: 950, completion: 0, total: 950 }, costUsd: 0.00000, status: '429 Rate Limit', statusCode: 429, isSuccess: false, correlationId: 'corr-01820-e' },
-  { id: 'req_01HP8F', time: '14:19:03', model: 'cerebras/llama-3.3-70b', requestedModel: 'auto', provider: 'Cerebras (Fallback)', cacheSource: 'UPSTREAM', protocol: 'HTTP /v1', account: 'free-pool', apiKeyMasked: 'rn_live_...9f2a', combo: 'combo/free-unlimited', latencyMs: 140, tps: 340, tokens: { prompt: 950, completion: 210, total: 1160 }, costUsd: 0.00000, status: '200 OK (Failover)', statusCode: 200, isSuccess: true, correlationId: 'corr-01819-f' },
-  { id: 'req_01HP8G', time: '14:17:44', model: 'llama-3.1-8b-instant', requestedModel: 'auto/fast', provider: 'Groq', cacheSource: 'UPSTREAM', protocol: 'MCP stdio', account: 'default', apiKeyMasked: 'rn_live_...9f2a', combo: 'auto/fast', latencyMs: 72, tps: 420, tokens: { prompt: 85, completion: 94, total: 179 }, costUsd: 0.00000, status: '200 OK', statusCode: 200, isSuccess: true, correlationId: 'corr-01818-g' },
-];
-
 export default function RequestLog() {
-  const [requests, setRequests] = useState<RequestItem[]>(initialRequests);
+  const [requests, setRequests] = useState<RequestItem[]>([]);
   const [isRecording, setIsRecording] = useState(true);
   const [pipelineLogs, setPipelineLogs] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
@@ -80,266 +70,280 @@ export default function RequestLog() {
     setColumns((prev) => ({ ...prev, [colId]: !prev[colId] }));
   };
 
-  const handleCleanHistory = () => {
-    if (confirm('Clean local in-memory request history?')) {
-      setRequests([]);
-    }
-  };
+  // Fetch live requests from gateway database
+  useEffect(() => {
+    async function fetchLiveRequests() {
+      try {
+        const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
+        const res = await fetch('http://127.0.0.1:3001/v1/admin/requests', {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => null);
 
-  const handleExport = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(requests, null, 2));
-    const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute('href', dataStr);
-    dlAnchor.setAttribute('download', `routenex_request_logs_${Date.now()}.json`);
-    dlAnchor.click();
-  };
+        if (res && res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.requests) && data.requests.length > 0) {
+            setRequests(data.requests);
+          }
+        }
+      } catch {
+        // Gateway offline or no requests yet
+      }
+    }
+
+    fetchLiveRequests();
+    const interval = setInterval(fetchLiveRequests, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const filtered = useMemo(() => {
     return requests.filter((r) => {
-      const matchText =
+      const matchSearch =
+        searchFilter === '' ||
         r.model.toLowerCase().includes(searchFilter.toLowerCase()) ||
         r.provider.toLowerCase().includes(searchFilter.toLowerCase()) ||
         r.id.toLowerCase().includes(searchFilter.toLowerCase());
 
-      const matchCorr = correlationFilter
-        ? (r.correlationId || '').toLowerCase().includes(correlationFilter.toLowerCase())
-        : true;
+      const matchCorrelation =
+        correlationFilter === '' ||
+        (r.correlationId && r.correlationId.toLowerCase().includes(correlationFilter.toLowerCase()));
 
       const matchStatus =
-        statusFilter === 'ALL'
-          ? true
-          : statusFilter === 'SUCCESS'
-          ? r.isSuccess
-          : !r.isSuccess;
+        statusFilter === 'ALL' ||
+        (statusFilter === 'SUCCESS' && r.isSuccess) ||
+        (statusFilter === 'ERROR' && !r.isSuccess);
 
-      return matchText && matchCorr && matchStatus;
+      return matchSearch && matchCorrelation && matchStatus;
     });
   }, [requests, searchFilter, correlationFilter, statusFilter]);
 
   return (
-    <div className="space-y-5">
-      {/* Top Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#222738]">
+    <div className="space-y-6 font-mono text-xs">
+      {/* Top Header & Live Recording Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#222226]">
         <div>
-          <h2 className="text-base font-semibold text-white font-mono tracking-tight">Request Logs & Monitor</h2>
-          <p className="text-xs text-[#8f96a3]">
-            Realtime payload inspection, correlation tracking, and token throughput.
+          <h2 className="text-base font-semibold text-zinc-100 tracking-tight font-sans">
+            Request Logs & Execution Trace
+          </h2>
+          <p className="text-zinc-500 text-xs font-sans mt-0.5">
+            Per-request token breakdown, latency profiling, and failover status.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Recording Toggle */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setIsRecording(!isRecording)}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition-colors ${
+            className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-medium transition ${
               isRecording
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                : 'bg-neutral-800 border-neutral-700 text-neutral-400'
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
             }`}
           >
-            <span className={`w-2 h-2 rounded-full ${isRecording ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-500'}`} />
-            {isRecording ? '• Recording' : 'Paused'}
+            <span className={`w-2 h-2 rounded-full ${isRecording ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`} />
+            <span>{isRecording ? 'Live Recording' : 'Paused'}</span>
           </button>
 
-          {/* Pipeline Logs Toggle */}
           <button
             type="button"
             onClick={() => setPipelineLogs(!pipelineLogs)}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-full border text-xs font-medium transition ${
               pipelineLogs
-                ? 'bg-purple-500/10 border-purple-500/30 text-purple-300'
-                : 'bg-[#181d2c] border-[#262f44] text-[#8e97ae]'
+                ? 'bg-zinc-100 text-zinc-950 border-zinc-200'
+                : 'bg-[#111113] text-zinc-400 border-[#222226] hover:text-zinc-200'
             }`}
           >
-            {pipelineLogs ? '• Pipeline logs on' : '• Pipeline logs off'}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleExport}
-            className="px-3 py-1.5 rounded-lg bg-[#181d2c] hover:bg-[#20273c] border border-[#262f44] text-xs font-mono text-white"
-          >
-            Export
-          </button>
-
-          <button
-            type="button"
-            onClick={handleCleanHistory}
-            className="px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 text-xs font-mono text-rose-300"
-          >
-            Clean history
+            Pipeline Logs: {pipelineLogs ? 'Expanded' : 'Standard'}
           </button>
         </div>
       </div>
 
-      {/* Filter Row: Search & Correlation */}
+      {/* 14 Column Filter Pills (Screenshot 597) */}
+      <div className="space-y-2">
+        <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider block">
+          Visible Columns ({Object.values(columns).filter(Boolean).length}/14):
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {columnList.map((col) => {
+            const active = columns[col.id];
+            return (
+              <button
+                key={col.id}
+                type="button"
+                onClick={() => toggleColumn(col.id)}
+                className={`px-2.5 py-1 rounded text-[11px] transition-colors border ${
+                  active
+                    ? 'bg-zinc-800 text-zinc-100 border-zinc-700'
+                    : 'bg-[#111113] text-zinc-500 border-[#222226] hover:text-zinc-300'
+                }`}
+              >
+                {col.label} {active ? '✓' : '+'}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Search & Correlation Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <input
           type="text"
           value={searchFilter}
           onChange={(e) => setSearchFilter(e.target.value)}
-          placeholder="Search by model, provider, or request ID..."
-          className="bg-[#121622] border border-[#222738] rounded-lg px-3 py-2 text-xs text-white placeholder-[#5a647d] font-mono focus:outline-none focus:border-purple-500"
+          placeholder="Filter by model, provider, or request ID..."
+          className="bg-[#111113] border border-[#222226] rounded px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
         />
-
         <input
           type="text"
           value={correlationFilter}
-          onChange={(e) => setCorrelationFilter(e.target.value)}
-          placeholder="# Correlation ID (e.g. corr-01824)"
-          className="bg-[#121622] border border-[#222738] rounded-lg px-3 py-2 text-xs text-white placeholder-[#5a647d] font-mono focus:outline-none focus:border-purple-500"
+          onChange={(e) => setSearchFilter(e.target.value)}
+          placeholder="Filter by Correlation ID..."
+          className="bg-[#111113] border border-[#222226] rounded px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
         />
-
-        <div className="flex rounded-lg bg-[#121622] border border-[#222738] p-0.5 text-xs font-mono">
-          {['ALL', 'SUCCESS', 'ERROR'].map((s) => (
+        <div className="flex rounded border border-[#222226] bg-[#111113] p-0.5">
+          {['ALL', 'SUCCESS', 'ERROR'].map((st) => (
             <button
-              key={s}
+              key={st}
               type="button"
-              onClick={() => setStatusFilter(s)}
-              className={`flex-1 py-1 rounded transition-colors ${
-                statusFilter === s ? 'bg-purple-600 text-white font-semibold' : 'text-[#7d8597] hover:text-white'
+              onClick={() => setStatusFilter(st)}
+              className={`flex-1 py-1 rounded text-[11px] transition ${
+                statusFilter === st ? 'bg-zinc-800 text-zinc-100 font-semibold' : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              {s}
+              {st}
             </button>
           ))}
         </div>
       </div>
 
-      {/* 14 Column Toggle Pills (Matching Screenshot 597) */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-[11px] font-mono text-[#7d8597]">
-          <span>TOGGLE COLUMNS (14 AVAILABLE):</span>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {columnList.map((col) => (
-            <button
-              key={col.id}
-              type="button"
-              onClick={() => toggleColumn(col.id)}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-mono border transition-all ${
-                columns[col.id]
-                  ? 'bg-purple-600/15 border-purple-500/40 text-purple-300 font-medium'
-                  : 'bg-[#121622] border-[#222738] text-[#636c80]'
-              }`}
-            >
-              {col.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Requests Table */}
-      <div className="rounded-xl border border-[#222738] overflow-hidden bg-[#121622]">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-[#161b2a] border-b border-[#222738] text-[#8e97ae]">
-              <tr>
-                {columns.status && <th className="py-2.5 px-3 uppercase font-semibold">Status</th>}
-                {columns.cacheSource && <th className="py-2.5 px-3 uppercase font-semibold">Source</th>}
-                {columns.model && <th className="py-2.5 px-3 uppercase font-semibold">Model</th>}
-                {columns.requested && <th className="py-2.5 px-3 uppercase font-semibold">Requested</th>}
-                {columns.provider && <th className="py-2.5 px-3 uppercase font-semibold">Provider</th>}
-                {columns.protocol && <th className="py-2.5 px-3 uppercase font-semibold">Protocol</th>}
-                {columns.account && <th className="py-2.5 px-3 uppercase font-semibold">Account</th>}
-                {columns.apiKey && <th className="py-2.5 px-3 uppercase font-semibold">Key</th>}
-                {columns.combo && <th className="py-2.5 px-3 uppercase font-semibold">Combo</th>}
-                {columns.tokens && <th className="py-2.5 px-3 uppercase font-semibold text-right">Tokens</th>}
-                {columns.tps && <th className="py-2.5 px-3 uppercase font-semibold text-right">TPS</th>}
-                {columns.duration && <th className="py-2.5 px-3 uppercase font-semibold text-right">Duration</th>}
-                {columns.time && <th className="py-2.5 px-3 uppercase font-semibold text-right">Time</th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#1b2234]">
-              {filtered.map((r) => (
-                <tr
-                  key={r.id}
-                  onClick={() => setSelectedRequest(r)}
-                  className="hover:bg-[#181d2c] transition-colors cursor-pointer"
-                >
-                  {columns.status && (
-                    <td className="py-2.5 px-3">
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          r.isSuccess
-                            ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
-                            : 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
-                        }`}
-                      >
-                        {r.statusCode}
-                      </span>
-                    </td>
-                  )}
-                  {columns.cacheSource && (
-                    <td className="py-2.5 px-3">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#181d2c] text-[#8e97ae] border border-[#262f44]">
-                        {r.cacheSource}
-                      </span>
-                    </td>
-                  )}
-                  {columns.model && <td className="py-2.5 px-3 text-white font-medium">{r.model}</td>}
-                  {columns.requested && <td className="py-2.5 px-3 text-[#7d8597]">{r.requestedModel}</td>}
-                  {columns.provider && <td className="py-2.5 px-3 text-[#a0a8be]">{r.provider}</td>}
-                  {columns.protocol && <td className="py-2.5 px-3 text-[#7d8597]">{r.protocol}</td>}
-                  {columns.account && <td className="py-2.5 px-3 text-[#7d8597]">{r.account}</td>}
-                  {columns.apiKey && <td className="py-2.5 px-3 text-[#7d8597]">{r.apiKeyMasked}</td>}
-                  {columns.combo && <td className="py-2.5 px-3 text-purple-300">{r.combo}</td>}
-                  {columns.tokens && (
-                    <td className="py-2.5 px-3 text-right text-[#a0a8be]">
-                      {r.tokens.total.toLocaleString()}
-                    </td>
-                  )}
-                  {columns.tps && <td className="py-2.5 px-3 text-right text-emerald-400">{r.tps}</td>}
-                  {columns.duration && <td className="py-2.5 px-3 text-right text-sky-400">{r.latencyMs}ms</td>}
-                  {columns.time && <td className="py-2.5 px-3 text-right text-[#7d8597]">{r.time}</td>}
+      {/* Requests Table or Empty State */}
+      <div className="rounded-xl border border-[#222226] bg-[#111113] overflow-hidden shadow-xs">
+        {filtered.length === 0 ? (
+          <div className="py-16 px-4 text-center space-y-3 font-sans">
+            <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center mx-auto text-zinc-400 text-sm">
+              📋
+            </div>
+            <h3 className="text-sm font-semibold text-zinc-200">No requests recorded this week</h3>
+            <p className="text-xs text-zinc-500 max-w-md mx-auto leading-relaxed">
+              RouteNex is listening on <code className="text-zinc-300 font-mono">http://127.0.0.1:3001/v1</code>.
+              Send a completion request or run <code className="text-zinc-300 font-mono">routenex run claude</code> to see live execution telemetry.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[#222226] bg-[#09090b] text-[10px] text-zinc-500 font-mono">
+                  {columns.status && <th className="py-2.5 px-3 uppercase font-semibold">Status</th>}
+                  {columns.cacheSource && <th className="py-2.5 px-3 uppercase font-semibold">Source</th>}
+                  {columns.model && <th className="py-2.5 px-3 uppercase font-semibold">Model</th>}
+                  {columns.requested && <th className="py-2.5 px-3 uppercase font-semibold">Requested</th>}
+                  {columns.provider && <th className="py-2.5 px-3 uppercase font-semibold">Provider</th>}
+                  {columns.protocol && <th className="py-2.5 px-3 uppercase font-semibold">Protocol</th>}
+                  {columns.account && <th className="py-2.5 px-3 uppercase font-semibold">Account</th>}
+                  {columns.apiKey && <th className="py-2.5 px-3 uppercase font-semibold">Key</th>}
+                  {columns.combo && <th className="py-2.5 px-3 uppercase font-semibold">Combo</th>}
+                  {columns.tokens && <th className="py-2.5 px-3 uppercase font-semibold text-right">Tokens</th>}
+                  {columns.tps && <th className="py-2.5 px-3 uppercase font-semibold text-right">TPS</th>}
+                  {columns.duration && <th className="py-2.5 px-3 uppercase font-semibold text-right">Duration</th>}
+                  {columns.time && <th className="py-2.5 px-3 uppercase font-semibold text-right">Time</th>}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-[#222226]">
+                {filtered.map((r) => (
+                  <tr
+                    key={r.id}
+                    onClick={() => setSelectedRequest(r)}
+                    className="hover:bg-zinc-800/40 transition-colors cursor-pointer"
+                  >
+                    {columns.status && (
+                      <td className="py-2.5 px-3">
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                            r.isSuccess
+                              ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                              : 'bg-red-500/10 border border-red-500/30 text-red-400'
+                          }`}
+                        >
+                          {r.statusCode}
+                        </span>
+                      </td>
+                    )}
+                    {columns.cacheSource && (
+                      <td className="py-2.5 px-3">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
+                          {r.cacheSource}
+                        </span>
+                      </td>
+                    )}
+                    {columns.model && <td className="py-2.5 px-3 text-zinc-100 font-medium">{r.model}</td>}
+                    {columns.requested && <td className="py-2.5 px-3 text-zinc-500">{r.requestedModel}</td>}
+                    {columns.provider && <td className="py-2.5 px-3 text-zinc-400">{r.provider}</td>}
+                    {columns.protocol && <td className="py-2.5 px-3 text-zinc-500">{r.protocol}</td>}
+                    {columns.account && <td className="py-2.5 px-3 text-zinc-500">{r.account}</td>}
+                    {columns.apiKey && <td className="py-2.5 px-3 text-zinc-500">{r.apiKeyMasked}</td>}
+                    {columns.combo && <td className="py-2.5 px-3 text-zinc-300">{r.combo}</td>}
+                    {columns.tokens && (
+                      <td className="py-2.5 px-3 text-right text-zinc-400">
+                        {r.tokens.total.toLocaleString()}
+                      </td>
+                    )}
+                    {columns.tps && <td className="py-2.5 px-3 text-right text-emerald-400">{r.tps}</td>}
+                    {columns.duration && <td className="py-2.5 px-3 text-right text-zinc-300">{r.latencyMs}ms</td>}
+                    {columns.time && <td className="py-2.5 px-3 text-right text-zinc-500">{r.time}</td>}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Inspect Modal Drawer */}
       {selectedRequest && (
         <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
-          <div className="w-full max-w-xl bg-[#121622] border border-[#222738] rounded-xl p-5 space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center pb-3 border-b border-[#1f2638]">
+          <div className="w-full max-w-xl bg-[#111113] border border-[#222226] rounded-xl p-5 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center pb-3 border-b border-[#222226]">
               <div>
-                <span className="text-[10px] text-[#7d8597] font-mono block">REQUEST INSPECTOR</span>
-                <h3 className="text-sm font-semibold text-white font-mono">{selectedRequest.id}</h3>
+                <span className="text-[10px] text-zinc-500 font-mono block">REQUEST INSPECTOR</span>
+                <h3 className="text-sm font-semibold text-zinc-100 font-mono">{selectedRequest.id}</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedRequest(null)}
-                className="text-neutral-400 hover:text-white"
+                className="text-zinc-500 hover:text-zinc-200"
               >
                 ✕
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-              <div className="p-2.5 rounded-lg bg-[#161b28] border border-[#232a3d]">
-                <span className="text-[10px] text-[#7d8597] block">Status</span>
-                <span className="text-white font-bold">{selectedRequest.status}</span>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3 rounded bg-[#09090b] border border-[#222226]">
+                <span className="text-zinc-500 block text-[10px]">Model Used</span>
+                <span className="text-zinc-100 font-semibold">{selectedRequest.model}</span>
               </div>
-              <div className="p-2.5 rounded-lg bg-[#161b28] border border-[#232a3d]">
-                <span className="text-[10px] text-[#7d8597] block">Duration</span>
-                <span className="text-white font-bold">{selectedRequest.latencyMs}ms</span>
+              <div className="p-3 rounded bg-[#09090b] border border-[#222226]">
+                <span className="text-zinc-500 block text-[10px]">Provider</span>
+                <span className="text-zinc-100 font-semibold">{selectedRequest.provider}</span>
               </div>
-              <div className="p-2.5 rounded-lg bg-[#161b28] border border-[#232a3d]">
-                <span className="text-[10px] text-[#7d8597] block">Tokens</span>
-                <span className="text-white font-bold">{selectedRequest.tokens.total}</span>
+              <div className="p-3 rounded bg-[#09090b] border border-[#222226]">
+                <span className="text-zinc-500 block text-[10px]">Latency</span>
+                <span className="text-emerald-400 font-semibold">{selectedRequest.latencyMs}ms</span>
               </div>
-              <div className="p-2.5 rounded-lg bg-[#161b28] border border-[#232a3d]">
-                <span className="text-[10px] text-[#7d8597] block">Cost</span>
-                <span className="text-emerald-400 font-bold">${selectedRequest.costUsd.toFixed(5)}</span>
+              <div className="p-3 rounded bg-[#09090b] border border-[#222226]">
+                <span className="text-zinc-500 block text-[10px]">Total Tokens</span>
+                <span className="text-zinc-100 font-semibold">{selectedRequest.tokens.total.toLocaleString()}</span>
               </div>
             </div>
 
-            <pre className="p-3 rounded-lg bg-[#161b28] border border-[#232a3d] text-[11px] font-mono text-[#a0a8be] overflow-x-auto max-h-48">
-              <code>{JSON.stringify(selectedRequest, null, 2)}</code>
-            </pre>
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedRequest(null)}
+                className="px-4 py-1.5 rounded bg-zinc-100 text-zinc-950 font-medium text-xs hover:bg-white"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

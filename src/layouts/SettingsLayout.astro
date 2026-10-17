@@ -1,0 +1,76 @@
+---
+import Layout from './Layout.astro';
+
+interface Props {
+  title: string;
+  currentPath: string;
+}
+
+const { title, currentPath } = Astro.props;
+
+const settingsNav = [
+  { href: '/settings/profile', label: 'User Profile', icon: '👤' },
+  { href: '/settings/preferences', label: 'Preferences', icon: '⚙️' },
+  { href: '/settings/credits', label: 'Credits & Billing', icon: '💳' },
+  { href: '/settings/byok', label: 'BYOK Provider Vault', icon: '🔐' },
+  { href: '/settings/guardrails', label: 'Guardrails & Privacy', icon: '🛡️' },
+];
+---
+
+<Layout title={`${title} — Settings — RouteNex Cloud`}>
+  <div class="min-h-screen bg-[#09090b] text-zinc-300 font-sans flex flex-col">
+    {/* Top Header */}
+    <header class="h-14 border-b border-[#222226] bg-[#09090b]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-40">
+      <div class="flex items-center gap-3">
+        <a href="/workspace" class="flex items-center gap-2 text-xs font-mono text-zinc-400 hover:text-white transition">
+          <span>← Back to Workspace</span>
+        </a>
+        <span class="text-zinc-600">/</span>
+        <span class="text-xs font-mono font-semibold text-zinc-100">Account Settings</span>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="/workspace" class="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-mono transition">
+          Console
+        </a>
+      </div>
+    </header>
+
+    {/* Body */}
+    <div class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+      {/* Left Settings Sidebar */}
+      <aside class="md:col-span-3 space-y-1 font-mono text-xs">
+        <div class="px-2 py-1 text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">
+          Settings Menu
+        </div>
+        {settingsNav.map((item) => {
+          const isActive = currentPath === item.href;
+          return (
+            <a
+              href={item.href}
+              class={`flex items-center gap-2 px-3 py-2 rounded-lg transition ${
+                isActive
+                  ? 'bg-zinc-800 text-zinc-100 font-semibold border border-zinc-700'
+                  : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900'
+              }`}
+            >
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
+            </a>
+          );
+        })}
+        <div class="pt-3 border-t border-[#222226]">
+          <a href="/login" class="flex items-center gap-2 px-3 py-2 rounded-lg text-red-400 hover:bg-zinc-900 transition">
+            <span>🚪</span>
+            <span>Sign Out</span>
+          </a>
+        </div>
+      </aside>
+
+      {/* Main Settings Card */}
+      <main class="md:col-span-9 p-6 rounded-2xl bg-[#111113] border border-[#222226] shadow-sm space-y-6">
+        <slot />
+      </main>
+    </div>
+  </div>
+</Layout>

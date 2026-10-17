@@ -64,7 +64,11 @@ export class RoutingEngine {
     private readonly circuitBreaker: CircuitBreaker,
     private readonly config: AppConfig,
     private readonly aliasResolver?: (model: string) => string,
-    private readonly comboResolver?: (model: string) => ComboDefinition | undefined
+    private readonly comboResolver?: (model: string) => ComboDefinition | undefined,
+    private readonly adminStore?: {
+      getProviderBlockedParams?: (p: string) => string[];
+      addProviderBlockedParam?: (p: string, param: string) => void;
+    }
   ) {}
 
   /**
@@ -459,6 +463,10 @@ export class RoutingEngine {
 
       try {
         const reqForTarget: ChatCompletionRequest = { ...request, model: targetModel.id };
+        const blocked = this.adminStore?.getProviderBlockedParams?.(targetModel.provider) || [];
+        for (const b of blocked) {
+          delete (reqForTarget as any)[b];
+        }
         const response = await adapter.chat(reqForTarget);
         this.circuitBreaker.recordSuccess(targetModel.provider);
         this.circuitBreaker.recordModelSuccess(targetModel.id);
@@ -483,6 +491,15 @@ export class RoutingEngine {
       } catch (err: any) {
         lastError = err;
         const status = err.status || (err instanceof ProviderError ? err.status : 500);
+
+        // Auto-learn from HTTP 400 unsupported parameter errors (OmniRoute Pattern)
+        if (status === 400 && err.message) {
+          const match = String(err.message).match(/(?:unsupported|unknown|unrecognized|invalid parameter|extra fields not permitted)[^\w]+(\w+)/i);
+          if (match && match[1]) {
+            const offendingParam = match[1].toLowerCase();
+            this.adminStore?.addProviderBlockedParam?.(targetModel.provider, offendingParam);
+          }
+        }
         if (status === 429) {
           // Layer 2: Key Rate Limit Cooldown
           this.circuitBreaker.recordKeyCooldown(targetModel.provider, 30000, err.message);

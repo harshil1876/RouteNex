@@ -43,6 +43,10 @@
   },
   "scripts": {
     "start": "node ./bin/routenex.js",
+    "start:oss": "node ./bin/routenex.js",
+    "dev:oss": "node ./bin/routenex.js",
+    "dev:cloud": "astro dev --port 4321",
+    "build:cloud": "astro build",
     "dev": "astro dev",
     "dev:web": "astro dev",
     "dev:api": "npm --prefix gateway run dev",

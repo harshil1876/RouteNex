@@ -1,0 +1,203 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/Header.astro';
+import Footer from '../../../components/Footer.astro';
+import ModelDetailAnalytics from '../../../components/models/ModelDetailAnalytics';
+
+export function getStaticPaths() {
+  return [
+    {
+      params: { provider: 'anthropic', model: 'claude-3-7-sonnet' },
+      props: {
+        displayName: 'Claude 3.7 Sonnet',
+        contextLength: '200K',
+        inputPrice: '$3.00 / M',
+        outputPrice: '$15.00 / M',
+        speed: '65 tps',
+        modality: 'Text · Multimodal · Thinking',
+        zdr: true,
+      },
+    },
+    {
+      params: { provider: 'anthropic', model: 'claude-3-5-sonnet' },
+      props: {
+        displayName: 'Claude 3.5 Sonnet',
+        contextLength: '200K',
+        inputPrice: '$3.00 / M',
+        outputPrice: '$15.00 / M',
+        speed: '75 tps',
+        modality: 'Text · Multimodal',
+        zdr: true,
+      },
+    },
+    {
+      params: { provider: 'openai', model: 'gpt-4o' },
+      props: {
+        displayName: 'GPT-4o Omnimodal',
+        contextLength: '128K',
+        inputPrice: '$2.50 / M',
+        outputPrice: '$10.00 / M',
+        speed: '90 tps',
+        modality: 'Text · Vision · Audio',
+        zdr: true,
+      },
+    },
+    {
+      params: { provider: 'openai', model: 'gpt-4o-mini' },
+      props: {
+        displayName: 'GPT-4o Mini',
+        contextLength: '128K',
+        inputPrice: '$0.15 / M',
+        outputPrice: '$0.60 / M',
+        speed: '140 tps',
+        modality: 'Text · Vision',
+        zdr: true,
+      },
+    },
+    {
+      params: { provider: 'deepseek', model: 'deepseek-r1' },
+      props: {
+        displayName: 'DeepSeek R1 Reasoning',
+        contextLength: '64K',
+        inputPrice: '$0.55 / M',
+        outputPrice: '$2.19 / M',
+        speed: '45 tps',
+        modality: 'Reasoning · Math',
+        zdr: false,
+      },
+    },
+    {
+      params: { provider: 'deepseek', model: 'deepseek-v3' },
+      props: {
+        displayName: 'DeepSeek V3',
+        contextLength: '64K',
+        inputPrice: '$0.14 / M',
+        outputPrice: '$0.28 / M',
+        speed: '65 tps',
+        modality: 'Text · Code',
+        zdr: false,
+      },
+    },
+    {
+      params: { provider: 'google', model: 'gemini-2.5-flash' },
+      props: {
+        displayName: 'Gemini 2.5 Flash',
+        contextLength: '1,000K',
+        inputPrice: '$0.00 / M',
+        outputPrice: '$0.00 / M',
+        speed: '180 tps',
+        modality: 'Multimodal 1M',
+        zdr: true,
+      },
+    },
+    {
+      params: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
+      props: {
+        displayName: 'Llama 3.3 70B Versatile',
+        contextLength: '128K',
+        inputPrice: '$0.00 / M',
+        outputPrice: '$0.00 / M',
+        speed: '380 tps',
+        modality: 'Text · Code',
+        zdr: false,
+      },
+    },
+    {
+      params: { provider: 'cerebras', model: 'llama-3.3-70b' },
+      props: {
+        displayName: 'Llama 3.3 70B Fast CS-3',
+        contextLength: '8K',
+        inputPrice: '$0.00 / M',
+        outputPrice: '$0.00 / M',
+        speed: '2,100 tps',
+        modality: 'Text · Code',
+        zdr: false,
+      },
+    },
+    {
+      params: { provider: 'mistral', model: 'codestral-2501' },
+      props: {
+        displayName: 'Codestral 2501',
+        contextLength: '256K',
+        inputPrice: '$0.00 / M',
+        outputPrice: '$0.00 / M',
+        speed: '140 tps',
+        modality: 'Code · FIM',
+        zdr: true,
+      },
+    },
+    {
+      params: { provider: 'qwen', model: 'qwen-2.5-coder-32b' },
+      props: {
+        displayName: 'Qwen 2.5 Coder 32B',
+        contextLength: '128K',
+        inputPrice: '$0.07 / M',
+        outputPrice: '$0.28 / M',
+        speed: '95 tps',
+        modality: 'Code · Agents',
+        zdr: false,
+      },
+    },
+    {
+      params: { provider: 'pollinations', model: 'openai' },
+      props: {
+        displayName: 'Pollinations Anonymous Proxy',
+        contextLength: '128K',
+        inputPrice: '$0.00 / M',
+        outputPrice: '$0.00 / M',
+        speed: '85 tps',
+        modality: 'Text · Free',
+        zdr: false,
+      },
+    },
+    {
+      params: { provider: 'nvidia', model: 'llama-3.1-405b' },
+      props: {
+        displayName: 'Llama 3.1 405B Frontier',
+        contextLength: '128K',
+        inputPrice: '$0.00 / M',
+        outputPrice: '$0.00 / M',
+        speed: '75 tps',
+        modality: 'Frontier 405B',
+        zdr: true,
+      },
+    },
+    {
+      params: { provider: 'zhipu', model: 'glm-4-flash' },
+      props: {
+        displayName: 'GLM 4 Flash',
+        contextLength: '128K',
+        inputPrice: '$0.00 / M',
+        outputPrice: '$0.00 / M',
+        speed: '110 tps',
+        modality: 'Text · Code',
+        zdr: false,
+      },
+    },
+  ];
+}
+
+const { provider, model } = Astro.params;
+const { displayName, contextLength, inputPrice, outputPrice, speed, modality, zdr } = Astro.props;
+---
+
+<Layout title={`${displayName} (${provider}/${model}) Pricing, Latency & Analytics — RouteNex`}>
+  <Header />
+
+  <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+    <ModelDetailAnalytics
+      client:load
+      provider={provider}
+      model={model}
+      displayName={displayName}
+      contextLength={contextLength}
+      inputPrice={inputPrice}
+      outputPrice={outputPrice}
+      speed={speed}
+      modality={modality}
+      zdr={zdr}
+    />
+  </main>
+
+  <Footer />
+</Layout>
