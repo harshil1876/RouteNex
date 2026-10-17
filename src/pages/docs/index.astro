@@ -6,198 +6,198 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   <div class="space-y-10">
     <!-- Header Title -->
     <div>
-      <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-mono mb-3">
+      <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono mb-3">
         <span>⚡ Documentation & Integration Portal</span>
       </div>
       <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-white font-mono">
         RouteNex Documentation
       </h1>
-      <p class="text-sm text-[#8f96a3] mt-2 max-w-2xl leading-relaxed">
+      <p class="text-sm text-zinc-400 mt-2 max-w-2xl leading-relaxed">
         One unified API endpoint for every AI model. Built-in free tier aggregation, 19 routing strategies, 12-engine prompt compression, and zero-cloud local autonomy.
       </p>
     </div>
 
-    <!-- 3 Top Hero Cards (Matching Screenshot 601) -->
+    <!-- 3 Top Hero Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Hero Card 1 */}
       <a
         href="/docs/getting-started/quick-start"
-        class="p-5 rounded-xl bg-gradient-to-b from-[#141824] to-[#10131d] border border-[#23293c] hover:border-purple-500/50 transition-all space-y-3 group shadow-lg"
+        class="p-5 rounded-xl bg-[#111113] border border-[#222226] hover:border-zinc-500 transition-all space-y-3 group shadow-sm"
       >
-        <div className="w-10 h-10 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+        <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl group-hover:scale-105 transition-transform">
           🚀
         </div>
         <div>
-          <h2 class="text-sm font-semibold text-white font-mono group-hover:text-purple-300 transition-colors">
+          <h2 class="text-sm font-semibold text-white font-mono group-hover:text-zinc-200 transition-colors">
             Quick Start Guide
           </h2>
-          <p class="text-xs text-[#8f96a3] mt-1 leading-snug">
+          <p class="text-xs text-zinc-400 mt-1 leading-snug">
             Get RouteNex running in 3 minutes with one command. Zero configuration needed.
           </p>
         </div>
-        <div class="text-[11px] font-mono text-purple-400 flex items-center gap-1 font-semibold pt-1">
+        <div class="text-[11px] font-mono text-zinc-400 group-hover:text-white flex items-center gap-1 font-semibold pt-1 transition-colors">
           <span>Start setup</span>
-          <span>→</span>
+          <span class="group-hover:translate-x-0.5 transition-transform">→</span>
         </div>
       </a>
 
       {/* Hero Card 2 */}
       <a
         href="/docs/guides/auto-combo"
-        class="p-5 rounded-xl bg-gradient-to-b from-[#141824] to-[#10131d] border border-[#23293c] hover:border-purple-500/50 transition-all space-y-3 group shadow-lg"
+        class="p-5 rounded-xl bg-[#111113] border border-[#222226] hover:border-zinc-500 transition-all space-y-3 group shadow-sm"
       >
-        <div className="w-10 h-10 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+        <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl group-hover:scale-105 transition-transform">
           ✨
         </div>
         <div>
-          <h2 class="text-sm font-semibold text-white font-mono group-hover:text-purple-300 transition-colors">
+          <h2 class="text-sm font-semibold text-white font-mono group-hover:text-zinc-200 transition-colors">
             Auto-Combo Guide
           </h2>
-          <p class="text-xs text-[#8f96a3] mt-1 leading-snug">
+          <p class="text-xs text-zinc-400 mt-1 leading-snug">
             Let RouteNex dynamically select the best provider and fallback cluster for you.
           </p>
         </div>
-        <div class="text-[11px] font-mono text-purple-400 flex items-center gap-1 font-semibold pt-1">
+        <div class="text-[11px] font-mono text-zinc-400 group-hover:text-white flex items-center gap-1 font-semibold pt-1 transition-colors">
           <span>Explore strategies</span>
-          <span>→</span>
+          <span class="group-hover:translate-x-0.5 transition-transform">→</span>
         </div>
       </a>
 
       {/* Hero Card 3 */}
       <a
         href="/docs/guides/providers"
-        class="p-5 rounded-xl bg-gradient-to-b from-[#141824] to-[#10131d] border border-[#23293c] hover:border-purple-500/50 transition-all space-y-3 group shadow-lg"
+        class="p-5 rounded-xl bg-[#111113] border border-[#222226] hover:border-zinc-500 transition-all space-y-3 group shadow-sm"
       >
-        <div className="w-10 h-10 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+        <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl group-hover:scale-105 transition-transform">
           🔗
         </div>
         <div>
-          <h2 class="text-sm font-semibold text-white font-mono group-hover:text-purple-300 transition-colors">
+          <h2 class="text-sm font-semibold text-white font-mono group-hover:text-zinc-200 transition-colors">
             Providers Guide
           </h2>
-          <p class="text-xs text-[#8f96a3] mt-1 leading-snug">
+          <p class="text-xs text-zinc-400 mt-1 leading-snug">
             Connect AI providers via OAuth, API keys, and free tier aggregators.
           </p>
         </div>
-        <div class="text-[11px] font-mono text-purple-400 flex items-center gap-1 font-semibold pt-1">
+        <div class="text-[11px] font-mono text-zinc-400 group-hover:text-white flex items-center gap-1 font-semibold pt-1 transition-colors">
           <span>Connect providers</span>
-          <span>→</span>
+          <span class="group-hover:translate-x-0.5 transition-transform">→</span>
         </div>
       </a>
     </div>
 
-    {/* Split 2-Column Guide Directory (Matching Screenshot 601) */}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-[#1f2433]">
+    {/* Split 2-Column Guide Directory */}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-[#222226]">
       {/* Column 1: For Non-Tech Users */}
       <div class="space-y-4">
-        <div class="flex items-center gap-2 pb-2 border-b border-[#1f2433]">
+        <div class="flex items-center gap-2 pb-2 border-b border-[#222226]">
           <span class="text-lg">🚀</span>
           <div>
             <h2 class="text-sm font-bold text-white font-mono">For Non-Tech Users</h2>
-            <p class="text-[11px] text-[#7d8597]">Get started quickly — no technical background needed.</p>
+            <p class="text-[11px] text-zinc-400">Get started quickly — no technical background needed.</p>
           </div>
         </div>
 
         <div class="space-y-2 font-mono text-xs">
           <a
             href="/docs/guides/cli-integrations"
-            class="p-3 rounded-lg bg-[#121622] hover:bg-[#161c2c] border border-[#222738] flex items-center justify-between text-white transition-all group"
+            class="p-3 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] flex items-center justify-between text-white transition-all group"
           >
             <div>
-              <div class="font-semibold group-hover:text-purple-300">Antigravity Onboarding</div>
-              <div class="text-[11px] text-[#7d8597]">Guided initial setup for local autonomous coding.</div>
+              <div class="font-semibold group-hover:text-zinc-200">Antigravity Onboarding</div>
+              <div class="text-[11px] text-zinc-400">Guided initial setup for local autonomous coding.</div>
             </div>
-            <span class="text-purple-400 group-hover:translate-x-0.5 transition-transform">→</span>
+            <span class="text-zinc-400 group-hover:text-white group-hover:translate-x-0.5 transition-transform">→</span>
           </a>
 
           <a
             href="/docs/guides/cli-integrations"
-            class="p-3 rounded-lg bg-[#121622] hover:bg-[#161c2c] border border-[#222738] flex items-center justify-between text-white transition-all group"
+            class="p-3 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] flex items-center justify-between text-white transition-all group"
           >
             <div>
-              <div class="font-semibold group-hover:text-purple-300">Claude Code CLI Configuration</div>
-              <div class="text-[11px] text-[#7d8597]">Run claude with zero env modifications via routenex run claude.</div>
+              <div class="font-semibold group-hover:text-zinc-200">Claude Code CLI Configuration</div>
+              <div class="text-[11px] text-zinc-400">Run claude with zero env modifications via routenex run claude.</div>
             </div>
-            <span class="text-purple-400 group-hover:translate-x-0.5 transition-transform">→</span>
+            <span class="text-zinc-400 group-hover:text-white group-hover:translate-x-0.5 transition-transform">→</span>
           </a>
 
           <a
             href="/docs/guides/cli-integrations"
-            class="p-3 rounded-lg bg-[#121622] hover:bg-[#161c2c] border border-[#222738] flex items-center justify-between text-white transition-all group"
+            class="p-3 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] flex items-center justify-between text-white transition-all group"
           >
             <div>
-              <div class="font-semibold group-hover:text-purple-300">Cursor & Cline Integrations</div>
-              <div class="text-[11px] text-[#7d8597]">Point your IDE models to http://127.0.0.1:3001/v1 in 3 clicks.</div>
+              <div class="font-semibold group-hover:text-zinc-200">Cursor & Cline Integrations</div>
+              <div class="text-[11px] text-zinc-400">Point your IDE models to http://127.0.0.1:3001/v1 in 3 clicks.</div>
             </div>
-            <span class="text-purple-400 group-hover:translate-x-0.5 transition-transform">→</span>
+            <span class="text-zinc-400 group-hover:text-white group-hover:translate-x-0.5 transition-transform">→</span>
           </a>
 
           <a
             href="/docs/guides/cost-spend-tracking"
-            class="p-3 rounded-lg bg-[#121622] hover:bg-[#161c2c] border border-[#222738] flex items-center justify-between text-white transition-all group"
+            class="p-3 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] flex items-center justify-between text-white transition-all group"
           >
             <div>
-              <div class="font-semibold group-hover:text-purple-300">Cost & Spend Tracking</div>
-              <div class="text-[11px] text-[#7d8597]">View real-time token spend and savings breakdown.</div>
+              <div class="font-semibold group-hover:text-zinc-200">Cost & Spend Tracking</div>
+              <div class="text-[11px] text-zinc-400">View real-time token spend and savings breakdown.</div>
             </div>
-            <span class="text-purple-400 group-hover:translate-x-0.5 transition-transform">→</span>
+            <span class="text-zinc-400 group-hover:text-white group-hover:translate-x-0.5 transition-transform">→</span>
           </a>
         </div>
       </div>
 
       {/* Column 2: For Tech Users */}
       <div class="space-y-4">
-        <div class="flex items-center gap-2 pb-2 border-b border-[#1f2433]">
-          <span class="text-lg font-mono text-purple-400">&lt;&gt;</span>
+        <div class="flex items-center gap-2 pb-2 border-b border-[#222226]">
+          <span class="text-lg font-mono text-zinc-400">&lt;&gt;</span>
           <div>
             <h2 class="text-sm font-bold text-white font-mono">For Tech Users</h2>
-            <p class="text-[11px] text-[#7d8597]">Deep dive into architecture, APIs, and internals.</p>
+            <p class="text-[11px] text-zinc-400">Deep dive into architecture, APIs, and internals.</p>
           </div>
         </div>
 
         <div class="space-y-2 font-mono text-xs">
           <a
             href="/docs/guides/auto-combo"
-            class="p-3 rounded-lg bg-[#121622] hover:bg-[#161c2c] border border-[#222738] flex items-center justify-between text-white transition-all group"
+            class="p-3 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] flex items-center justify-between text-white transition-all group"
           >
             <div>
-              <div class="font-semibold group-hover:text-purple-300">Adaptive Routing & Explainability</div>
-              <div class="text-[11px] text-[#7d8597]">Deterministic candidate scoring, circuit breakers & LKGP stickiness.</div>
+              <div class="font-semibold group-hover:text-zinc-200">Adaptive Routing & Explainability</div>
+              <div class="text-[11px] text-zinc-400">Deterministic candidate scoring, circuit breakers & LKGP stickiness.</div>
             </div>
-            <span class="text-purple-400 group-hover:translate-x-0.5 transition-transform">→</span>
+            <span class="text-zinc-400 group-hover:text-white group-hover:translate-x-0.5 transition-transform">→</span>
           </a>
 
           <a
             href="/docs/guides/architecture-api"
-            class="p-3 rounded-lg bg-[#121622] hover:bg-[#161c2c] border border-[#222738] flex items-center justify-between text-white transition-all group"
+            class="p-3 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] flex items-center justify-between text-white transition-all group"
           >
             <div>
-              <div class="font-semibold group-hover:text-purple-300">RouteNex Architecture & Core Engine</div>
-              <div class="text-[11px] text-[#7d8597]">Hono.js proxy pipeline, prompt compression & SQLite store.</div>
+              <div class="font-semibold group-hover:text-zinc-200">RouteNex Architecture & Core Engine</div>
+              <div class="text-[11px] text-zinc-400">Hono.js proxy pipeline, prompt compression & SQLite store.</div>
             </div>
-            <span class="text-purple-400 group-hover:translate-x-0.5 transition-transform">→</span>
+            <span class="text-zinc-400 group-hover:text-white group-hover:translate-x-0.5 transition-transform">→</span>
           </a>
 
           <a
             href="/docs/guides/cloud-supabase-auth"
-            class="p-3 rounded-lg bg-[#121622] hover:bg-[#161c2c] border border-[#222738] flex items-center justify-between text-white transition-all group"
+            class="p-3 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] flex items-center justify-between text-white transition-all group"
           >
             <div>
-              <div class="font-semibold group-hover:text-purple-300">Authorization Guide (Local OSS vs Cloud)</div>
-              <div class="text-[11px] text-[#7d8597]">Terminal setup token, SHA-256 hashed keys & Supabase RLS.</div>
+              <div class="font-semibold group-hover:text-zinc-200">Authorization Guide (Local OSS vs Cloud)</div>
+              <div class="text-[11px] text-zinc-400">Terminal setup token, SHA-256 hashed keys & Supabase RLS.</div>
             </div>
-            <span class="text-purple-400 group-hover:translate-x-0.5 transition-transform">→</span>
+            <span class="text-zinc-400 group-hover:text-white group-hover:translate-x-0.5 transition-transform">→</span>
           </a>
 
           <a
             href="/docs/guides/docker-self-hosting"
-            class="p-3 rounded-lg bg-[#121622] hover:bg-[#161c2c] border border-[#222738] flex items-center justify-between text-white transition-all group"
+            class="p-3 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] flex items-center justify-between text-white transition-all group"
           >
             <div>
-              <div class="font-semibold group-hover:text-purple-300">Docker & VPS Self-Hosting</div>
-              <div class="text-[11px] text-[#7d8597]">Deploy on Coolify, Railway, Hetzner, or AWS with one command.</div>
+              <div class="font-semibold group-hover:text-zinc-200">Docker & VPS Self-Hosting</div>
+              <div class="text-[11px] text-zinc-400">Deploy on Coolify, Railway, Hetzner, or AWS with one command.</div>
             </div>
-            <span class="text-purple-400 group-hover:translate-x-0.5 transition-transform">→</span>
+            <span class="text-zinc-400 group-hover:text-white group-hover:translate-x-0.5 transition-transform">→</span>
           </a>
         </div>
       </div>

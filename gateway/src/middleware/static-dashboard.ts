@@ -51,8 +51,11 @@ export function mountStaticDashboard(app: Hono, staticRoot: string): void {
 
     let filePath = path.resolve(staticRoot, relPath);
 
-    // Check for clean URL without .html extension (e.g. /dashboard -> /dashboard/index.html)
-    if (!fs.existsSync(filePath)) {
+    // If filePath is a directory (e.g. /dashboard -> dist/dashboard), append index.html
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+      filePath = path.resolve(filePath, 'index.html');
+    } else if (!fs.existsSync(filePath)) {
+      // Check for clean URL without .html extension (e.g. /dashboard -> /dashboard.html or /dashboard/index.html)
       if (fs.existsSync(path.resolve(staticRoot, `${relPath}.html`))) {
         filePath = path.resolve(staticRoot, `${relPath}.html`);
       } else if (fs.existsSync(path.resolve(staticRoot, relPath, 'index.html'))) {
@@ -60,8 +63,10 @@ export function mountStaticDashboard(app: Hono, staticRoot: string): void {
       }
     }
 
-    // Security check: strictly prevent directory traversal
-    if (filePath.startsWith(staticRoot) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    // Security check: strictly prevent directory traversal (case-insensitive for Windows)
+    const normFile = path.normalize(filePath).toLowerCase();
+    const normRoot = path.normalize(staticRoot).toLowerCase();
+    if (normFile.startsWith(normRoot) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       const ext = path.extname(filePath).toLowerCase();
       const contentType = MIME_TYPES[ext] || 'application/octet-stream';
       const fileBytes = fs.readFileSync(filePath);

@@ -106,7 +106,7 @@ export default function EmbeddedServices() {
             onClick={() => setActiveServiceId(s.id)}
             className={`pb-2.5 px-3 text-xs font-mono font-medium transition-colors shrink-0 flex items-center gap-2 border-b-2 ${
               activeServiceId === s.id
-                ? 'border-purple-500 text-white'
+                ? 'border-white text-white'
                 : 'border-transparent text-[#7d8597] hover:text-white'
             }`}
           >
@@ -146,7 +146,7 @@ export default function EmbeddedServices() {
               className={`px-4 py-2 rounded-lg font-mono text-xs font-medium transition-all shadow-md ${
                 activeService.status === 'running'
                   ? 'bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30'
-                  : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/20'
+                  : 'bg-white hover:bg-zinc-200 text-black shadow-sm'
               }`}
             >
               {activeService.status === 'running' ? 'Stop Service' : 'Install & Start'}
@@ -165,12 +165,12 @@ export default function EmbeddedServices() {
               type="button"
               onClick={() => toggleToggle('autoStart')}
               className={`w-10 h-5 rounded-full transition-colors relative ${
-                activeService.autoStart ? 'bg-purple-600' : 'bg-neutral-700'
+                activeService.autoStart ? 'bg-white' : 'bg-zinc-700'
               }`}
             >
               <div
-                className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${
-                  activeService.autoStart ? 'translate-x-5' : 'translate-x-1'
+                className={`w-3.5 h-3.5 rounded-full absolute top-0.5 transition-transform ${
+                  activeService.autoStart ? 'translate-x-5 bg-black' : 'translate-x-1 bg-white'
                 }`}
               />
             </button>
@@ -185,12 +185,12 @@ export default function EmbeddedServices() {
               type="button"
               onClick={() => toggleToggle('autoRestart')}
               className={`w-10 h-5 rounded-full transition-colors relative ${
-                activeService.autoRestart ? 'bg-purple-600' : 'bg-neutral-700'
+                activeService.autoRestart ? 'bg-white' : 'bg-zinc-700'
               }`}
             >
               <div
-                className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${
-                  activeService.autoRestart ? 'translate-x-5' : 'translate-x-1'
+                className={`w-3.5 h-3.5 rounded-full absolute top-0.5 transition-transform ${
+                  activeService.autoRestart ? 'translate-x-5 bg-black' : 'translate-x-1 bg-white'
                 }`}
               />
             </button>
@@ -205,12 +205,12 @@ export default function EmbeddedServices() {
               type="button"
               onClick={() => toggleToggle('fallbackRouting')}
               className={`w-10 h-5 rounded-full transition-colors relative ${
-                activeService.fallbackRouting ? 'bg-purple-600' : 'bg-neutral-700'
+                activeService.fallbackRouting ? 'bg-white' : 'bg-zinc-700'
               }`}
             >
               <div
-                className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${
-                  activeService.fallbackRouting ? 'translate-x-5' : 'translate-x-1'
+                className={`w-3.5 h-3.5 rounded-full absolute top-0.5 transition-transform ${
+                  activeService.fallbackRouting ? 'translate-x-5 bg-black' : 'translate-x-1 bg-white'
                 }`}
               />
             </button>

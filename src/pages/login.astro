@@ -3,81 +3,83 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Sign In — RouteNex Cloud">
-  <div class="min-h-screen bg-[#0b0d13] text-[#e0e2ec] flex flex-col justify-center items-center px-4 relative overflow-hidden">
-    <!-- Dark engineering grid background -->
-    <div class="absolute inset-0 bg-[linear-gradient(to_right,#1f243015_1px,transparent_1px),linear-gradient(to_bottom,#1f243015_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
-    <div class="absolute w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none top-1/4"></div>
+  <div class="min-h-screen bg-[#09090b] text-zinc-200 flex flex-col justify-center items-center px-4 relative overflow-hidden">
+    <!-- Subtle technical grid background -->
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#27272a15_1px,transparent_1px),linear-gradient(to_bottom,#27272a15_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
     <div class="w-full max-w-md relative z-10">
       <!-- Logo Header -->
       <div class="text-center mb-8">
-        <a href="/" class="inline-flex items-center gap-2 mb-3 group">
-          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-purple-500/20 group-hover:scale-105 transition-transform">
-            ⚡
-          </div>
-          <span class="text-2xl font-bold tracking-tight text-white font-mono">RouteNex<span class="text-purple-400">.cloud</span></span>
+        <a href="/" class="inline-flex items-center gap-2.5 mb-3 group" aria-label="RouteNex Home">
+          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 12l10 10 10-10L12 2z"></path>
+              <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
+            </svg>
+          </span>
+          <span class="text-2xl font-bold tracking-tight text-white font-mono">RouteNex<span class="text-zinc-400">.cloud</span></span>
         </a>
         <h1 class="text-xl font-semibold text-white tracking-tight">Sign In to Cloud Edition</h1>
-        <p class="text-xs text-[#8f96a3] mt-1 font-mono">Managed Workspaces • Team RBAC • Centralized Spend</p>
+        <p class="text-xs text-zinc-400 mt-1 font-mono">Managed Workspaces • Team RBAC • Centralized Spend</p>
       </div>
 
       <!-- Local OSS Callout Banner -->
-      <div class="mb-6 p-3 rounded-lg bg-[#141824] border border-[#232b3e] text-xs text-[#a0a8be] flex items-start gap-2.5 shadow-sm">
+      <div class="mb-5 p-3 rounded-lg bg-[#111113] border border-[#222226] text-xs text-zinc-400 flex items-start gap-2.5 shadow-sm">
         <span class="text-emerald-400 text-sm leading-none mt-0.5">●</span>
         <div class="leading-relaxed">
           <span class="font-medium text-white">Using RouteNex Open Source?</span>
           Zero cloud account needed. Jump straight into your offline local gateway:
-          <a href="/dashboard" class="text-purple-400 hover:text-purple-300 font-semibold underline ml-1">Open Local Dashboard →</a>
+          <a href="/dashboard" class="text-white hover:underline font-medium ml-1">Open Local Dashboard →</a>
         </div>
       </div>
 
       <!-- Auth Container -->
-      <div class="bg-[#12151f] border border-[#222738] rounded-xl p-6 shadow-2xl backdrop-blur-md">
+      <div class="bg-[#111113] border border-[#222226] rounded-xl p-6 shadow-2xl backdrop-blur-md">
         <!-- Auth Method Tabs -->
-        <div class="flex border-b border-[#222738] mb-5">
-          <button id="tab-password" class="pb-2.5 px-3 text-xs font-medium text-white border-b-2 border-purple-500 transition-colors">
+        <div class="flex border-b border-[#222226] mb-5">
+          <button id="tab-password" class="pb-2.5 px-3 text-xs font-medium text-white border-b-2 border-white transition-colors">
             Password
           </button>
-          <button id="tab-magic" class="pb-2.5 px-3 text-xs font-medium text-[#7d8597] hover:text-white border-b-2 border-transparent transition-colors">
+          <button id="tab-magic" class="pb-2.5 px-3 text-xs font-medium text-zinc-500 hover:text-white border-b-2 border-transparent transition-colors">
             Magic Link OTP
           </button>
         </div>
 
         <!-- OAuth Buttons -->
         <div class="grid grid-cols-2 gap-3 mb-5">
-          <button id="btn-github" type="button" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#1a1f2c] hover:bg-[#22293a] border border-[#2a324b] text-xs font-medium text-white transition-all shadow-sm">
+          <button id="btn-github" type="button" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] text-xs font-medium text-white transition-all shadow-sm">
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
             GitHub
           </button>
-          <button id="btn-google" type="button" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#1a1f2c] hover:bg-[#22293a] border border-[#2a324b] text-xs font-medium text-white transition-all shadow-sm">
+          <button id="btn-google" type="button" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] text-xs font-medium text-white transition-all shadow-sm">
             <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.7 0 3 .7 3.9 1.5l2.9-2.9C17 2 14.7 1.2 12 1.2 7.7 1.2 4.1 3.7 2.4 7.2l3.4 2.6C6.6 7.2 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.8 14.8c-.2-.7-.4-1.5-.4-2.3 0-.8.2-1.6.4-2.3L2.4 7.6C1.4 9.5.8 11.7.8 14s.6 4.5 1.6 6.4l3.4-2.6v-3z"/><path fill="#34A853" d="M12 22.8c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.4-2.2-6.2-5l-3.4 2.6c1.7 3.5 5.3 6.1 9.6 6.1z"/></svg>
             Google
           </button>
         </div>
 
         <div class="relative flex items-center justify-center mb-5">
-          <div class="border-t border-[#222738] w-full"></div>
-          <span class="bg-[#12151f] px-2 text-[11px] font-mono uppercase tracking-wider text-[#636c80] absolute">or with email</span>
+          <div class="border-t border-[#222226] w-full"></div>
+          <span class="bg-[#111113] px-2 text-[11px] font-mono uppercase tracking-wider text-zinc-500 absolute">or with email</span>
         </div>
 
         <!-- Password Form -->
         <form id="form-password" class="space-y-4">
           <div>
-            <label class="block text-xs font-medium text-[#a0a8be] mb-1 font-mono">Email Address</label>
-            <input type="email" id="login-email" required placeholder="developer@example.com" class="w-full bg-[#171b28] border border-[#262c3f] rounded-lg px-3 py-2 text-xs text-white placeholder-[#525a6e] focus:outline-none focus:border-purple-500 font-mono transition-colors" />
+            <label class="block text-xs font-medium text-zinc-400 mb-1 font-mono">Email Address</label>
+            <input type="email" id="login-email" required placeholder="developer@example.com" class="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white font-mono transition-colors" />
           </div>
 
           <div>
             <div class="flex justify-between items-center mb-1">
-              <label class="block text-xs font-medium text-[#a0a8be] font-mono">Password</label>
-              <a href="#" class="text-[11px] text-purple-400 hover:text-purple-300">Forgot?</a>
+              <label class="block text-xs font-medium text-zinc-400 font-mono">Password</label>
+              <a href="#" class="text-[11px] text-zinc-400 hover:text-white">Forgot?</a>
             </div>
-            <input type="password" id="login-password" required placeholder="••••••••••••" class="w-full bg-[#171b28] border border-[#262c3f] rounded-lg px-3 py-2 text-xs text-white placeholder-[#525a6e] focus:outline-none focus:border-purple-500 font-mono transition-colors" />
+            <input type="password" id="login-password" required placeholder="••••••••••••" class="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white font-mono transition-colors" />
           </div>
 
           <div id="login-error" class="hidden p-2 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-mono"></div>
 
-          <button type="submit" id="btn-submit" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium text-xs shadow-lg shadow-purple-600/20 transition-all font-mono">
+          <button type="submit" id="btn-submit" class="w-full py-2.5 rounded-lg bg-white hover:bg-zinc-200 text-black font-medium text-xs shadow-md transition-all font-mono">
             Sign In with Password →
           </button>
         </form>
@@ -85,21 +87,21 @@ import Layout from '../layouts/Layout.astro';
         <!-- Magic Link Form (Hidden initially) -->
         <form id="form-magic" class="space-y-4 hidden">
           <div>
-            <label class="block text-xs font-medium text-[#a0a8be] mb-1 font-mono">Work Email</label>
-            <input type="email" id="magic-email" required placeholder="developer@example.com" class="w-full bg-[#171b28] border border-[#262c3f] rounded-lg px-3 py-2 text-xs text-white placeholder-[#525a6e] focus:outline-none focus:border-purple-500 font-mono transition-colors" />
+            <label class="block text-xs font-medium text-zinc-400 mb-1 font-mono">Work Email</label>
+            <input type="email" id="magic-email" required placeholder="developer@example.com" class="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white font-mono transition-colors" />
           </div>
 
           <div id="magic-message" class="hidden p-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono"></div>
 
-          <button type="submit" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium text-xs shadow-lg shadow-purple-600/20 transition-all font-mono">
+          <button type="submit" class="w-full py-2.5 rounded-lg bg-white hover:bg-zinc-200 text-black font-medium text-xs shadow-md transition-all font-mono">
             Send Magic Login Link ⚡
           </button>
         </form>
 
         <!-- Bottom Link -->
-        <div class="mt-5 text-center text-xs text-[#7d8597]">
+        <div class="mt-5 text-center text-xs text-zinc-500">
           Don't have a Cloud account?
-          <a href="/signup" class="text-purple-400 hover:text-purple-300 font-semibold ml-1">Create one →</a>
+          <a href="/signup" class="text-white hover:underline font-medium ml-1">Create one →</a>
         </div>
       </div>
     </div>
@@ -107,7 +109,7 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { signInWithEmail, signInWithMagicLink, signInWithOAuth } from '../lib/supabase';
+  import { signInWithEmail, signInWithMagicLink, signInWithOAuth, isSupabaseConfigured } from '../lib/supabase';
 
   const tabPassword = document.getElementById('tab-password');
   const tabMagic = document.getElementById('tab-magic');
@@ -117,15 +119,15 @@ import Layout from '../layouts/Layout.astro';
   const magicMessage = document.getElementById('magic-message');
 
   tabPassword?.addEventListener('click', () => {
-    tabPassword.className = 'pb-2.5 px-3 text-xs font-medium text-white border-b-2 border-purple-500 transition-colors';
-    tabMagic!.className = 'pb-2.5 px-3 text-xs font-medium text-[#7d8597] hover:text-white border-b-2 border-transparent transition-colors';
+    tabPassword.className = 'pb-2.5 px-3 text-xs font-medium text-white border-b-2 border-white transition-colors';
+    tabMagic!.className = 'pb-2.5 px-3 text-xs font-medium text-zinc-500 hover:text-white border-b-2 border-transparent transition-colors';
     formPassword?.classList.remove('hidden');
     formMagic?.classList.add('hidden');
   });
 
   tabMagic?.addEventListener('click', () => {
-    tabMagic.className = 'pb-2.5 px-3 text-xs font-medium text-white border-b-2 border-purple-500 transition-colors';
-    tabPassword!.className = 'pb-2.5 px-3 text-xs font-medium text-[#7d8597] hover:text-white border-b-2 border-transparent transition-colors';
+    tabMagic.className = 'pb-2.5 px-3 text-xs font-medium text-white border-b-2 border-white transition-colors';
+    tabPassword!.className = 'pb-2.5 px-3 text-xs font-medium text-zinc-500 hover:text-white border-b-2 border-transparent transition-colors';
     formMagic?.classList.remove('hidden');
     formPassword?.classList.add('hidden');
   });
@@ -136,6 +138,12 @@ import Layout from '../layouts/Layout.astro';
     const email = (document.getElementById('login-email') as HTMLInputElement).value;
     const password = (document.getElementById('login-password') as HTMLInputElement).value;
     
+    if (!isSupabaseConfigured()) {
+      // In development when keys are pending, allow preview transition to workspace
+      window.location.href = '/workspace';
+      return;
+    }
+
     try {
       const { data, error } = await signInWithEmail(email, password);
       if (error) {
@@ -144,7 +152,7 @@ import Layout from '../layouts/Layout.astro';
           loginError.classList.remove('hidden');
         }
       } else if (data.session) {
-        window.location.href = '/dashboard';
+        window.location.href = '/workspace';
       }
     } catch (err: any) {
       if (loginError) {
@@ -157,6 +165,12 @@ import Layout from '../layouts/Layout.astro';
   formMagic?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = (document.getElementById('magic-email') as HTMLInputElement).value;
+    
+    if (!isSupabaseConfigured()) {
+      window.location.href = '/workspace';
+      return;
+    }
+
     try {
       const { error } = await signInWithMagicLink(email);
       if (magicMessage) {
@@ -178,10 +192,18 @@ import Layout from '../layouts/Layout.astro';
   });
 
   document.getElementById('btn-github')?.addEventListener('click', () => {
+    if (!isSupabaseConfigured()) {
+      window.location.href = '/workspace';
+      return;
+    }
     signInWithOAuth('github');
   });
 
   document.getElementById('btn-google')?.addEventListener('click', () => {
+    if (!isSupabaseConfigured()) {
+      window.location.href = '/workspace';
+      return;
+    }
     signInWithOAuth('google');
   });
 </script>

@@ -54,27 +54,36 @@ const docNav = [
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="stylesheet" href="/src/styles/global.css" />
   </head>
-  <body class="bg-[#0b0d13] text-[#e0e2ec] font-sans antialiased min-h-screen flex flex-col selection:bg-purple-600 selection:text-white">
+  <body class="bg-[#09090b] text-zinc-200 font-sans antialiased min-h-screen flex flex-col selection:bg-zinc-800 selection:text-white">
     <!-- Dark Grid Pattern -->
-    <div class="fixed inset-0 bg-[linear-gradient(to_right,#1f243015_1px,transparent_1px),linear-gradient(to_bottom,#1f243015_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none -z-10"></div>
+    <div class="fixed inset-0 bg-[linear-gradient(to_right,#27272a15_1px,transparent_1px),linear-gradient(to_bottom,#27272a15_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none -z-10"></div>
 
     <!-- Top Navigation Bar -->
-    <header class="h-14 border-b border-[#1f2433] bg-[#0c0f18]/90 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40">
-      <div class="flex items-center gap-4">
-        <a href="/" class="flex items-center gap-2 group">
-          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform font-mono">
-            ⚡
-          </div>
-          <span class="text-sm font-bold tracking-tight text-white font-mono">RouteNex<span class="text-purple-400">/docs</span></span>
+    <header class="h-14 border-b border-[#222226] bg-[#111113]/90 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40">
+      <div class="flex items-center gap-6">
+        <a href="/" class="flex items-center gap-2.5 group" aria-label="RouteNex Home">
+          <span class="flex h-7 w-7 items-center justify-center rounded-md bg-white text-black transition-transform group-hover:scale-105">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 12l10 10 10-10L12 2z"></path>
+              <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
+            </svg>
+          </span>
+          <span class="text-sm font-bold tracking-tight text-white font-mono">RouteNex<span class="text-zinc-400">/docs</span></span>
         </a>
+
+        <nav class="hidden md:flex items-center gap-4 text-xs font-mono text-zinc-400">
+          <a href="/models" class="hover:text-white transition">Models</a>
+          <a href="/rankings" class="hover:text-white transition">Rankings</a>
+          <a href="/pricing" class="hover:text-white transition">Pricing</a>
+        </nav>
       </div>
 
       <div class="flex items-center gap-3 font-mono text-xs">
         <a
           href="/dashboard"
-          class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium shadow-md shadow-purple-600/20 transition-all"
+          class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-zinc-200 text-black font-medium shadow-sm transition-all"
         >
-          <span>Open Dashboard</span>
+          <span>Open Console</span>
           <span>→</span>
         </a>
 
@@ -82,25 +91,25 @@ const docNav = [
           href="https://github.com/harshil1876/RouteNex"
           target="_blank"
           rel="noopener noreferrer"
-          class="px-2.5 py-1.5 rounded-lg border border-[#222738] bg-[#141824] hover:bg-[#1a2030] text-white transition-colors"
+          class="px-2.5 py-1.5 rounded-lg border border-[#27272a] bg-[#18181b] hover:bg-[#27272a] text-white transition-colors"
         >
           GitHub ↗
         </a>
       </div>
     </header>
 
-    <!-- Docs Shell: Left Sidebar + Article + Right Scrollspy -->
+    <!-- Docs Shell: Left Sidebar + Article -->
     <div class="flex-1 max-w-7xl w-full mx-auto flex min-h-[calc(100vh-3.5rem)]">
-      <!-- Left Sidebar (Matching Screenshot 601) -->
-      <aside class="w-64 border-r border-[#1f2433] p-4 hidden md:flex flex-col justify-between shrink-0 font-mono text-xs">
+      <!-- Left Sidebar -->
+      <aside class="w-64 border-r border-[#222226] p-4 hidden md:flex flex-col justify-between shrink-0 font-mono text-xs bg-[#09090b]">
         <div class="space-y-4">
           <!-- Back to Dashboard Pill -->
           <a
             href="/dashboard"
-            class="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#141824] hover:bg-[#1c2234] border border-[#23293c] text-purple-300 font-semibold transition-all group"
+            class="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] text-zinc-200 font-medium transition-all group"
           >
-            <span class="group-hover:-translate-x-0.5 transition-transform">←</span>
-            <span>Back to Dashboard</span>
+            <span class="group-hover:-translate-x-0.5 transition-transform text-zinc-400">←</span>
+            <span>Back to Console</span>
           </a>
 
           <!-- Quick Search -->
@@ -108,7 +117,7 @@ const docNav = [
             <input
               type="text"
               placeholder="Search docs (Ctrl K)..."
-              class="w-full bg-[#121622] border border-[#222738] rounded-lg px-3 py-1.5 text-xs text-white placeholder-[#5a647d] focus:outline-none focus:border-purple-500"
+              class="w-full bg-[#111113] border border-[#222226] rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
             />
           </div>
 
@@ -116,7 +125,7 @@ const docNav = [
           <div class="space-y-4 pt-1">
             {docNav.map((cat) => (
               <div class="space-y-1">
-                <span class="text-[10px] font-semibold text-[#6e778d] uppercase tracking-wider block px-2">
+                <span class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block px-2">
                   {cat.category}
                 </span>
                 <div class="space-y-0.5">
@@ -127,8 +136,8 @@ const docNav = [
                         href={item.href}
                         class={`block px-2.5 py-1.5 rounded-lg transition-colors truncate ${
                           isActive
-                            ? 'bg-purple-600/15 text-purple-300 font-semibold border border-purple-500/30'
-                            : 'text-[#8e97ae] hover:text-white hover:bg-[#141926]'
+                            ? 'bg-[#18181b] text-white font-medium border border-zinc-700'
+                            : 'text-zinc-400 hover:text-white hover:bg-[#111113]'
                         }`}
                       >
                         {item.label}
@@ -141,7 +150,7 @@ const docNav = [
           </div>
         </div>
 
-        <div class="pt-4 border-t border-[#1b202e] text-[11px] text-[#636c80] space-y-1">
+        <div class="pt-4 border-t border-[#222226] text-[11px] text-zinc-500 space-y-1">
           <div>RouteNex v0.2.0 Docs</div>
           <div>MIT OR Apache-2.0</div>
         </div>

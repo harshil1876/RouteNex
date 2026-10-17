@@ -29,7 +29,7 @@ import ThemeToggle from './ThemeToggle.astro';
     </div>
 
     <!-- Right: External actions & CTAs -->
-    <div class="hidden sm:flex items-center gap-3">
+    <div class="hidden sm:flex items-center gap-4">
       <ThemeToggle />
 
       <a
@@ -45,10 +45,17 @@ import ThemeToggle from './ThemeToggle.astro';
       </a>
 
       <a
-        href="/dashboard"
+        href="/login"
+        class="text-sm font-medium text-body hover:text-ink transition"
+      >
+        Sign In
+      </a>
+
+      <a
+        href="/signup"
         class="inline-flex items-center justify-center rounded-full bg-ink px-4 py-2 text-xs sm:text-sm font-medium text-white dark:bg-white dark:text-black transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
       >
-        Open Console
+        Get Started
       </a>
     </div>
 
@@ -56,10 +63,16 @@ import ThemeToggle from './ThemeToggle.astro';
     <div class="flex items-center gap-2 sm:hidden">
       <ThemeToggle />
       <a
-        href="/dashboard"
+        href="/login"
+        class="text-xs font-medium text-body hover:text-ink px-2 py-1 transition"
+      >
+        Sign In
+      </a>
+      <a
+        href="/signup"
         class="rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-white dark:bg-white dark:text-black transition hover:opacity-90"
       >
-        Console
+        Get Started
       </a>
       <details class="relative">
         <summary class="flex h-9 w-9 list-none items-center justify-center rounded-md border border-hairline text-ink cursor-pointer hover:bg-hairline/60" aria-label="Toggle navigation menu">

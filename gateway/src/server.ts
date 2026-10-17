@@ -19,6 +19,7 @@ import { RequestStore } from './storage/sqlite.js';
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { AdminStore } from './storage/admin-store.js';
 import { createAdminRoutes } from './routes/admin.js';
 import { createMessagesRoute } from './routes/messages.js';
@@ -94,9 +95,13 @@ export function createApp(appConfig: AppConfig = config) {
   app.route('/', usageRoute);
 
   // 4. Standalone Dashboard Asset Serving (serves built dist/ if available)
+  const currentDir = path.dirname(fileURLToPath(import.meta.url));
   const distCandidatePaths = [
     path.resolve(process.cwd(), 'dist'),
     path.resolve(process.cwd(), '..', 'dist'),
+    path.resolve(currentDir, '../../dist'),
+    path.resolve(currentDir, '../dist'),
+    path.resolve(currentDir, '../../../dist'),
   ];
   const staticRoot = distCandidatePaths.find((p) => fs.existsSync(p));
   if (staticRoot) {

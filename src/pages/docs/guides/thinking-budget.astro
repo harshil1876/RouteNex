@@ -5,21 +5,21 @@ import DocsLayout from '../../../layouts/DocsLayout.astro';
 <DocsLayout title="Thinking Budget & Modality Bridge" currentPath="/docs/guides/thinking-budget">
   <div class="space-y-8 font-mono text-xs">
     <div>
-      <div class="text-[11px] text-purple-400 font-semibold mb-1">REASONING & MULTIMODAL</div>
+      <div class="text-[11px] text-zinc-400 font-semibold mb-1">REASONING & MULTIMODAL</div>
       <h1 class="text-2xl font-bold text-white font-sans">Thinking Budget & Modality Bridge</h1>
-      <p class="text-[#8f96a3] text-sm font-sans mt-1">Configuring extended reasoning budgets for Claude 3.7 Sonnet, DeepSeek R1, and Gemini 2.5.</p>
+      <p class="text-zinc-400 text-sm font-sans mt-1">Configuring extended reasoning budgets for Claude 3.7 Sonnet, DeepSeek R1, and Gemini 2.5.</p>
     </div>
 
-    <div class="p-5 rounded-xl bg-[#121622] border border-[#222738] space-y-3">
+    <div class="p-5 rounded-xl bg-[#111113] border border-[#222226] space-y-3">
       <h2 class="text-sm font-bold text-white font-sans">Thinking Budget Configuration</h2>
-      <p class="text-[#8f96a3] leading-relaxed">
-        Pass <code class="text-purple-300">thinking: &#123; type: "enabled", budget_tokens: 4096 &#125;</code> in chat completions requests. RouteNex normalizes this parameter across Anthropic, DeepSeek, and Google reasoning adapters.
+      <p class="text-zinc-400 leading-relaxed">
+        Pass <code class="text-zinc-200">thinking: &#123; type: "enabled", budget_tokens: 4096 &#125;</code> in chat completions requests. RouteNex normalizes this parameter across Anthropic, DeepSeek, and Google reasoning adapters.
       </p>
     </div>
 
-    <div class="p-5 rounded-xl bg-[#121622] border border-[#222738] space-y-3">
+    <div class="p-5 rounded-xl bg-[#111113] border border-[#222226] space-y-3">
       <h2 class="text-sm font-bold text-white font-sans">Modality Bridge Fallback</h2>
-      <p class="text-[#8f96a3] leading-relaxed">
+      <p class="text-zinc-400 leading-relaxed">
         When an image or audio file is sent to a text-only target model, RouteNex automatically routes the media payload through a multimodal descriptor model first, inserting the detailed transcription or description into the message context seamlessly.
       </p>
     </div>

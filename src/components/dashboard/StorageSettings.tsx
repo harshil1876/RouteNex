@@ -46,7 +46,7 @@ export default function StorageSettings() {
           <button
             type="button"
             onClick={() => runMaintenance('Backup Now')}
-            className="px-3.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-mono font-medium shadow-md shadow-purple-600/20"
+            className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-zinc-200 text-black text-xs font-mono font-medium shadow-sm transition-all"
           >
             Backup Now
           </button>
@@ -93,7 +93,7 @@ export default function StorageSettings() {
           </div>
           <div className="p-4 rounded-xl bg-[#121622] border border-[#222738]">
             <span className="text-[11px] text-[#7d8597] font-mono block mb-1">PAGE COUNT</span>
-            <span className="text-2xl font-bold text-purple-400 font-mono">{dbStats.pageCount.toLocaleString()}</span>
+            <span className="text-2xl font-bold text-white font-mono">{dbStats.pageCount.toLocaleString()}</span>
           </div>
           <div className="p-4 rounded-xl bg-[#121622] border border-[#222738]">
             <span className="text-[11px] text-[#7d8597] font-mono block mb-1">FREELIST COUNT</span>

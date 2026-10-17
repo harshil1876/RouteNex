@@ -156,12 +156,12 @@ export default function CavemanStudio() {
                 type="button"
                 onClick={() => togglePack(pack.code)}
                 className={`w-10 h-5 rounded-full transition-colors relative ${
-                  pack.enabled ? 'bg-purple-600' : 'bg-neutral-700'
+                  pack.enabled ? 'bg-white' : 'bg-zinc-700'
                 }`}
               >
                 <div
-                  className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${
-                    pack.enabled ? 'translate-x-5' : 'translate-x-1'
+                  className={`w-3.5 h-3.5 rounded-full absolute top-0.5 transition-transform ${
+                    pack.enabled ? 'translate-x-5 bg-black' : 'translate-x-1 bg-white'
                   }`}
                 />
               </button>
