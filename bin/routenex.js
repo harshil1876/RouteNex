@@ -193,8 +193,8 @@ Server Options:
   });
 
   const setupToken = `rn_local_${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
-  if (serverInstance && (serverInstance as any).adminStore) {
-    (serverInstance as any).adminStore.setAdminToken?.(setupToken);
+  if (serverInstance && serverInstance.adminStore) {
+    serverInstance.adminStore.setAdminToken?.(setupToken);
   }
 
   const autoLoginUrl = `http://${host}:${port}/dashboard?auto_token=${setupToken}`;
