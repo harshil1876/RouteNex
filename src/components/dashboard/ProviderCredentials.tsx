@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ProviderBrandIcon from './ProviderBrandIcon';
 import ProviderDetailView from './ProviderDetailView';
+import ModelCatalogExplorer from '../models/ModelCatalogExplorer';
 import catalogProvidersData from '../../../gateway/src/providers/catalog.json';
 
 interface ProviderCredentialsProps {
@@ -75,6 +76,7 @@ export default function ProviderCredentials({
   const [activeDetailProviderId, setActiveDetailProviderId] = useState<string | null>(
     selectedProviderId || null
   );
+  const [hubView, setHubView] = useState<'providers' | 'models'>('providers');
 
   useEffect(() => {
     if (selectedProviderId !== undefined) {
@@ -387,24 +389,57 @@ export default function ProviderCredentials({
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-xl font-bold text-zinc-100 tracking-tight font-sans">
-              AI Providers Hub
+              Providers & Models Hub
             </h2>
             <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-0.5 text-[10px] font-mono font-semibold">
               🔒 AES-256-GCM Keystore
             </span>
           </div>
           <p className="mt-1 text-xs text-zinc-400 font-sans leading-relaxed">
-            Manage 120+ providers across 12 categories. Connect API keys, multi-key pooling, OAuth PKCE, local runtimes, and $0 developer tiers.
+            Manage {providers.length}+ providers across 12 categories, multi-key pooling, OAuth PKCE, local runtimes, and 200+ models.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
-          <span>{providers.filter((p) => p.isConfigured).length} Connected</span>
-          <span>/</span>
-          <span>{providers.length} Total Providers</span>
+        <div className="flex items-center gap-3">
+          {/* Top Unified Hub Toggle: ⊞ By Provider ↔ 🧠 By Model */}
+          <div className="flex items-center p-1 rounded-lg bg-[#09090b] border border-[#222226] text-xs font-mono">
+            <button
+              type="button"
+              onClick={() => setHubView('providers')}
+              className={`px-3 py-1.5 rounded-md transition ${
+                hubView === 'providers'
+                  ? 'bg-zinc-100 !text-zinc-950 font-semibold shadow-xs'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              ⊞ By Provider ({providers.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setHubView('models')}
+              className={`px-3 py-1.5 rounded-md transition ${
+                hubView === 'models'
+                  ? 'bg-zinc-100 !text-zinc-950 font-semibold shadow-xs'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              🧠 By Model (200+)
+            </button>
+          </div>
+
+          <div className="hidden lg:flex items-center gap-2 text-xs font-mono text-zinc-400">
+            <span>{providers.filter((p) => p.isConfigured).length} Connected</span>
+            <span>/</span>
+            <span>{providers.length} Total</span>
+          </div>
         </div>
       </div>
 
+      {/* Conditionally render Model Catalog Explorer if "By Model" is active */}
+      {hubView === 'models' ? (
+        <ModelCatalogExplorer />
+      ) : (
+        <>
       {/* TOP FILTER & ACTION BAR (Screenshot 603) */}
       <div className="space-y-3 p-4 rounded-xl bg-[#111113] border border-[#222226] shadow-xs">
         {/* ROW 1: Search Inputs, Views, and Main Actions */}
@@ -982,6 +1017,8 @@ export default function ProviderCredentials({
             </form>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

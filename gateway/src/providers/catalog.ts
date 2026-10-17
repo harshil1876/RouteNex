@@ -1,6 +1,377 @@
 // Declarative Provider Catalog for RouteNex Universal Adapters
 export const CATALOG_PROVIDERS = [
   {
+    "id": "antigravity",
+    "name": "Antigravity",
+    "category": "OAUTH",
+    "baseUrl": "http://127.0.0.1:3001/v1",
+    "envKey": "ANTIGRAVITY_API_KEY",
+    "freeTier": true,
+    "badge": "OAuth 2.0 PKCE / IDE Agent",
+    "modalities": [
+      "text",
+      "vision",
+      "tools",
+      "embedding"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "antigravity/gemini-3.7-flash-high",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity/gemini-3.7-flash-medium",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity/gemini-3.7-flash-low",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity/gemini-3.7-flash-tiered",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity/gemini-pro-agent",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 2000000
+      },
+      {
+        "id": "antigravity/gemini-3.1-pro-low",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity/gemini-3.1-flash-lite",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity/claude-opus-4-6-thinking",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity/claude-sonnet-4-6-thinking",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity/gpt-oss-120b",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "antigravity/gemini-3.8-flash-tiered",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity/gemini-3-flash",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity/gemini-3.1-pro-high",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 2000000
+      },
+      {
+        "id": "antigravity/gemini-3.6-flash-tiered",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      }
+    ]
+  },
+  {
+    "id": "antigravity-cli",
+    "name": "Antigravity CLI",
+    "category": "IDE",
+    "baseUrl": "http://127.0.0.1:3001/v1",
+    "envKey": "ANTIGRAVITY_CLI_KEY",
+    "freeTier": true,
+    "badge": "IDE Agentic Bridge",
+    "modalities": [
+      "text",
+      "vision",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "antigravity-cli/gemini-3.7-flash-high",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity-cli/gemini-3.7-flash-medium",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity-cli/gemini-3.7-flash-low",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity-cli/gemini-3.7-flash-tiered",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity-cli/gemini-pro-agent",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 2000000
+      },
+      {
+        "id": "antigravity-cli/gemini-3.1-pro-low",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity-cli/gemini-3.1-flash-lite",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity-cli/claude-opus-4-6-thinking",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity-cli/claude-sonnet-4-6-thinking",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity-cli/gpt-oss-120b",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "antigravity-cli/gemini-3.8-flash-tiered",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity-cli/gemini-3-flash",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity-cli/gemini-3.1-pro-high",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 2000000
+      },
+      {
+        "id": "antigravity-cli/gemini-3.6-flash-tiered",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      }
+    ]
+  },
+  {
     "id": "openrouter",
     "name": "OpenRouter",
     "category": "OAUTH",

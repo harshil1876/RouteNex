@@ -29,8 +29,7 @@ export function mountStaticDashboard(app: Hono, staticRoot: string): void {
     if (
       pathname.startsWith('/v1') ||
       pathname.startsWith('/health') ||
-      pathname.startsWith('/chat') ||
-      pathname.startsWith('/models')
+      pathname.startsWith('/chat')
     ) {
       return next();
     }
@@ -60,6 +59,17 @@ export function mountStaticDashboard(app: Hono, staticRoot: string): void {
         filePath = path.resolve(staticRoot, `${relPath}.html`);
       } else if (fs.existsSync(path.resolve(staticRoot, relPath, 'index.html'))) {
         filePath = path.resolve(staticRoot, relPath, 'index.html');
+      } else if (pathname.startsWith('/models')) {
+        // Fallback for dynamic model pages to models index or dashboard shell to prevent 404
+        if (fs.existsSync(path.resolve(staticRoot, 'models', 'index.html'))) {
+          filePath = path.resolve(staticRoot, 'models', 'index.html');
+        } else if (fs.existsSync(path.resolve(staticRoot, 'dashboard', 'index.html'))) {
+          filePath = path.resolve(staticRoot, 'dashboard', 'index.html');
+        }
+      } else if (pathname.startsWith('/dashboard')) {
+        if (fs.existsSync(path.resolve(staticRoot, 'dashboard', 'index.html'))) {
+          filePath = path.resolve(staticRoot, 'dashboard', 'index.html');
+        }
       }
     }
 

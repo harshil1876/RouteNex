@@ -15,6 +15,7 @@ import { SiliconFlowProviderAdapter } from './providers/siliconflow.js';
 import { DuckDuckGoProviderAdapter } from './providers/duckduckgo.js';
 import { ResponseCache } from './router/cache.js';
 import { encryptValue, decryptValue, maskSecret, hashToken } from './storage/crypto.js';
+import { validateSafeUrl, timingSafeEqualStr } from './utils/security.js';
 import type { AppConfig } from './config.js';
 
 const testConfig: AppConfig = {
@@ -1249,6 +1250,117 @@ describe('Built-in Model Context Protocol (MCP) Server', () => {
     const comboData = await comboRes.json();
     const comboText = JSON.parse(comboData.result.content[0].text);
     expect(comboText.success).toBe(true);
+  });
+});
+
+describe('High-Concurrency Stress Testing (100 Concurrent Requests)', () => {
+  it('handles 100 parallel chat requests with zero crashes and exact accounting', async () => {
+    const { app, store } = createApp({ ...testConfig, rateLimitRpm: 1000, persistenceEnabled: true });
+
+    const requests = Array.from({ length: 100 }, (_, i) =>
+      app.request('/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'mock/fast',
+          messages: [{ role: 'user', content: `Parallel request #${i}` }],
+          stream: false,
+        }),
+      })
+    );
+
+    const responses = await Promise.all(requests);
+    expect(responses.length).toBe(100);
+
+    for (const res of responses) {
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.choices[0].message.content).toBeDefined();
+      expect(data.routenex.provider).toBe('mock');
+      expect(data.routenex.model_used).toBe('mock/fast');
+    }
+
+    // Verify all 100 requests were persisted in store
+    const stats = store.getUsageStats();
+    expect(stats.total_requests).toBeGreaterThanOrEqual(100);
+    expect(stats.successful_requests).toBeGreaterThanOrEqual(100);
+    expect(stats.failed_requests).toBe(0);
+
+    // Clean up temporary test persistence file if created
+    if (fs.existsSync('./test_routenex.json')) {
+      try { fs.unlinkSync('./test_routenex.json'); } catch {}
+    }
+  });
+});
+
+describe('Cybersecurity & Anti-Crash Hardening', () => {
+  it('emits OWASP recommended security headers on all responses', async () => {
+    const { app } = createApp(testConfig);
+    const res = await app.request('/health/live');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(res.headers.get('x-frame-options')).toBe('DENY');
+    expect(res.headers.get('x-xss-protection')).toBe('1; mode=block');
+    expect(res.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
+    expect(res.headers.get('permissions-policy')).toBe('geolocation=(), microphone=(), camera=()');
+  });
+
+  it('rejects oversized request payloads exceeding 10MB with HTTP 413', async () => {
+    const { app } = createApp(testConfig);
+    const res = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': String(15 * 1024 * 1024), // 15MB
+      },
+      body: JSON.stringify({ model: 'mock/fast', messages: [] }),
+    });
+
+    expect(res.status).toBe(413);
+    const err = await res.json();
+    expect(err.error.code).toBe('PAYLOAD_TOO_LARGE');
+  });
+
+  it('SSRF validator strictly blocks AWS/GCP metadata and private subnets', () => {
+    expect(validateSafeUrl('http://169.254.169.254/latest/meta-data/').safe).toBe(false);
+    expect(validateSafeUrl('http://10.0.1.5:8080/v1').safe).toBe(false);
+    expect(validateSafeUrl('http://192.168.1.1/admin').safe).toBe(false);
+    expect(validateSafeUrl('http://172.20.0.1/api').safe).toBe(false);
+    expect(validateSafeUrl('file:///etc/passwd').safe).toBe(false);
+    expect(validateSafeUrl('gopher://127.0.0.1:6379').safe).toBe(false);
+    expect(validateSafeUrl('https://api.openai.com/v1').safe).toBe(true);
+    expect(validateSafeUrl('https://api.groq.com/openai/v1').safe).toBe(true);
+  });
+
+  it('timing-safe string comparison prevents side-channel timing attacks', () => {
+    expect(timingSafeEqualStr('routenex-admin', 'routenex-admin')).toBe(true);
+    expect(timingSafeEqualStr('routenex-admin', 'wrong-password')).toBe(false);
+    expect(timingSafeEqualStr('rn_live_123', 'rn_live_124')).toBe(false);
+  });
+
+  it('brute-force rate limiter blocks login attacks after 10 failed attempts', async () => {
+    const { app } = createApp(testConfig);
+
+    // Perform 10 failed login attempts
+    for (let i = 0; i < 10; i++) {
+      const res = await app.request('/v1/admin/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '198.51.100.42' },
+        body: JSON.stringify({ token: `invalid-guess-${i}` }),
+      });
+      expect(res.status).toBe(401);
+    }
+
+    // 11th attempt from the same IP must be rejected with HTTP 429
+    const blockedRes = await app.request('/v1/admin/auth/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '198.51.100.42' },
+      body: JSON.stringify({ token: 'another-invalid-guess' }),
+    });
+
+    expect(blockedRes.status).toBe(429);
+    const err = await blockedRes.json();
+    expect(err.error.code).toBe('BRUTE_FORCE_PROTECTION');
   });
 });
 

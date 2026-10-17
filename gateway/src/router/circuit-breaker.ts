@@ -60,6 +60,10 @@ export class CircuitBreaker {
   private getOrCreate(providerId: string): CircuitStatus {
     let status = this.states.get(providerId);
     if (!status) {
+      if (this.states.size >= 5000) {
+        const oldestKey = this.states.keys().next().value;
+        if (oldestKey) this.states.delete(oldestKey);
+      }
       status = {
         state: 'CLOSED',
         failures: 0,
@@ -147,6 +151,10 @@ export class CircuitBreaker {
    * Places an API key on cooldown for the specified duration (or Retry-After header duration).
    */
   recordKeyCooldown(keyId: string, durationMs?: number, reason?: string): void {
+    if (this.keyCooldowns.size >= 5000) {
+      const oldestKey = this.keyCooldowns.keys().next().value;
+      if (oldestKey) this.keyCooldowns.delete(oldestKey);
+    }
     const cooldownMs = durationMs ?? this.defaultKeyCooldownMs;
     this.keyCooldowns.set(keyId, {
       keyId,
@@ -183,6 +191,10 @@ export class CircuitBreaker {
    * Locks out a single model without impacting other models under the same provider.
    */
   recordModelLockout(modelId: string, durationMs?: number, reason?: string): void {
+    if (this.modelLockouts.size >= 5000) {
+      const oldestModel = this.modelLockouts.keys().next().value;
+      if (oldestModel) this.modelLockouts.delete(oldestModel);
+    }
     const lockoutMs = durationMs ?? this.defaultModelLockoutMs;
     this.modelLockouts.set(modelId, {
       modelId,

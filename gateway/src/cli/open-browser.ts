@@ -35,10 +35,9 @@ export function openBrowser(url: string): Promise<boolean> {
 }
 
 /**
- * Opens the RouteNex Local Dashboard directly, optionally passing an auto-authentication setup token.
+ * Opens the RouteNex Local Dashboard directly (landing on the authentication gate).
  */
-export function openLocalDashboard(port: number = 3001, autoToken?: string): Promise<boolean> {
-  const query = autoToken ? `?auto_token=${encodeURIComponent(autoToken)}` : '';
-  const url = `http://localhost:${port}/dashboard${query}`;
+export function openLocalDashboard(port: number = 3001): Promise<boolean> {
+  const url = `http://localhost:${port}/dashboard`;
   return openBrowser(url);
 }

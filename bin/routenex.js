@@ -192,22 +192,22 @@ Server Options:
     persistenceEnabled: true,
   });
 
-  const setupToken = `rn_local_${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+  const adminPassword = process.env.ROUTENEX_ADMIN_PASSWORD || 'routenex-admin';
   if (serverInstance && serverInstance.adminStore) {
-    serverInstance.adminStore.setAdminToken?.(setupToken);
+    serverInstance.adminStore.setAdminToken?.(adminPassword);
   }
 
-  const autoLoginUrl = `http://${host}:${port}/dashboard?auto_token=${setupToken}`;
+  const dashboardUrl = `http://${host}:${port}/dashboard`;
 
   console.log(`\x1b[35m┌────────────────────────────────────────────────────────────────────────┐\x1b[0m`);
-  console.log(`\x1b[35m│\x1b[0m  \x1b[1m\x1b[35m✨ RouteNex Open-Source Local Setup (Zero Cloud Login)\x1b[0m                 \x1b[35m│\x1b[0m`);
-  console.log(`\x1b[35m│\x1b[0m  Token: \x1b[33m${setupToken}\x1b[0m                           \x1b[35m│\x1b[0m`);
-  console.log(`\x1b[35m│\x1b[0m  URL:   \x1b[36m${autoLoginUrl}\x1b[0m     \x1b[35m│\x1b[0m`);
+  console.log(`\x1b[35m│\x1b[0m  \x1b[1m\x1b[35m✨ RouteNex Open-Source Local Gateway Console\x1b[0m                         \x1b[35m│\x1b[0m`);
+  console.log(`\x1b[35m│\x1b[0m  Default Password: \x1b[1m\x1b[33m${adminPassword}\x1b[0m                                \x1b[35m│\x1b[0m`);
+  console.log(`\x1b[35m│\x1b[0m  Console URL:      \x1b[36m${dashboardUrl}\x1b[0m                      \x1b[35m│\x1b[0m`);
   console.log(`\x1b[35m│\x1b[0m  Zero Cloud Auth Required • 100% Offline & Self-Hosted                 \x1b[35m│\x1b[0m`);
   console.log(`\x1b[35m└────────────────────────────────────────────────────────────────────────┘\x1b[0m\n`);
 
   console.log(`\x1b[32m✔ Gateway Ready for Coding Agents & Client Applications:\x1b[0m`);
-  console.log(`  • Web Dashboard: \x1b[1m\x1b[34mhttp://${host}:${port}/dashboard\x1b[0m (100% Offline Standalone)`);
+  console.log(`  • Web Dashboard: \x1b[1m\x1b[34m${dashboardUrl}\x1b[0m (Authentication Screen First)`);
   console.log(`  • Base URL:      \x1b[1mhttp://${host}:${port}/v1\x1b[0m`);
   console.log(`  • MCP Endpoint:  \x1b[1mhttp://${host}:${port}/v1/mcp\x1b[0m`);
   console.log(`  • Health Check:  http://${host}:${port}/health/live`);
@@ -221,7 +221,7 @@ Server Options:
   if (shouldOpen) {
     const { openBrowser } = await import(pathToFileURL(path.resolve(__dirname, '../gateway/dist/cli/open-browser.js')).href).catch(() => ({ openBrowser: null }));
     if (openBrowser) {
-      openBrowser(autoLoginUrl).catch(() => {});
+      openBrowser(dashboardUrl).catch(() => {});
     }
   }
 }

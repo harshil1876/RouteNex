@@ -47,6 +47,34 @@ export function createApp(appConfig: AppConfig = config) {
   );
 
   // 2. Global Middleware
+  // OWASP Security Headers
+  app.use('*', async (c, next) => {
+    c.header('X-Content-Type-Options', 'nosniff');
+    c.header('X-Frame-Options', 'DENY');
+    c.header('X-XSS-Protection', '1; mode=block');
+    c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+    c.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    await next();
+  });
+
+  // 10MB Request Body Guard
+  app.use('*', async (c, next) => {
+    const len = c.req.header('content-length');
+    if (len && parseInt(len, 10) > 10 * 1024 * 1024) {
+      return c.json(
+        {
+          error: {
+            message: 'Payload Too Large: maximum request body size is 10MB',
+            type: 'invalid_request_error',
+            code: 'PAYLOAD_TOO_LARGE',
+          },
+        },
+        413
+      );
+    }
+    await next();
+  });
+
   app.use(
     '*',
     cors({
@@ -160,6 +188,14 @@ export function startServer(appConfig: AppConfig = config) {
 
   return { app, server, registry, store, adminStore, engine, circuitBreaker };
 }
+
+// High-availability anti-crash protection guards
+process.on('uncaughtException', (err) => {
+  console.error('[RouteNex Guard] Caught uncaughtException:', err?.message || err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[RouteNex Guard] Caught unhandledRejection:', reason);
+});
 
 // Auto-start when executed directly as entrypoint
 const isMain = Boolean(

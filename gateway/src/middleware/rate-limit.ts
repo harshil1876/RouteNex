@@ -46,6 +46,10 @@ export function createRateLimitMiddleware(
     let record = tracker.get(ip);
 
     if (!record || now > record.resetAt) {
+      if (tracker.size >= 5000) {
+        const oldestIp = tracker.keys().next().value;
+        if (oldestIp) tracker.delete(oldestIp);
+      }
       record = { count: 1, resetAt: now + windowMs };
       tracker.set(ip, record);
     } else {

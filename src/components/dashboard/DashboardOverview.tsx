@@ -39,9 +39,10 @@ export default function DashboardOverview() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [topologyView, setTopologyView] = useState<'radial' | 'pipeline'>('radial');
 
-  // Local Gateway Password Unlock state
+  // Local Gateway Password Unlock state (Always present authentication card with default password first)
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('routenex-admin');
+  const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
 
   // Top dismissible announcement banners
@@ -72,25 +73,19 @@ export default function DashboardOverview() {
         setSelectedProviderId(providerParam);
       }
 
-      const savedToken = localStorage.getItem('routenex_admin_token');
-
+      // Remove auto_token from query string to enforce local password gate
       if (autoToken) {
-        localStorage.setItem('routenex_admin_token', autoToken);
-        setIsUnlocked(true);
         params.delete('auto_token');
         const newQuery = params.toString() ? `?${params.toString()}` : '';
         window.history.replaceState({}, '', `${window.location.pathname}${newQuery}`);
-      } else if (savedToken) {
+      }
+
+      // Check if unlocked in current active browser session
+      const isSessionUnlocked = sessionStorage.getItem('routenex_unlocked') === 'true';
+      if (isSessionUnlocked) {
         setIsUnlocked(true);
       } else {
-        // In local development mode on localhost, check if gateway requires auth
-        fetch('http://127.0.0.1:3001/v1/admin/auth/verify')
-          .then((res) => {
-            if (res.ok) setIsUnlocked(true);
-          })
-          .catch(() => {
-            // Offline or requiring password
-          });
+        setIsUnlocked(false);
       }
 
       // Keyboard shortcut Ctrl+K / Cmd+K for command palette
@@ -152,26 +147,41 @@ export default function DashboardOverview() {
       }).catch(() => null);
 
       if (res && res.ok) {
+        sessionStorage.setItem('routenex_unlocked', 'true');
         localStorage.setItem('routenex_admin_token', token);
         setIsUnlocked(true);
       } else {
-        // If gateway endpoint is mocked or offline, check if token begins with rn_local_ or match
-        if (token.startsWith('rn_local_') || token === 'rn-local-dev-default') {
+        // Fallback for offline dev or standard token match
+        if (token === 'routenex-admin' || token.startsWith('rn_local_') || token === 'rn-local-dev-default') {
+          sessionStorage.setItem('routenex_unlocked', 'true');
           localStorage.setItem('routenex_admin_token', token);
           setIsUnlocked(true);
         } else {
-          setAuthError('Invalid password. Check the setup token printed in your terminal.');
+          setAuthError('Invalid password. Default password is routenex-admin (or check terminal setup token).');
         }
       }
     } catch {
-      setAuthError('Connection to gateway failed.');
+      if (token === 'routenex-admin' || token.startsWith('rn_local_') || token === 'rn-local-dev-default') {
+        sessionStorage.setItem('routenex_unlocked', 'true');
+        localStorage.setItem('routenex_admin_token', token);
+        setIsUnlocked(true);
+      } else {
+        setAuthError('Connection to gateway failed.');
+      }
     }
+  };
+
+  const handleLock = () => {
+    sessionStorage.removeItem('routenex_unlocked');
+    localStorage.removeItem('routenex_admin_token');
+    setPasswordInput('routenex-admin');
+    setIsUnlocked(false);
   };
 
   const commands = [
     { label: 'Home Overview', action: () => setActiveTab('overview') },
     { label: 'Endpoints & Tunnels', action: () => setActiveTab('endpoints') },
-    { label: 'Providers Hub (347+)', action: () => setActiveTab('providers') },
+    { label: 'Providers & Models Hub', action: () => setActiveTab('providers') },
     { label: 'API Keys Manager', action: () => setActiveTab('keys') },
     { label: 'Combos & Studio', action: () => setActiveTab('combos') },
     { label: 'Caveman 10 Language Packs', action: () => setActiveTab('caveman') },
@@ -193,41 +203,65 @@ export default function DashboardOverview() {
       <div className="min-h-screen bg-[#09090b] text-zinc-200 flex items-center justify-center p-4 font-mono">
         <div className="w-full max-w-md p-8 rounded-2xl bg-[#111113] border border-[#222226] shadow-2xl space-y-6">
           <div className="text-center space-y-2">
-            <div className="w-10 h-10 rounded-lg bg-zinc-100 text-zinc-950 font-bold flex items-center justify-center mx-auto text-sm">
+            <div className="w-10 h-10 rounded-lg bg-white text-zinc-950 font-bold flex items-center justify-center mx-auto text-sm shadow-xs">
               RN
             </div>
             <h1 className="text-lg font-semibold text-zinc-100 font-sans tracking-tight">
               RouteNex Local Gateway
             </h1>
             <p className="text-xs text-zinc-500 font-sans leading-relaxed">
-              Enter the admin password printed in your terminal on startup, or launch with <code className="text-zinc-300">routenex</code> to auto-authenticate in Chrome/Edge.
+              Open Source self-hosted AI routing gateway. Authenticate with the default admin password to unlock the console.
             </p>
+          </div>
+
+          {/* Default Password Callout Card */}
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-xs">
+            <div className="space-y-0.5">
+              <span className="text-[10px] uppercase font-mono text-zinc-500 tracking-wider">Default Password</span>
+              <div className="font-mono text-zinc-100 font-semibold text-sm">routenex-admin</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPasswordInput('routenex-admin')}
+              className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 !text-zinc-200 border border-zinc-700 text-[11px] font-sans transition flex items-center gap-1 font-medium cursor-pointer"
+            >
+              <span>Auto-Fill</span> ↵
+            </button>
           </div>
 
           <form onSubmit={handleUnlock} className="space-y-4">
             <div>
-              <label className="block text-xs text-zinc-400 mb-1.5 font-sans">Admin Setup Password</label>
+              <div className="flex items-center justify-between mb-1.5 font-sans">
+                <label className="text-xs text-zinc-400">Admin Setup Password</label>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="text-[11px] text-zinc-400 hover:text-zinc-200 font-mono transition cursor-pointer"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="rn_local_..."
+                placeholder="routenex-admin"
                 autoFocus
                 className="w-full bg-[#09090b] border border-[#222226] rounded-lg px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
               />
             </div>
 
             {authError && (
-              <div className="text-[11px] text-red-400 bg-red-950/20 border border-red-900/30 p-2 rounded">
+              <div className="text-[11px] text-red-400 bg-red-950/20 border border-red-900/30 p-2.5 rounded-lg">
                 {authError}
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full py-2.5 rounded-lg bg-zinc-100 text-zinc-950 font-medium text-xs hover:bg-white transition font-sans"
+              className="w-full py-2.5 rounded-lg bg-white hover:bg-zinc-100 !text-zinc-950 font-semibold text-xs transition font-sans cursor-pointer shadow-sm"
             >
-              Unlock Local Gateway →
+              Unlock RouteNex Console →
             </button>
           </form>
 
@@ -294,11 +328,8 @@ export default function DashboardOverview() {
             {/* Lock / Sign Out */}
             <button
               type="button"
-              onClick={() => {
-                localStorage.removeItem('routenex_admin_token');
-                setIsUnlocked(false);
-              }}
-              className="text-xs font-mono text-zinc-500 hover:text-zinc-300 transition"
+              onClick={handleLock}
+              className="text-xs font-mono text-zinc-500 hover:text-zinc-200 transition cursor-pointer flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-800"
               title="Lock Local Gateway"
             >
               🔒 Lock

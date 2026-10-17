@@ -59,6 +59,14 @@ export function sanitizeHeader(val: string | undefined | null, fallback: string 
 export class RoutingEngine {
   private readonly lastKnownGoodProviders = new Map<string, string>();
 
+  private setLastKnownGood(key: string, provider: string): void {
+    if (this.lastKnownGoodProviders.size >= 1000) {
+      const oldest = this.lastKnownGoodProviders.keys().next().value;
+      if (oldest) this.lastKnownGoodProviders.delete(oldest);
+    }
+    this.lastKnownGoodProviders.set(key, provider);
+  }
+
   constructor(
     private readonly registry: ProviderRegistry,
     private readonly circuitBreaker: CircuitBreaker,
@@ -471,8 +479,8 @@ export class RoutingEngine {
         this.circuitBreaker.recordSuccess(targetModel.provider);
         this.circuitBreaker.recordModelSuccess(targetModel.id);
         this.circuitBreaker.recordKeySuccess(targetModel.provider);
-        this.lastKnownGoodProviders.set(targetModel.id, targetModel.provider);
-        this.lastKnownGoodProviders.set(request.model || 'auto', targetModel.provider);
+        this.setLastKnownGood(targetModel.id, targetModel.provider);
+        this.setLastKnownGood(request.model || 'auto', targetModel.provider);
 
         const latencyMs = Date.now() - startTime;
         const costEstimate = this.calculateCost(targetModel, response.usage);

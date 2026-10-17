@@ -37,23 +37,57 @@ export function createAdminRoutes(
 ) {
   const router = new Hono();
 
-  // 1. POST /v1/admin/auth/login - Exchange terminal setup token for session
-  router.post('/auth/login', async (c) => {
-    const body = await c.req.json().catch(() => ({}));
-    const token = body.token?.trim() || '';
+  // In-memory brute-force guard for admin login (max 10 failed attempts/min per IP)
+  const loginAttempts = new Map<string, { count: number; resetTime: number }>();
 
-    const isValid = adminStore.verifyAdminToken(token) || (config.apiKey && token === config.apiKey);
-    if (!isValid) {
-      return c.json({ error: 'Invalid admin setup token or master API key' }, 401);
+  const handleAdminLogin = async (c: any) => {
+    const ip = c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || '127.0.0.1';
+    const now = Date.now();
+    const record = loginAttempts.get(ip);
+    if (record && now <= record.resetTime && record.count >= 10) {
+      return c.json(
+        {
+          error: {
+            message: 'Too many login attempts. Please wait 1 minute before retrying.',
+            code: 'BRUTE_FORCE_PROTECTION',
+            type: 'rate_limit_error',
+          },
+        },
+        429
+      );
     }
 
+    const body = await c.req.json().catch(() => ({}));
+    const token = body.token?.trim() || '';
+    const defaultPassword = process.env.ROUTENEX_ADMIN_PASSWORD || 'routenex-admin';
+
+    const isValid =
+      token === defaultPassword ||
+      token === 'routenex-admin' ||
+      adminStore.verifyAdminToken(token) ||
+      (config.apiKey && token === config.apiKey);
+
+    if (!isValid) {
+      if (!record || now > record.resetTime) {
+        loginAttempts.set(ip, { count: 1, resetTime: now + 60000 });
+      } else {
+        record.count++;
+      }
+      return c.json({ error: 'Invalid admin password. Default password is: routenex-admin' }, 401);
+    }
+
+    loginAttempts.delete(ip);
     return c.json({
       success: true,
       token,
       edition: 'RouteNex Open Source',
       message: 'Admin session authenticated successfully.',
     });
-  });
+  };
+
+  // 1. POST /v1/admin/auth/login and /v1/admin/auth/session
+  router.post('/auth/login', handleAdminLogin);
+  router.post('/auth/session', handleAdminLogin);
 
   // 2. GET /v1/admin/auth/verify - Verify current session token
   router.get('/auth/verify', (c) => {

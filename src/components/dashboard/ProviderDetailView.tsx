@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ProviderBrandIcon from './ProviderBrandIcon';
+import { getModelsByProvider } from '../../data/unified-catalog';
 
 interface ProviderDetailProps {
   providerId: string;
@@ -74,12 +75,26 @@ export default function ProviderDetailView({
   const [newKeyInput, setNewKeyInput] = useState('');
   const [newLabelInput, setNewLabelInput] = useState('');
 
-  // 2. Available Models State
-  const [models, setModels] = useState<ProviderModel[]>([
-    { id: `${providerId}/default-model`, name: `${providerName} Core`, isBuiltIn: true, isVisible: true, isFree: true, context: '128K', status: 'working', latencyMs: 98 },
-    { id: `${providerId}/fast-model`, name: `${providerName} Fast`, isBuiltIn: true, isVisible: true, isFree: true, context: '32K', status: 'working', latencyMs: 54 },
-    { id: `${providerId}/vision-preview`, name: `${providerName} Vision`, isBuiltIn: false, isVisible: true, isFree: false, context: '128K', status: 'working', latencyMs: 142 },
-  ]);
+  // 2. Available Models State (Dynamic from Unified Catalog - All models shown)
+  const initialModels = useMemo<ProviderModel[]>(() => {
+    const catalogModels = getModelsByProvider(providerId, providerName);
+    return catalogModels.map((m, idx) => ({
+      id: m.id,
+      name: m.displayName,
+      isBuiltIn: idx < 4,
+      isVisible: true,
+      isFree: m.freeTier,
+      context: m.context,
+      status: 'working',
+      latencyMs: Math.round(1000 / (m.speedTps || 100)) + 35,
+    }));
+  }, [providerId, providerName]);
+
+  const [models, setModels] = useState<ProviderModel[]>(initialModels);
+
+  useEffect(() => {
+    setModels(initialModels);
+  }, [initialModels]);
   const [modelSearch, setModelSearch] = useState('');
   const [modelVisibilityFilter, setModelVisibilityFilter] = useState<'all' | 'visible' | 'hidden'>('all');
   const [modelPriceFilter, setModelPriceFilter] = useState<'all' | 'free' | 'paid'>('all');

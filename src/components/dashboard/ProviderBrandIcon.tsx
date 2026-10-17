@@ -6,7 +6,28 @@ interface ProviderBrandIconProps {
 }
 
 export default function ProviderBrandIcon({ id, className = 'w-5 h-5' }: ProviderBrandIconProps) {
-  const normalizedId = id.toLowerCase();
+  const normalizedId = (id || '').toLowerCase();
+
+  // Google Antigravity & Antigravity CLI
+  if (normalizedId.includes('antigravity')) {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="none">
+        <rect width="24" height="24" rx="5" fill="#0E0F12" stroke="#222226" strokeWidth="1" />
+        <path
+          d="M12 4.2L4.5 19.5H7.8L9.6 15.6H14.4L16.2 19.5H19.5L12 4.2ZM10.7 13.1L12 8.4L13.3 13.1H10.7Z"
+          fill="url(#antigravity-brand-grad)"
+        />
+        <circle cx="12" cy="10.5" r="1.6" fill="#38BDF8" />
+        <defs>
+          <linearGradient id="antigravity-brand-grad" x1="4.5" y1="4.2" x2="19.5" y2="19.5" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#38BDF8" />
+            <stop offset="0.5" stopColor="#818CF8" />
+            <stop offset="1" stopColor="#C084FC" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
 
   // Anthropic / Claude
   if (normalizedId.includes('anthropic') || normalizedId.includes('claude')) {
