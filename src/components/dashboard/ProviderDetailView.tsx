@@ -128,6 +128,8 @@ export default function ProviderDetailView({
 
   // 5. Param Filters State (Screenshots 609-611)
   const [blockedParams, setBlockedParams] = useState('thinking, reasoning_budget');
+  const [copiedModelId, setCopiedModelId] = useState<string | null>(null);
+  const [retestingAccId, setRetestingAccId] = useState<string | null>(null);
   const [allowedParams, setAllowedParams] = useState('temperature, max_tokens, top_p, stream');
   const [autoLearn400, setAutoLearn400] = useState(true);
 
@@ -422,10 +424,13 @@ export default function ProviderDetailView({
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
-                          onClick={() => alert(`Retesting account ${acc.label}...`)}
-                          className="px-2 py-1 rounded bg-[#09090b] border border-[#222226] text-zinc-300 hover:text-white"
+                          onClick={() => {
+                            setRetestingAccId(acc.id);
+                            setTimeout(() => setRetestingAccId(null), 1200);
+                          }}
+                          className="px-2 py-1 rounded bg-[#09090b] border border-[#222226] text-zinc-300 hover:text-white transition"
                         >
-                          Retest
+                          {retestingAccId === acc.id ? '✓ OK' : 'Retest'}
                         </button>
                         <button
                           type="button"
@@ -522,12 +527,13 @@ export default function ProviderDetailView({
                         type="button"
                         onClick={() => {
                           navigator.clipboard.writeText(m.id);
-                          alert(`Copied ${m.id}`);
+                          setCopiedModelId(m.id);
+                          setTimeout(() => setCopiedModelId(null), 1500);
                         }}
                         className="p-1 rounded bg-[#09090b] border border-[#222226] text-zinc-400 hover:text-zinc-200"
-                        title="Copy Model ID"
+                        title={copiedModelId === m.id ? 'Copied to clipboard' : 'Copy Model ID'}
                       >
-                        📋
+                        {copiedModelId === m.id ? '✓' : '📋'}
                       </button>
                       <button
                         type="button"

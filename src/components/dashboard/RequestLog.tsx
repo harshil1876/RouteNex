@@ -195,7 +195,7 @@ export default function RequestLog() {
         <input
           type="text"
           value={correlationFilter}
-          onChange={(e) => setSearchFilter(e.target.value)}
+          onChange={(e) => setCorrelationFilter(e.target.value)}
           placeholder="Filter by Correlation ID..."
           className="bg-[#111113] border border-[#222226] rounded px-3 py-2 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
         />
