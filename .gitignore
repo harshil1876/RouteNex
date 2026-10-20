@@ -42,3 +42,17 @@ test_routenex*
 .omniroute-ref/
 .omniroute-ref
 
+# Internal agent skills & instructions (private to development)
+.claude/
+.claude
+.agents/skills/company-values/
+.agents/skills/find-community/
+.agents/skills/first-customers/
+.agents/skills/grow-sustainably/
+.agents/skills/marketing-plan/
+.agents/skills/minimalist-review/
+.agents/skills/mvp/
+.agents/skills/pricing/
+.agents/skills/processize/
+.agents/skills/validate-idea/
+
