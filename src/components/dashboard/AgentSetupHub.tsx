@@ -37,26 +37,25 @@ export default function AgentSetupHub() {
       </div>
 
       {/* Agent Selector Pills */}
-      <div className="flex space-x-2 overflow-x-auto pb-1 text-xs font-mono">
+      <div className="flex space-x-2 overflow-x-auto pb-1 text-xs font-sans">
         {[
-          { id: 'cursor', label: 'Cursor IDE', icon: '⚡' },
-          { id: 'claudecode', label: 'Claude Code CLI', icon: '🤖' },
-          { id: 'cline', label: 'Cline (VS Code)', icon: '🧩' },
-          { id: 'aider', label: 'Aider CLI', icon: '🚀' },
-          { id: 'python', label: 'Python (openai)', icon: '🐍' },
-          { id: 'node', label: 'Node.js / TS', icon: '📦' },
+          { id: 'cursor', label: 'Cursor IDE' },
+          { id: 'claudecode', label: 'Claude Code CLI' },
+          { id: 'cline', label: 'Cline (VS Code)' },
+          { id: 'aider', label: 'Aider CLI' },
+          { id: 'python', label: 'Python SDK' },
+          { id: 'node', label: 'Node.js / TS' },
         ].map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setSelectedAgent(tab.id as AgentType)}
-            className={`px-3 py-1.5 rounded-full border transition flex items-center gap-1.5 whitespace-nowrap ${
+            className={`px-3 py-1.5 rounded-lg border transition flex items-center gap-1.5 whitespace-nowrap ${
               selectedAgent === tab.id
                 ? 'bg-zinc-100 dark:bg-white !text-zinc-950 font-semibold border-zinc-200 dark:border-white shadow-xs'
                 : 'bg-elevated text-mute border-hairline hover:text-ink hover:border-neutral-400'
             }`}
           >
-            <span>{tab.icon}</span>
             <span>{tab.label}</span>
           </button>
         ))}

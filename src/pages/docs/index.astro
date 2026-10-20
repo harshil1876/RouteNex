@@ -3,13 +3,16 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 ---
 
 <DocsLayout title="Documentation Portal" currentPath="/docs">
-  <div class="space-y-10">
+  <div class="space-y-10 font-sans">
     <!-- Header Title -->
     <div>
-      <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono mb-3">
-        <span>⚡ Documentation & Integration Portal</span>
+      <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-sans mb-3">
+        <svg class="w-3.5 h-3.5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+        <span>Documentation & Integration Portal</span>
       </div>
-      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-white font-mono">
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-white font-sans">
         RouteNex Documentation
       </h1>
       <p class="text-sm text-zinc-400 mt-2 max-w-2xl leading-relaxed">
@@ -24,18 +27,20 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
         href="/docs/getting-started/quick-start"
         class="p-5 rounded-xl bg-[#111113] border border-[#222226] hover:border-zinc-500 transition-all space-y-3 group shadow-sm"
       >
-        <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl group-hover:scale-105 transition-transform">
-          🚀
+        <div class="w-10 h-10 rounded-lg bg-zinc-800/80 border border-zinc-700/80 flex items-center justify-center text-zinc-200 group-hover:scale-105 transition-transform">
+          <svg class="w-5 h-5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
         </div>
         <div>
-          <h2 class="text-sm font-semibold text-white font-mono group-hover:text-zinc-200 transition-colors">
+          <h2 class="text-sm font-semibold text-white font-sans group-hover:text-zinc-200 transition-colors">
             Quick Start Guide
           </h2>
           <p class="text-xs text-zinc-400 mt-1 leading-snug">
             Get RouteNex running in 3 minutes with one command. Zero configuration needed.
           </p>
         </div>
-        <div class="text-[11px] font-mono text-zinc-400 group-hover:text-white flex items-center gap-1 font-semibold pt-1 transition-colors">
+        <div class="text-[11px] font-sans text-zinc-400 group-hover:text-white flex items-center gap-1 font-semibold pt-1 transition-colors">
           <span>Start setup</span>
           <span class="group-hover:translate-x-0.5 transition-transform">→</span>
         </div>
@@ -46,18 +51,21 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
         href="/docs/guides/auto-combo"
         class="p-5 rounded-xl bg-[#111113] border border-[#222226] hover:border-zinc-500 transition-all space-y-3 group shadow-sm"
       >
-        <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl group-hover:scale-105 transition-transform">
-          ✨
+        <div class="w-10 h-10 rounded-lg bg-zinc-800/80 border border-zinc-700/80 flex items-center justify-center text-zinc-200 group-hover:scale-105 transition-transform">
+          <svg class="w-5 h-5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
         </div>
         <div>
-          <h2 class="text-sm font-semibold text-white font-mono group-hover:text-zinc-200 transition-colors">
+          <h2 class="text-sm font-semibold text-white font-sans group-hover:text-zinc-200 transition-colors">
             Auto-Combo Guide
           </h2>
           <p class="text-xs text-zinc-400 mt-1 leading-snug">
             Let RouteNex dynamically select the best provider and fallback cluster for you.
           </p>
         </div>
-        <div class="text-[11px] font-mono text-zinc-400 group-hover:text-white flex items-center gap-1 font-semibold pt-1 transition-colors">
+        <div class="text-[11px] font-sans text-zinc-400 group-hover:text-white flex items-center gap-1 font-semibold pt-1 transition-colors">
           <span>Explore strategies</span>
           <span class="group-hover:translate-x-0.5 transition-transform">→</span>
         </div>
@@ -68,18 +76,21 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
         href="/docs/guides/providers"
         class="p-5 rounded-xl bg-[#111113] border border-[#222226] hover:border-zinc-500 transition-all space-y-3 group shadow-sm"
       >
-        <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl group-hover:scale-105 transition-transform">
-          🔗
+        <div class="w-10 h-10 rounded-lg bg-zinc-800/80 border border-zinc-700/80 flex items-center justify-center text-zinc-200 group-hover:scale-105 transition-transform">
+          <svg class="w-5 h-5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
         </div>
         <div>
-          <h2 class="text-sm font-semibold text-white font-mono group-hover:text-zinc-200 transition-colors">
+          <h2 class="text-sm font-semibold text-white font-sans group-hover:text-zinc-200 transition-colors">
             Providers Guide
           </h2>
           <p class="text-xs text-zinc-400 mt-1 leading-snug">
             Connect AI providers via OAuth, API keys, and free tier aggregators.
           </p>
         </div>
-        <div class="text-[11px] font-mono text-zinc-400 group-hover:text-white flex items-center gap-1 font-semibold pt-1 transition-colors">
+        <div class="text-[11px] font-sans text-zinc-400 group-hover:text-white flex items-center gap-1 font-semibold pt-1 transition-colors">
           <span>Connect providers</span>
           <span class="group-hover:translate-x-0.5 transition-transform">→</span>
         </div>
@@ -90,15 +101,22 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-[#222226]">
       {/* Column 1: For Non-Tech Users */}
       <div class="space-y-4">
-        <div class="flex items-center gap-2 pb-2 border-b border-[#222226]">
-          <span class="text-lg">🚀</span>
+        <div class="flex items-center gap-2.5 pb-2 border-b border-[#222226]">
+          <div class="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sky-400">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
           <div>
-            <h2 class="text-sm font-bold text-white font-mono">For Non-Tech Users</h2>
-            <p class="text-[11px] text-zinc-400">Get started quickly — no technical background needed.</p>
+            <h2 class="text-sm font-bold text-white font-sans">For Non-Tech Users</h2>
+            <p class="text-[11px] text-zinc-400 font-sans">Get started quickly — no technical background needed.</p>
           </div>
         </div>
 
-        <div class="space-y-2 font-mono text-xs">
+        <div class="space-y-2 font-sans text-xs">
           <a
             href="/docs/guides/cli-integrations"
             class="p-3 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] flex items-center justify-between text-white transition-all group"
@@ -147,15 +165,20 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 
       {/* Column 2: For Tech Users */}
       <div class="space-y-4">
-        <div class="flex items-center gap-2 pb-2 border-b border-[#222226]">
-          <span class="text-lg font-mono text-zinc-400">&lt;&gt;</span>
+        <div class="flex items-center gap-2.5 pb-2 border-b border-[#222226]">
+          <div class="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sky-400">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+          </div>
           <div>
-            <h2 class="text-sm font-bold text-white font-mono">For Tech Users</h2>
-            <p class="text-[11px] text-zinc-400">Deep dive into architecture, APIs, and internals.</p>
+            <h2 class="text-sm font-bold text-white font-sans">For Tech Users</h2>
+            <p class="text-[11px] text-zinc-400 font-sans">Deep dive into architecture, APIs, and internals.</p>
           </div>
         </div>
 
-        <div class="space-y-2 font-mono text-xs">
+        <div class="space-y-2 font-sans text-xs">
           <a
             href="/docs/guides/auto-combo"
             class="p-3 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] flex items-center justify-between text-white transition-all group"

@@ -84,7 +84,7 @@ export default function Sidebar({
     {
       id: 'home',
       title: 'HOME',
-      icon: '⚡',
+      icon: '',
       items: [
         { id: 'overview', label: 'Home Overview', tooltip: 'Topology & Live Requests' },
       ],
@@ -92,7 +92,7 @@ export default function Sidebar({
     {
       id: 'proxy',
       title: 'ROUTENEX GATEWAY',
-      icon: '🌐',
+      icon: '',
       items: [
         { id: 'endpoints', label: 'Endpoints & Tunnels', tooltip: 'HTTP /v1, MCP, A2A & LAN IP' },
         { id: 'keys', label: 'API Keys Manager', tooltip: 'Virtual hashed keys and spend limits' },
@@ -106,7 +106,7 @@ export default function Sidebar({
     {
       id: 'compression',
       title: 'COMPRESSION CONTEXT',
-      icon: '🗜️',
+      icon: '',
       items: [
         { id: 'caveman', label: 'Caveman 10 Langs', tooltip: '10 Language Rule Packs', badge: '-38%' },
         { id: 'compression', label: 'Compression Studio', tooltip: 'Live Diff & Multi-Engine Cascade' },
@@ -115,7 +115,7 @@ export default function Sidebar({
     {
       id: 'analytics',
       title: 'ANALYTICS & LOGS',
-      icon: '📊',
+      icon: '',
       items: [
         { id: 'usage', label: 'Usage & Heatmap', tooltip: '365-Day Activity & Token Metrics' },
         { id: 'topology', label: 'Live Routing Trace', tooltip: 'Route Execution & Latency Graph' },
@@ -124,7 +124,7 @@ export default function Sidebar({
     {
       id: 'costs',
       title: 'COSTS & BUDGETS',
-      icon: '💰',
+      icon: '',
       items: [
         { id: 'costs', label: 'Cost Explorer', tooltip: '5-Dimension Spend Explorer' },
         { id: 'free-tiers', label: 'Free Tier Pools', tooltip: '1.62B Free Token Leaderboard', badge: '1.6B' },
@@ -133,7 +133,7 @@ export default function Sidebar({
     {
       id: 'tools',
       title: 'TOOLS & AGENTS',
-      icon: '🤖',
+      icon: '',
       items: [
         { id: 'agents', label: 'Coding Agent Hub', tooltip: 'Claude, Cursor, Cline Presets' },
         { id: 'memory', label: 'Conversational Memory', tooltip: 'SQLite FTS5 Semantic Memory', badge: 'FTS5' },
@@ -143,7 +143,7 @@ export default function Sidebar({
     {
       id: 'other',
       title: 'DEVELOPER PROFILE',
-      icon: '🏆',
+      icon: '',
       items: [
         { id: 'gamification', label: 'Achievements & Badges', tooltip: 'Live Token Milestones & Badges', badge: '23' },
       ],
@@ -151,7 +151,7 @@ export default function Sidebar({
     {
       id: 'config',
       title: 'CONFIGURATION',
-      icon: '⚙️',
+      icon: '',
       items: [
         { id: 'storage', label: 'Storage SQLite', tooltip: 'PRAGMA Stats, VACUUM, Exports' },
         { id: 'aliases', label: 'Model Aliases', tooltip: 'Virtual Model Map & Policy' },

@@ -215,7 +215,9 @@ export default function LexiPackStudio() {
 
           <div className="p-3 rounded-xl bg-[#121622] border border-[#232838] flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-2">
-              <span className="text-emerald-400">⚡</span>
+              <svg className="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+              </svg>
               <span className="text-zinc-300">Pipeline Savings:</span>
               <strong className="text-emerald-400">+{tokensSaved} tokens saved ({savingsPct}% reduction)</strong>
             </div>

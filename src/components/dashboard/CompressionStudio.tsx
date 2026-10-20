@@ -235,7 +235,7 @@ export default function CompressionStudio() {
               onChange={(e) => setPreserveGuards(e.target.checked)}
               className="rounded border-hairline text-ink focus:ring-ink"
             />
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium">🛡️ Guard Preservation</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">Guard Preservation</span>
           </label>
         </div>
       </div>

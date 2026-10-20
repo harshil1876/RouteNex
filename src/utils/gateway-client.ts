@@ -222,7 +222,7 @@ export class RouteNexClient {
   }
 
   /**
-   * Fetches recent requests or returns clean empty/sample stream.
+   * Fetches recent requests or returns clean empty array.
    */
   public async getRecentRequests(): Promise<any[]> {
     const isOnline = await this.isGatewayOnline();
@@ -242,46 +242,7 @@ export class RouteNexClient {
       }
     }
 
-    return [
-      {
-        id: 'rn_req_78a1bc',
-        time: 'Just now',
-        model: 'auto:nitro',
-        model_used: 'groq/llama-3.3-70b-versatile',
-        provider: 'groq',
-        latency_ms: 118,
-        status: 'success',
-        tokens: { prompt: 240, completion: 82, total: 322 },
-        tokens_saved: 92,
-        cost_usd: 0.000018,
-        routing_reason: 'auto:nitro matched fastest healthy candidate in pool',
-      },
-      {
-        id: 'rn_req_65d9fa',
-        time: '1m ago',
-        model: 'antigravity/claude-sonnet-4-6-thinking',
-        model_used: 'antigravity/claude-sonnet-4-6-thinking',
-        provider: 'antigravity',
-        latency_ms: 412,
-        status: 'success',
-        tokens: { prompt: 1420, completion: 490, total: 1910 },
-        tokens_saved: 540,
-        cost_usd: 0.0,
-        routing_reason: 'Direct route to Google Antigravity OAuth Cluster',
-      },
-      {
-        id: 'rn_req_33b8ce',
-        time: '3m ago',
-        model: 'auto:free',
-        model_used: 'pollinations/openai',
-        provider: 'pollinations',
-        latency_ms: 320,
-        status: 'success',
-        tokens: { prompt: 180, completion: 64, total: 244 },
-        tokens_saved: 68,
-        cost_usd: 0.0,
-        routing_reason: 'auto:free filtered exclusively to zero-cost providers',
-      },
-    ];
+    // Clean zero-state for new sessions
+    return [];
   }
 }

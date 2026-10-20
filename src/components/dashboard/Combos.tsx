@@ -459,13 +459,13 @@ export default function Combos() {
                   onChange={(e) => setStrategy(e.target.value as ComboStrategy)}
                   className="w-full rounded border border-hairline bg-canvas px-3 py-2 text-ink font-mono text-xs focus:border-ink focus:outline-hidden"
                 >
-                  <option value="priority">Priority Failover (1st ➔ 2nd ➔ 3rd)</option>
-                  <option value="lkgp">📌 LKGP (Last-Known-Good Provider stickiness)</option>
-                  <option value="headroom">📊 Headroom (Highest remaining RPM / quota)</option>
-                  <option value="reset-window">⏳ Reset-Window (Soonest rate-limit reset)</option>
-                  <option value="cache-optimized">🎯 Cache-Optimized (Prefix affinity for prompt-cache hits)</option>
-                  <option value="fastest">⚡ Fastest (Lowest Latency First)</option>
-                  <option value="round-robin">🔄 Round-Robin (Equally Balanced)</option>
+                  <option value="priority">Priority Failover (1st → 2nd → 3rd)</option>
+                  <option value="lkgp">LKGP (Last-Known-Good Provider stickiness)</option>
+                  <option value="headroom">Headroom (Highest remaining RPM / quota)</option>
+                  <option value="reset-window">Reset-Window (Soonest rate-limit reset)</option>
+                  <option value="cache-optimized">Cache-Optimized (Prefix affinity for prompt-cache hits)</option>
+                  <option value="fastest">Fastest (Lowest Latency First)</option>
+                  <option value="round-robin">Round-Robin (Equally Balanced)</option>
                 </select>
               </div>
 

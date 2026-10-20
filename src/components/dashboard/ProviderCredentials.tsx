@@ -61,12 +61,12 @@ const CATEGORIES: { id: CategoryFilter; label: string }[] = [
 ];
 
 const MODALITY_FILTERS = [
-  { id: 'image', label: '🖼 Image' },
-  { id: 'video', label: '🎬 Video' },
-  { id: 'music', label: '🎵 Music' },
-  { id: 'tts', label: '🗣 TTS' },
-  { id: 'stt', label: '🎙 STT' },
-  { id: 'embedding', label: '🧬 Embedding' },
+  { id: 'image', label: 'Image' },
+  { id: 'video', label: 'Video' },
+  { id: 'music', label: 'Audio' },
+  { id: 'tts', label: 'TTS' },
+  { id: 'stt', label: 'STT' },
+  { id: 'embedding', label: 'Embedding' },
 ];
 
 export default function ProviderCredentials({
@@ -391,8 +391,12 @@ export default function ProviderCredentials({
             <h2 className="text-xl font-bold text-zinc-100 tracking-tight font-sans">
               Providers & Models Hub
             </h2>
-            <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-0.5 text-[10px] font-mono font-semibold">
-              🔒 AES-256-GCM Keystore
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-0.5 text-[10px] font-sans font-medium">
+              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              AES-256-GCM Keystore
             </span>
           </div>
           <p className="mt-1 text-xs text-zinc-400 font-sans leading-relaxed">
@@ -401,29 +405,38 @@ export default function ProviderCredentials({
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Top Unified Hub Toggle: ⊞ By Provider ↔ 🧠 By Model */}
-          <div className="flex items-center p-1 rounded-lg bg-[#09090b] border border-[#222226] text-xs font-mono">
+          {/* Top Unified Hub Toggle: By Provider ↔ By Model */}
+          <div className="flex items-center p-1 rounded-lg bg-[#09090b] border border-[#222226] text-xs font-sans">
             <button
               type="button"
               onClick={() => setHubView('providers')}
-              className={`px-3 py-1.5 rounded-md transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition ${
                 hubView === 'providers'
                   ? 'bg-zinc-100 !text-zinc-950 font-semibold shadow-xs'
                   : 'text-zinc-400 hover:text-white'
               }`}
             >
-              ⊞ By Provider ({providers.length})
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              By Provider ({providers.length})
             </button>
             <button
               type="button"
               onClick={() => setHubView('models')}
-              className={`px-3 py-1.5 rounded-md transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition ${
                 hubView === 'models'
                   ? 'bg-zinc-100 !text-zinc-950 font-semibold shadow-xs'
                   : 'text-zinc-400 hover:text-white'
               }`}
             >
-              🧠 By Model (200+)
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+              </svg>
+              By Model (200+)
             </button>
           </div>
 
@@ -447,7 +460,12 @@ export default function ProviderCredentials({
           <div className="flex flex-wrap items-center gap-2 flex-1">
             {/* Search Providers */}
             <div className="relative flex-1 min-w-[180px]">
-              <span className="absolute left-3 top-2.5 text-zinc-500 text-xs">🔍</span>
+              <span className="absolute left-3 top-2.5 text-zinc-500">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="M21 21l-4.35-4.35"></path>
+                </svg>
+              </span>
               <input
                 type="text"
                 value={searchProvider}
@@ -459,7 +477,20 @@ export default function ProviderCredentials({
 
             {/* Search by Model */}
             <div className="relative flex-1 min-w-[180px]">
-              <span className="absolute left-3 top-2.5 text-zinc-500 text-xs">⚡</span>
+              <span className="absolute left-3 top-2.5 text-zinc-500">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                  <rect x="9" y="9" width="6" height="6"></rect>
+                  <line x1="9" y1="1" x2="9" y2="4"></line>
+                  <line x1="15" y1="1" x2="15" y2="4"></line>
+                  <line x1="9" y1="20" x2="9" y2="23"></line>
+                  <line x1="15" y1="20" x2="15" y2="23"></line>
+                  <line x1="20" y1="9" x2="23" y2="9"></line>
+                  <line x1="20" y1="14" x2="23" y2="14"></line>
+                  <line x1="1" y1="9" x2="4" y2="9"></line>
+                  <line x1="1" y1="14" x2="4" y2="14"></line>
+                </svg>
+              </span>
               <input
                 type="text"
                 value={searchModel}
@@ -470,7 +501,7 @@ export default function ProviderCredentials({
             </div>
 
             {/* View Switcher: All / Configured / Compact */}
-            <div className="flex items-center p-0.5 rounded-lg bg-[#09090b] border border-[#222226] text-xs font-mono">
+            <div className="flex items-center p-0.5 rounded-lg bg-[#09090b] border border-[#222226] text-xs font-sans">
               <button
                 type="button"
                 onClick={() => setViewFilter('all')}
@@ -513,7 +544,7 @@ export default function ProviderCredentials({
             <button
               type="button"
               onClick={() => setOnboardingOpen(true)}
-              className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 !text-zinc-100 border border-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-xs"
+              className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 !text-zinc-100 border border-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-xs font-sans"
             >
               <span>＋</span>
               <span>Onboarding Wizard</span>
@@ -522,9 +553,13 @@ export default function ProviderCredentials({
             <button
               type="button"
               onClick={() => setImportOpen(true)}
-              className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 !text-zinc-100 border border-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-xs"
+              className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 !text-zinc-100 border border-zinc-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-xs font-sans"
             >
-              <span>📥</span>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
               <span>Import</span>
             </button>
 
@@ -532,9 +567,11 @@ export default function ProviderCredentials({
               type="button"
               onClick={handleTestAll}
               disabled={isTestingAll}
-              className="px-3.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-white !text-zinc-950 font-semibold text-xs border border-zinc-200 transition disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+              className="px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold text-xs border border-sky-400 transition disabled:opacity-50 flex items-center gap-1.5 shadow-sm font-sans"
             >
-              <span>▷</span>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
               <span>{isTestingAll ? 'Testing All...' : 'Test All'}</span>
             </button>
           </div>
@@ -811,9 +848,14 @@ export default function ProviderCredentials({
 
       {filteredProviders.length === 0 && (
         <div className="p-12 text-center rounded-xl border border-[#222226] bg-[#111113] space-y-2">
-          <span className="text-2xl">🔍</span>
-          <h3 className="text-sm font-semibold text-zinc-200">No matching providers found</h3>
-          <p className="text-xs text-zinc-500">
+          <div className="mx-auto w-10 h-10 rounded-full bg-zinc-800/60 border border-zinc-700/60 flex items-center justify-center text-zinc-400">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="M21 21l-4.35-4.35"></path>
+            </svg>
+          </div>
+          <h3 className="text-sm font-semibold text-zinc-200 font-sans">No matching providers found</h3>
+          <p className="text-xs text-zinc-500 font-sans">
             Try adjusting your search query, clearing modality pills, or switching to the 'All' category.
           </p>
         </div>

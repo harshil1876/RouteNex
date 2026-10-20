@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { RouteNexClient, type TestPulseResult } from '../../utils/gateway-client';
 
 interface NexFlowCanvasProps {
-  onNavigateTab?: (pillarId: string, subTabId?: string) => void;
+  onNavigateTab?: (tabId: string) => void;
 }
 
 export default function NexFlowCanvas({ onNavigateTab }: NexFlowCanvasProps) {
@@ -26,7 +26,6 @@ export default function NexFlowCanvas({ onNavigateTab }: NexFlowCanvasProps) {
     setIsPulsing(true);
     setPulseStage(1);
 
-    // Animate stages smoothly
     setTimeout(() => setPulseStage(2), 250);
     setTimeout(() => setPulseStage(3), 500);
     setTimeout(() => setPulseStage(4), 750);
@@ -42,103 +41,107 @@ export default function NexFlowCanvas({ onNavigateTab }: NexFlowCanvasProps) {
   };
 
   return (
-    <div className="rounded-2xl bg-[#0e1017] border border-[#1e2333] p-5 sm:p-6 space-y-6 shadow-xl relative overflow-hidden font-sans">
-      {/* Background technical dot matrix */}
-      <div className="absolute inset-0 bg-[radial-gradient(rgba(0,242,254,0.04)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
-
-      {/* Header bar with View Mode Switcher */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10">
+    <div className="rounded-xl bg-[#111113] border border-[#222226] p-5 sm:p-6 space-y-6 shadow-sm font-sans">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00F2FE]" />
-            <h2 className="text-sm sm:text-base font-bold text-zinc-100 font-sans tracking-tight">
-              NexFlow™ Live Pipeline Canvas
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-[17px] font-semibold text-zinc-100 tracking-tight font-sans">
+              Live Routing Pipeline
             </h2>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-800/40 text-cyan-300">
-              4-Stage Telemetry
+            <span className="text-xs font-sans px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 font-medium">
+              4-Stage Engine
             </span>
           </div>
-          <p className="text-xs text-zinc-400 font-sans">
-            Real-time signal ingress, 4-stage NexCompress token stripping, policy resolution, and provider failover.
+          <p className="text-sm text-zinc-400 font-sans">
+            Real-time signal ingress, 4-stage token optimization, policy resolution, and provider failover.
           </p>
         </div>
 
         {/* View Toggle */}
-        <div className="inline-flex rounded-lg bg-[#141722] border border-[#232838] p-1 text-xs font-mono">
+        <div className="inline-flex rounded-lg bg-[#09090b] border border-[#222226] p-1 text-xs font-sans">
           <button
             type="button"
             onClick={() => setViewMode('pipeline')}
-            className={`px-3 py-1.5 rounded-md transition-all ${
+            className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
               viewMode === 'pipeline'
-                ? 'bg-cyan-500 text-zinc-950 font-bold shadow-xs'
-                : 'text-zinc-400 hover:text-white'
+                ? 'bg-sky-500 !text-zinc-950 font-semibold shadow-xs'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            ⚡ Signal Pipeline
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+            <span>Signal Pipeline</span>
           </button>
           <button
             type="button"
             onClick={() => setViewMode('constellation')}
-            className={`px-3 py-1.5 rounded-md transition-all ${
+            className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
               viewMode === 'constellation'
-                ? 'bg-cyan-500 text-zinc-950 font-bold shadow-xs'
-                : 'text-zinc-400 hover:text-white'
+                ? 'bg-sky-500 !text-zinc-950 font-semibold shadow-xs'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            🪐 Constellation Hub
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+              <path d="M2 12h20" />
+            </svg>
+            <span>Constellation Hub</span>
           </button>
         </div>
       </div>
 
-      {/* Interactive Send Test Pulse Bar */}
-      <form onSubmit={handleSendPulse} className="space-y-3 relative z-10">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          {/* Strategy Selector */}
+      {/* Send Test Pulse Form */}
+      <form onSubmit={handleSendPulse} className="space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           <select
             value={selectedStrategy}
             onChange={(e) => setSelectedStrategy(e.target.value)}
-            className="bg-[#141722] border border-[#232838] rounded-xl px-3 py-2 text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-500 shrink-0"
+            className="bg-[#09090b] border border-[#222226] rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-sky-500 shrink-0"
           >
-            <option value="auto:nitro">auto:nitro (Fastest 110ms)</option>
+            <option value="auto:nitro">auto:nitro (Fastest 114ms)</option>
             <option value="auto:cheap">auto:cheap (Lowest Cost)</option>
             <option value="auto:free">auto:free (Zero-Cost $0)</option>
             <option value="auto:zdr">auto:zdr (Zero Data Retention)</option>
             <option value="antigravity/claude-sonnet-4-6-thinking">Antigravity Claude Sonnet 4.6</option>
           </select>
 
-          {/* Prompt Input */}
           <div className="flex-1 relative">
             <input
               type="text"
               value={pulsePrompt}
               onChange={(e) => setPulsePrompt(e.target.value)}
-              placeholder="Type test prompt to simulate RouteNex signal..."
-              className="w-full bg-[#141722] border border-[#232838] rounded-xl px-3.5 py-2 text-xs text-zinc-100 placeholder-zinc-500 font-mono focus:outline-none focus:border-cyan-500"
+              placeholder="Enter prompt to simulate RouteNex signal..."
+              className="w-full bg-[#09090b] border border-[#222226] rounded-lg px-3.5 py-2 text-xs text-zinc-100 placeholder-zinc-500 font-sans focus:outline-none focus:border-sky-500"
             />
           </div>
 
-          {/* Pulse Button */}
           <button
             type="submit"
             disabled={isPulsing}
-            className="px-5 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 !text-zinc-950 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-[0_0_15px_rgba(0,242,254,0.3)] disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-sm disabled:opacity-50 font-sans"
           >
             {isPulsing ? (
               <>
-                <span className="w-3 h-3 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
+                <span className="w-3.5 h-3.5 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
                 <span>Pulsing...</span>
               </>
             ) : (
               <>
-                <span>⚡ Send Test Pulse</span>
+                <svg className="w-3.5 h-3.5 text-zinc-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                <span>Send Test Pulse</span>
               </>
             )}
           </button>
         </div>
 
-        {/* Presets Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto text-[11px] font-mono text-zinc-500">
-          <span className="shrink-0 text-zinc-400 font-semibold">Simulate Preset:</span>
+        {/* Preset Chips */}
+        <div className="flex items-center gap-2 overflow-x-auto text-xs font-sans text-zinc-400">
+          <span className="shrink-0 text-zinc-500 text-xs">Presets:</span>
           {presets.map((p, idx) => (
             <button
               key={idx}
@@ -147,7 +150,7 @@ export default function NexFlowCanvas({ onNavigateTab }: NexFlowCanvasProps) {
                 setPulsePrompt(p.prompt);
                 setSelectedStrategy(p.model);
               }}
-              className="px-2.5 py-0.5 rounded-full bg-[#141722] hover:bg-zinc-800 border border-[#232838] text-zinc-300 hover:text-white transition shrink-0"
+              className="px-2.5 py-1 rounded-md bg-[#09090b] hover:bg-zinc-800 border border-[#222226] text-zinc-300 hover:text-white transition shrink-0 text-xs font-sans"
             >
               {p.label}
             </button>
@@ -155,113 +158,141 @@ export default function NexFlowCanvas({ onNavigateTab }: NexFlowCanvasProps) {
         </div>
       </form>
 
-      {/* PIPELINE VIEW */}
+      {/* PIPELINE STAGES */}
       {viewMode === 'pipeline' && (
-        <div className="space-y-4 relative z-10">
-          {/* 4-Stage Horizontal Pipeline Graph */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 relative">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {/* Stage 1: Client Ingress */}
             <div
-              className={`p-4 rounded-xl border transition-all duration-300 ${
+              className={`p-4 rounded-xl border transition-all duration-200 ${
                 pulseStage >= 1
-                  ? 'bg-[#141926] border-cyan-400/80 shadow-[0_0_12px_rgba(0,242,254,0.15)]'
-                  : 'bg-[#12141c] border-[#1e2333]'
+                  ? 'bg-sky-950/20 border-sky-500/40'
+                  : 'bg-[#09090b] border-[#222226]'
               }`}
             >
-              <div className="flex items-center justify-between text-xs font-mono mb-2">
-                <span className="text-zinc-400 font-bold">01 / INGRESS</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300">HTTP/MCP</span>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="4 17 10 11 4 5" />
+                    <line x1="12" x2="20" y1="19" y2="19" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-zinc-100 font-sans">Client Ingress</div>
+                  <span className="text-xs text-zinc-400 font-sans">HTTP / MCP Gateway</span>
+                </div>
               </div>
-              <div className="text-xs font-semibold text-zinc-200">Client Ingress</div>
-              <p className="text-[11px] text-zinc-400 mt-1">Cursor · Claude Code · Cline · SDK</p>
-              <div className="mt-3 pt-2 border-t border-[#1e2333] flex items-center justify-between text-[11px] font-mono">
-                <span className="text-zinc-500">Tokens:</span>
-                <span className="text-cyan-300 font-bold">{lastResult ? lastResult.originalTokens : 68} tok</span>
+              <p className="text-[13px] text-zinc-400 leading-5 font-sans">
+                Cursor, Claude Code, Cline, and OpenAI SDK endpoints.
+              </p>
+              <div className="mt-3 pt-2.5 border-t border-[#222226] flex items-center justify-between text-xs font-mono">
+                <span className="text-zinc-500">Payload:</span>
+                <span className="text-zinc-200 font-medium">{lastResult ? `${lastResult.originalTokens} tokens` : '—'}</span>
               </div>
             </div>
 
-            {/* Stage 2: NexCompress (LexiPack) */}
+            {/* Stage 2: Token Optimizer */}
             <div
-              className={`p-4 rounded-xl border transition-all duration-300 ${
+              className={`p-4 rounded-xl border transition-all duration-200 ${
                 pulseStage >= 2
-                  ? 'bg-[#141926] border-emerald-400/80 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
-                  : 'bg-[#12141c] border-[#1e2333]'
+                  ? 'bg-sky-950/20 border-sky-500/40'
+                  : 'bg-[#09090b] border-[#222226]'
               }`}
             >
-              <div className="flex items-center justify-between text-xs font-mono mb-2">
-                <span className="text-emerald-400 font-bold">02 / NEXCOMPRESS</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-300 font-bold">
-                  {lastResult ? `-${lastResult.reductionPercent}%` : '-38%'}
-                </span>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-zinc-100 font-sans">Token Optimizer</div>
+                  <span className="text-xs text-zinc-400 font-sans">NexCompress Pipeline</span>
+                </div>
               </div>
-              <div className="text-xs font-semibold text-zinc-200">LexiPack + LogPrune</div>
-              <p className="text-[11px] text-zinc-400 mt-1">Structural & cross-turn deduplication</p>
-              <div className="mt-3 pt-2 border-t border-[#1e2333] flex items-center justify-between text-[11px] font-mono">
-                <span className="text-zinc-500">Saved:</span>
-                <span className="text-emerald-400 font-bold">{lastResult ? `+${lastResult.tokensSaved} tok` : '+26 tok'}</span>
+              <p className="text-[13px] text-zinc-400 leading-5 font-sans">
+                LexiPack semantic condensor, LogPrune, and TurnDedup.
+              </p>
+              <div className="mt-3 pt-2.5 border-t border-[#222226] flex items-center justify-between text-xs font-mono">
+                <span className="text-zinc-500">Reduction:</span>
+                <span className="text-sky-400 font-medium">{lastResult ? `-${lastResult.reductionPercent}% saved` : '—'}</span>
               </div>
             </div>
 
-            {/* Stage 3: NexRoute Policy Engine */}
+            {/* Stage 3: Route Policy */}
             <div
-              className={`p-4 rounded-xl border transition-all duration-300 ${
+              className={`p-4 rounded-xl border transition-all duration-200 ${
                 pulseStage >= 3
-                  ? 'bg-[#141926] border-amber-400/80 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
-                  : 'bg-[#12141c] border-[#1e2333]'
+                  ? 'bg-sky-950/20 border-sky-500/40'
+                  : 'bg-[#09090b] border-[#222226]'
               }`}
             >
-              <div className="flex items-center justify-between text-xs font-mono mb-2">
-                <span className="text-amber-400 font-bold">03 / NEXROUTE</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 font-bold">19 Policies</span>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="18" r="3" />
+                    <circle cx="6" cy="6" r="3" />
+                    <circle cx="18" cy="6" r="3" />
+                    <path d="M18 9v2c0 .6-.4 1-1 1H7c-.6 0-1-.4-1-1V9" />
+                    <path d="M12 12v3" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-zinc-100 font-sans">Route Policy</div>
+                  <span className="text-xs text-zinc-400 font-sans">Policy Resolution</span>
+                </div>
               </div>
-              <div className="text-xs font-semibold text-zinc-200">Policy Resolution</div>
-              <p className="text-[11px] text-zinc-400 mt-1">Latency · Cost · Quota Headroom</p>
-              <div className="mt-3 pt-2 border-t border-[#1e2333] flex items-center justify-between text-[11px] font-mono">
-                <span className="text-zinc-500">Selected:</span>
-                <span className="text-amber-300 font-bold truncate max-w-[100px]">
-                  {lastResult ? lastResult.selectedProvider : 'groq'}
-                </span>
+              <p className="text-[13px] text-zinc-400 leading-5 font-sans">
+                Evaluates latency, cost, and active circuit breaker states.
+              </p>
+              <div className="mt-3 pt-2.5 border-t border-[#222226] flex items-center justify-between text-xs font-mono">
+                <span className="text-zinc-500">Target Pool:</span>
+                <span className="text-zinc-200 font-medium truncate max-w-[120px]">{lastResult ? lastResult.selectedProvider : '—'}</span>
               </div>
             </div>
 
-            {/* Stage 4: Target Model & Output */}
+            {/* Stage 4: Provider Dispatch */}
             <div
-              className={`p-4 rounded-xl border transition-all duration-300 ${
+              className={`p-4 rounded-xl border transition-all duration-200 ${
                 pulseStage >= 4
-                  ? 'bg-[#141926] border-cyan-400/80 shadow-[0_0_12px_rgba(0,242,254,0.15)]'
-                  : 'bg-[#12141c] border-[#1e2333]'
+                  ? 'bg-sky-950/20 border-sky-500/40'
+                  : 'bg-[#09090b] border-[#222226]'
               }`}
             >
-              <div className="flex items-center justify-between text-xs font-mono mb-2">
-                <span className="text-cyan-400 font-bold">04 / DISPATCH</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-300 font-bold">
-                  {lastResult ? `${lastResult.latencyMs}ms` : '114ms'}
-                </span>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-zinc-100 font-sans">Provider Dispatch</div>
+                  <span className="text-xs text-zinc-400 font-sans">Execution & Logging</span>
+                </div>
               </div>
-              <div className="text-xs font-semibold text-zinc-200 truncate">
-                {lastResult ? lastResult.selectedModel.split('/').pop() : 'llama-3.3-70b'}
-              </div>
-              <p className="text-[11px] text-zinc-400 mt-1">100% Circuit Health · 0 Retries</p>
-              <div className="mt-3 pt-2 border-t border-[#1e2333] flex items-center justify-between text-[11px] font-mono">
-                <span className="text-zinc-500">Total Cost:</span>
-                <span className="text-zinc-200 font-bold">{lastResult ? `$${lastResult.costUsd.toFixed(6)}` : '$0.000012'}</span>
+              <p className="text-[13px] text-zinc-400 leading-5 font-sans truncate">
+                {lastResult ? lastResult.selectedModel : 'Live response streaming with 0ms retry overhead.'}
+              </p>
+              <div className="mt-3 pt-2.5 border-t border-[#222226] flex items-center justify-between text-xs font-mono">
+                <span className="text-zinc-500">Latency:</span>
+                <span className="text-zinc-200 font-medium">{lastResult ? `${lastResult.latencyMs}ms` : '—'}</span>
               </div>
             </div>
           </div>
 
-          {/* Pulse Telemetry Log Feed */}
+          {/* Pulse Telemetry Result Card */}
           {lastResult && (
-            <div className="p-3.5 rounded-xl bg-[#141722] border border-[#232838] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs font-mono">
-              <div className="flex items-center gap-2">
-                <span className="text-emerald-400">✓</span>
-                <span className="text-zinc-200 font-semibold">Signal Pulse Completed:</span>
-                <span className="text-cyan-300">{lastResult.ingressModel}</span>
-                <span className="text-zinc-500">➔</span>
-                <span className="text-white">{lastResult.selectedModel}</span>
+            <div className="p-4 rounded-xl bg-[#09090b] border border-sky-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-sky-400" />
+                <span className="font-semibold text-zinc-100 font-sans">Pulse Completed:</span>
+                <span className="font-mono text-sky-400">{lastResult.ingressModel}</span>
+                <span className="text-zinc-500 font-mono">→</span>
+                <span className="font-mono text-zinc-200">{lastResult.selectedModel}</span>
               </div>
-              <div className="flex items-center gap-3 text-zinc-400">
+              <div className="flex items-center gap-4 text-zinc-400 font-mono">
                 <span>Latency: <strong className="text-zinc-100">{lastResult.latencyMs}ms</strong></span>
-                <span>Saved: <strong className="text-emerald-400">-{lastResult.reductionPercent}% tokens</strong></span>
+                <span>Saved: <strong className="text-sky-400">-{lastResult.reductionPercent}% tokens</strong></span>
               </div>
             </div>
           )}
@@ -270,22 +301,26 @@ export default function NexFlowCanvas({ onNavigateTab }: NexFlowCanvasProps) {
 
       {/* CONSTELLATION HUB VIEW */}
       {viewMode === 'constellation' && (
-        <div className="p-6 rounded-xl bg-[#12141c] border border-[#1e2333] flex flex-col items-center justify-center text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(0,242,254,0.2)]">
-            🌐
+        <div className="p-8 rounded-xl bg-[#09090b] border border-[#222226] flex flex-col items-center justify-center text-center space-y-4">
+          <div className="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+              <path d="M2 12h20" />
+            </svg>
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-bold text-zinc-100 font-sans">RouteNex Constellation Mesh</h3>
-            <p className="text-xs text-zinc-400 max-w-md font-sans">
-              347 connected AI endpoints, 120+ active providers, and real-time circuit-breaker rings clustered around the RouteNex core daemon.
+            <h3 className="text-base font-semibold text-zinc-100 font-sans">RouteNex Constellation Mesh</h3>
+            <p className="text-sm text-zinc-400 max-w-md font-sans">
+              347 connected AI endpoints, 120+ active providers, and circuit-breaker rings clustered around the RouteNex core.
             </p>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-2 font-mono text-xs">
-            <span className="px-2.5 py-1 rounded bg-[#181d2a] border border-[#232838] text-cyan-300">Antigravity (14 Models)</span>
-            <span className="px-2.5 py-1 rounded bg-[#181d2a] border border-[#232838] text-zinc-300">Groq (Nitro 110ms)</span>
-            <span className="px-2.5 py-1 rounded bg-[#181d2a] border border-[#232838] text-zinc-300">Anthropic Claude</span>
-            <span className="px-2.5 py-1 rounded bg-[#181d2a] border border-[#232838] text-zinc-300">OpenAI GPT-4o</span>
-            <span className="px-2.5 py-1 rounded bg-[#181d2a] border border-[#232838] text-emerald-400">Pollinations ($0 Free)</span>
+          <div className="flex flex-wrap items-center justify-center gap-2 font-mono text-xs pt-1">
+            <span className="px-3 py-1 rounded-md bg-[#111113] border border-[#222226] text-sky-400 font-medium">Antigravity (14 Models)</span>
+            <span className="px-3 py-1 rounded-md bg-[#111113] border border-[#222226] text-zinc-300">Groq (Nitro 114ms)</span>
+            <span className="px-3 py-1 rounded-md bg-[#111113] border border-[#222226] text-zinc-300">Anthropic Claude</span>
+            <span className="px-3 py-1 rounded-md bg-[#111113] border border-[#222226] text-zinc-300">OpenAI GPT-4o</span>
+            <span className="px-3 py-1 rounded-md bg-[#111113] border border-[#222226] text-zinc-300">Pollinations ($0 Free)</span>
           </div>
         </div>
       )}

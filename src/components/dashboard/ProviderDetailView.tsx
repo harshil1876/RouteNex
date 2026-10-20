@@ -482,9 +482,12 @@ export default function ProviderDetailView({
                 type="button"
                 onClick={handleTestAllModels}
                 disabled={isTestingAllModels}
-                className="px-3 py-1.5 rounded bg-zinc-100 text-zinc-950 font-semibold text-xs hover:bg-white transition disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold text-xs transition disabled:opacity-50 font-sans inline-flex items-center gap-1.5"
               >
-                {isTestingAllModels ? 'Testing All...' : '⚡ Test All Models'}
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                {isTestingAllModels ? 'Testing All...' : 'Test All Models'}
               </button>
             </div>
           </div>
@@ -533,7 +536,16 @@ export default function ProviderDetailView({
                         className="p-1 rounded bg-[#09090b] border border-[#222226] text-zinc-400 hover:text-zinc-200"
                         title={copiedModelId === m.id ? 'Copied to clipboard' : 'Copy Model ID'}
                       >
-                        {copiedModelId === m.id ? '✓' : '📋'}
+                        {copiedModelId === m.id ? (
+                          <svg className="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                          </svg>
+                        )}
                       </button>
                       <button
                         type="button"
@@ -545,10 +557,15 @@ export default function ProviderDetailView({
                       </button>
                       <a
                         href={`/models/${providerId}/${m.id.includes('/') ? m.id.split('/')[1] : m.id}`}
-                        className="px-1.5 py-1 rounded bg-[#09090b] border border-[#222226] text-zinc-300 hover:text-white text-[10px] inline-flex items-center gap-1"
+                        className="px-1.5 py-1 rounded bg-[#09090b] border border-[#222226] text-zinc-300 hover:text-white text-[10px] inline-flex items-center gap-1 font-sans"
                         title="View 8-Tab Model Comparison & Analytics"
                       >
-                        📊 Compare
+                        <svg className="w-3 h-3 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <line x1="18" y1="20" x2="18" y2="10"></line>
+                          <line x1="12" y1="20" x2="12" y2="4"></line>
+                          <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                        Compare
                       </a>
                       <button
                         type="button"

@@ -299,7 +299,7 @@ export default function ModelCatalogExplorer() {
                           )}
                           {m.zdr && (
                             <span className="text-[9px] px-1.5 py-0.2 rounded font-mono font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700" title="Zero Data Retention">
-                              🛡️ ZDR
+                              ZDR
                             </span>
                           )}
                         </div>

@@ -167,8 +167,8 @@ export default function Playground() {
             {/* Context Token Compressor Toggle */}
             <div className="flex items-center justify-between p-2.5 rounded border border-hairline bg-canvas">
               <div>
-                <span className="block font-mono text-xs font-semibold text-ink">
-                  🗜️ Context Compressor
+                <span className="block font-sans text-xs font-semibold text-ink">
+                  Context Compressor
                 </span>
                 <span className="text-[10px] text-mute">
                   Strip redundant whitespace & comments (-15% to -50% tokens)
@@ -209,7 +209,7 @@ export default function Playground() {
                   <div className="flex items-center gap-2">
                     {result.cacheHit && (
                       <span className="rounded bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 px-2 py-0.5 font-mono text-[10px] font-semibold border border-sky-300 dark:border-sky-800">
-                        ⚡ 0ms Cache Hit
+                        0ms Cache Hit
                       </span>
                     )}
                     <span className="rounded bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 font-mono text-[10px] text-emerald-800 dark:text-emerald-300 font-medium border border-emerald-300 dark:border-emerald-800">
@@ -246,14 +246,14 @@ export default function Playground() {
 
                   {result.compression && (
                     <div className="rounded border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/50 p-2.5 text-teal-900 dark:text-teal-200 text-[11px] flex items-center justify-between">
-                      <span>🗜️ <strong>Context Token Compression:</strong> -{result.compression.saved_percent}% characters</span>
+                      <span><strong>Context Token Compression:</strong> -{result.compression.saved_percent}% characters</span>
                       <span className="font-semibold text-teal-600 dark:text-teal-400">~{result.compression.estimated_tokens_saved} tokens saved</span>
                     </div>
                   )}
 
                   {result.fallbackAttempts > 0 && (
                     <div className="rounded border border-amber-200 bg-amber-50 p-2.5 text-amber-900 text-[11px]">
-                      <span className="font-semibold">⚡ Cascade Failover Triggered:</span> Mitigated {result.fallbackAttempts} failing candidate before successful completion.
+                      <span className="font-semibold">Cascade Failover Triggered:</span> Mitigated {result.fallbackAttempts} failing candidate before successful completion.
                     </div>
                   )}
 

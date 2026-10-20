@@ -8,13 +8,8 @@ import ThemeToggle from './ThemeToggle.astro';
     <!-- Left: Brand / Logo -->
     <div class="flex items-center gap-8">
       <a href="/" class="flex items-center gap-2.5 text-ink font-semibold tracking-tight transition hover:opacity-90" aria-label="RouteNex Home">
-        <span class="flex h-7 w-7 items-center justify-center rounded-md bg-ink text-white dark:bg-white dark:text-black">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 2L2 12l10 10 10-10L12 2z"></path>
-            <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
-          </svg>
-        </span>
-        <span class="text-base font-semibold tracking-tight text-ink">RouteNex</span>
+        <img src="/logo.png" alt="RouteNex" width="28" height="28" class="h-7 w-7 rounded-lg object-contain" />
+        <span class="text-base font-semibold tracking-tight text-ink font-sans">RouteNex</span>
       </a>
 
       <!-- Desktop Nav links -->
@@ -53,7 +48,7 @@ import ThemeToggle from './ThemeToggle.astro';
 
       <a
         href="/signup"
-        class="inline-flex items-center justify-center rounded-full bg-zinc-950 text-white dark:bg-zinc-100 dark:!text-zinc-950 font-semibold px-4 py-2 text-xs sm:text-sm transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+        class="inline-flex items-center justify-center rounded-lg bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold px-4 py-2 text-xs sm:text-sm transition shadow-xs focus:outline-none"
       >
         Get Started
       </a>

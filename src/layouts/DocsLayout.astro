@@ -62,26 +62,21 @@ const docNav = [
     <header class="h-14 border-b border-[#222226] bg-[#111113]/90 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40">
       <div class="flex items-center gap-6">
         <a href="/" class="flex items-center gap-2.5 group" aria-label="RouteNex Home">
-          <span class="flex h-7 w-7 items-center justify-center rounded-md bg-white text-black transition-transform group-hover:scale-105">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2L2 12l10 10 10-10L12 2z"></path>
-              <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
-            </svg>
-          </span>
-          <span class="text-sm font-bold tracking-tight text-white font-mono">RouteNex<span class="text-zinc-400">/docs</span></span>
+          <img src="/logo.png" alt="RouteNex" width="28" height="28" class="h-7 w-7 rounded-lg object-contain transition-transform group-hover:scale-105" />
+          <span class="text-sm font-semibold tracking-tight text-white font-sans">RouteNex<span class="text-zinc-400 font-normal"> / docs</span></span>
         </a>
 
-        <nav class="hidden md:flex items-center gap-4 text-xs font-mono text-zinc-400">
+        <nav class="hidden md:flex items-center gap-4 text-xs font-sans text-zinc-400">
           <a href="/models" class="hover:text-white transition">Models</a>
           <a href="/rankings" class="hover:text-white transition">Rankings</a>
           <a href="/pricing" class="hover:text-white transition">Pricing</a>
         </nav>
       </div>
 
-      <div class="flex items-center gap-3 font-mono text-xs">
+      <div class="flex items-center gap-3 font-sans text-xs">
         <a
           href="/dashboard"
-          class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-zinc-200 text-black font-medium shadow-sm transition-all"
+          class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold shadow-xs transition-all"
         >
           <span>Open Console</span>
           <span>→</span>
@@ -134,9 +129,9 @@ const docNav = [
                     return (
                       <a
                         href={item.href}
-                        class={`block px-2.5 py-1.5 rounded-lg transition-colors truncate ${
+                        class={`block px-2.5 py-1.5 rounded-lg transition-colors truncate text-xs ${
                           isActive
-                            ? 'bg-[#18181b] text-white font-medium border border-zinc-700'
+                            ? 'bg-sky-500/10 text-sky-400 font-medium border border-sky-500/20'
                             : 'text-zinc-400 hover:text-white hover:bg-[#111113]'
                         }`}
                       >

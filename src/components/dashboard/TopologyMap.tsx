@@ -118,11 +118,11 @@ export default function TopologyMap() {
           {/* Quick presets */}
           <div className="flex flex-wrap items-center gap-2">
             {[
-              { label: '⚡ :nitro (Lowest Latency)', val: 'auto:nitro' },
-              { label: '🎁 :free ($0 Endpoints)', val: 'auto:free' },
-              { label: '📉 :floor (Cheapest)', val: 'auto:floor' },
-              { label: '🛡️ :zdr (Zero Retention)', val: 'auto:zdr' },
-              { label: '⚖️ auto (Balanced)', val: 'auto' },
+              { label: ':nitro (Lowest Latency)', val: 'auto:nitro' },
+              { label: ':free ($0 Endpoints)', val: 'auto:free' },
+              { label: ':floor (Cheapest)', val: 'auto:floor' },
+              { label: ':zdr (Zero Retention)', val: 'auto:zdr' },
+              { label: 'auto (Balanced)', val: 'auto' },
             ].map((p) => (
               <button
                 key={p.val}
