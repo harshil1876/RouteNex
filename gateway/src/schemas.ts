@@ -196,7 +196,9 @@ export const RoutingExplanationSchema = z.object({
   request_id: z.string(),
   model_requested: z.string(),
   model_selected: z.string().nullable(),
+  selected_model: z.string().nullable().optional(),
   provider_selected: z.string().nullable(),
+  selected_provider: z.string().nullable().optional(),
   reason: z.string(),
   reason_code: z.enum([
     'EXPLICIT_MODEL',

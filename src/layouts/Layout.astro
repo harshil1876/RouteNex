@@ -10,6 +10,7 @@ const {
 } = Astro.props;
 
 import '../styles/global.css';
+import CloudWaitlistModal from '../components/common/CloudWaitlistModal.astro';
 ---
 
 <!doctype html>
@@ -70,5 +71,6 @@ import '../styles/global.css';
       Skip to content
     </a>
     <slot />
+    <CloudWaitlistModal />
   </body>
 </html>

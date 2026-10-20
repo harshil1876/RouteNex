@@ -18,13 +18,12 @@ import ThemeToggle from './ThemeToggle.astro';
         <a href="/rankings" class="text-sm font-normal text-body transition hover:text-ink">Rankings</a>
         <a href="/pricing" class="text-sm font-normal text-body transition hover:text-ink">Pricing</a>
         <a href="/docs" class="text-sm font-normal text-body transition hover:text-ink">Docs</a>
-        <a href="/workspace" class="text-sm font-normal text-body transition hover:text-ink">Workspace</a>
         <a href="/dashboard" class="text-sm font-normal text-body transition hover:text-ink">Local Gateway</a>
       </nav>
     </div>
 
     <!-- Right: External actions & CTAs -->
-    <div class="hidden sm:flex items-center gap-4">
+    <div class="hidden sm:flex items-center gap-3">
       <ThemeToggle />
 
       <a
@@ -39,35 +38,38 @@ import ThemeToggle from './ThemeToggle.astro';
         </svg>
       </a>
 
-      <a
-        href="/login"
-        class="text-sm font-medium text-body hover:text-ink transition"
+      <button
+        type="button"
+        data-waitlist-trigger
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-hairline bg-canvas hover:bg-hairline/60 text-xs font-medium text-body hover:text-ink transition cursor-pointer"
       >
-        Sign In
-      </a>
+        <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+        <span>RouteNex Cloud (Join Waitlist)</span>
+      </button>
 
       <a
-        href="/signup"
+        href="/docs/getting-started/quick-start"
         class="inline-flex items-center justify-center rounded-lg bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold px-4 py-2 text-xs sm:text-sm transition shadow-xs focus:outline-none"
       >
-        Get Started
+        Get Started — Open Source
       </a>
     </div>
 
     <!-- Mobile Hamburger Toggle via details disclosure -->
     <div class="flex items-center gap-2 sm:hidden">
       <ThemeToggle />
-      <a
-        href="/login"
-        class="text-xs font-medium text-body hover:text-ink px-2 py-1 transition"
+      <button
+        type="button"
+        data-waitlist-trigger
+        class="text-xs font-medium text-body hover:text-ink px-2 py-1 transition cursor-pointer"
       >
-        Sign In
-      </a>
+        Cloud Waitlist
+      </button>
       <a
-        href="/signup"
-        class="rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-white dark:bg-white dark:text-black transition hover:opacity-90"
+        href="/docs/getting-started/quick-start"
+        class="rounded-lg bg-sky-500 !text-zinc-950 px-3 py-1.5 text-xs font-semibold shadow-xs"
       >
-        Get Started
+        Open Source
       </a>
       <details class="relative">
         <summary class="flex h-9 w-9 list-none items-center justify-center rounded-md border border-hairline text-ink cursor-pointer hover:bg-hairline/60" aria-label="Toggle navigation menu">
@@ -75,14 +77,21 @@ import ThemeToggle from './ThemeToggle.astro';
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </summary>
-        <div class="absolute right-0 top-12 z-50 w-52 rounded-lg border border-hairline bg-elevated p-2 shadow-lg">
+        <div class="absolute right-0 top-12 z-50 w-56 rounded-lg border border-hairline bg-elevated p-2 shadow-lg">
           <nav class="flex flex-col gap-1 text-sm">
-            <a href="/#features" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Features</a>
-            <a href="/#editions" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Editions Matrix</a>
+            <a href="/models" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Model Catalog</a>
+            <a href="/rankings" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Free Rankings</a>
+            <a href="/pricing" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Pricing & Editions</a>
             <a href="/docs" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Documentation</a>
-            <a href="/dashboard" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Console</a>
-            <a href="/#pricing" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Pricing</a>
+            <a href="/dashboard" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">Local Console</a>
             <div class="my-1 border-t border-hairline"></div>
+            <button
+              type="button"
+              data-waitlist-trigger
+              class="w-full text-left rounded px-3 py-2 text-sky-500 hover:bg-hairline font-medium"
+            >
+              RouteNex Cloud (Join Waitlist)
+            </button>
             <a href="https://github.com/harshil1876/RouteNex" target="_blank" rel="noreferrer" class="rounded px-3 py-2 text-body hover:bg-hairline hover:text-ink">GitHub</a>
           </nav>
         </div>

@@ -1364,5 +1364,322 @@ describe('Cybersecurity & Anti-Crash Hardening', () => {
   });
 });
 
+describe('Open Source Pre-Launch E2E Feature Verification', () => {
+  it('Workflow 1: Password Gate & Lock (:3001) lifecycle', async () => {
+    const { app } = createApp(testConfig);
+
+    // 1. Valid unlock with default password
+    const unlockRes = await app.request('/v1/admin/auth/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: 'routenex-admin' }),
+    });
+    expect(unlockRes.status).toBe(200);
+    const unlockData = await unlockRes.json();
+    expect(unlockData.success).toBe(true);
+    expect(unlockData.edition).toBe('RouteNex Open Source');
+
+    // 2. Lock session immediately
+    const lockRes = await app.request('/v1/admin/auth/session', {
+      method: 'DELETE',
+    });
+    expect(lockRes.status).toBe(200);
+    const lockData = await lockRes.json();
+    expect(lockData.locked).toBe(true);
+
+    // 3. Unauthenticated request to verify endpoint fails
+    const verifyRes = await app.request('/v1/admin/auth/verify');
+    expect(verifyRes.status).toBe(200);
+    const verifyData = await verifyRes.json();
+    expect(verifyData.authenticated).toBe(false);
+  });
+
+  it('Workflow 2: Providers & Models Matrix loading, AES-256-GCM encryption, and health test', async () => {
+    const { app, adminStore } = createApp(testConfig);
+
+    // 1. Models catalog returns full model list
+    const modelsRes = await app.request('/v1/models');
+    expect(modelsRes.status).toBe(200);
+    const modelsData = await modelsRes.json();
+    expect(modelsData.data.length).toBeGreaterThan(50);
+
+    // 2. Save provider key via AES-256-GCM
+    const saveKeyRes = await app.request('/v1/admin/providers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: 'groq',
+        key: 'gsk_test_mock_secret_key_1234567890',
+      }),
+    });
+    expect(saveKeyRes.status).toBe(200);
+    const saveKeyData = await saveKeyRes.json();
+    expect(saveKeyData.success).toBe(true);
+
+    // 3. Verify key is masked in UI and not plaintext
+    const configRes = await app.request('/v1/admin/config');
+    expect(configRes.status).toBe(200);
+    const configData = await configRes.json();
+    const groqEntry = configData.providers.find((p: any) => p.id === 'groq');
+    expect(groqEntry).toBeDefined();
+    expect(groqEntry.isConfigured).toBe(true);
+    expect(groqEntry.maskedKeys[0]).toMatch(/^gsk_.*7890$/);
+
+    // 4. Test provider endpoint health check
+    const testRes = await app.request('/v1/admin/providers/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: 'mock' }),
+    });
+    expect(testRes.status).toBe(200);
+    const testData = await testRes.json();
+    expect(testData.status).toBe('success');
+  });
+
+  it('Workflow 3: Live Routing & Failover across OpenAI and Anthropic SSE protocols', async () => {
+    const { app } = createApp(testConfig);
+
+    // 1. Direct completion through OpenAI protocol
+    const chatRes = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mock/fast',
+        messages: [{ role: 'user', content: 'Ping' }],
+        stream: false,
+      }),
+    });
+    expect(chatRes.status).toBe(200);
+    const chatData = await chatRes.json();
+    expect(chatData.choices[0].message.content).toContain('Ping');
+    expect(chatData.routenex.provider).toBe('mock');
+
+    // 2. Automatic Failover chain (failing target -> healthy fallback)
+    const failoverRes = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'auto',
+        models: ['mock/error', 'mock/fast'],
+        messages: [{ role: 'user', content: 'Resilience test' }],
+        stream: false,
+      }),
+    });
+    expect(failoverRes.status).toBe(200);
+    expect(failoverRes.headers.get('x-routenex-fallback-count')).toBe('1');
+    expect(failoverRes.headers.get('x-routenex-provider-used')).toBe('mock');
+
+    // 3. Anthropic Messages SSE streaming protocol (/v1/messages)
+    const msgRes = await app.request('/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mock/fast',
+        messages: [{ role: 'user', content: 'Hello Claude' }],
+        stream: true,
+      }),
+    });
+    expect(msgRes.status).toBe(200);
+    expect(msgRes.headers.get('content-type')).toContain('text/event-stream');
+    const msgText = await msgRes.text();
+    expect(msgText).toContain('event: message_start');
+    expect(msgText).toContain('event: content_block_delta');
+    expect(msgText).toContain('event: message_stop');
+
+    // 4. Routing Explanation Dry-Run (/v1/router/explain)
+    const explainRes = await app.request('/v1/router/explain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'auto',
+        messages: [{ role: 'user', content: 'Explain quantum logic' }],
+      }),
+    });
+    expect(explainRes.status).toBe(200);
+    const explainData = await explainRes.json();
+    expect(explainData.selected_model).toBeDefined();
+    expect(explainData.reason).toBeDefined();
+    expect(explainData.candidates_evaluated.length).toBeGreaterThan(0);
+  });
+
+  it('Workflow 4: 4-Stage Token Optimizer preserves code blocks byte-for-byte', async () => {
+    const { app } = createApp(testConfig);
+
+    const testPromptWithCode = `
+      Please review this implementation:
+      
+      \`\`\`typescript
+      export function calculateHash(input: string): string {
+        return crypto.createHash('sha256').update(input).digest('hex');
+      }
+      \`\`\`
+      
+      Trace log output:
+      at Object.<anonymous> (/node_modules/express/lib/router.js:142:12)
+      at Module._compile (node:internal/modules/cjs/loader:1376:14)
+      at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+      at Object.<anonymous> (/node_modules/express/lib/router.js:142:12)
+      
+      What is the time complexity?
+    `;
+
+    const res = await app.request('/v1/admin/compress/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: testPromptWithCode,
+        options: {
+          stripExcessiveWhitespace: true,
+          pruneErrorTraces: true,
+          preserveGuards: true,
+        },
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.success).toBe(true);
+    expect(data.savedPercent).toBeGreaterThan(10);
+    expect(data.compressedText).toContain("export function calculateHash(input: string): string {");
+    expect(data.compressedText).toContain("return crypto.createHash('sha256').update(input).digest('hex');");
+    expect(data.compressedText).toContain('What is the time complexity?');
+  });
+
+  it('Workflow 5: Telemetry incrementing, 14-column logs & SQLite maintenance', async () => {
+    const { app } = createApp({ ...testConfig, persistenceEnabled: true, dbPath: './test_workflow5_store.json' });
+
+    // 1. Send chat completion
+    await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mock/fast',
+        messages: [{ role: 'user', content: 'Telemetry pulse test' }],
+        stream: false,
+      }),
+    });
+
+    // 2. Verify usage stats incremented
+    const usageRes = await app.request('/v1/usage');
+    expect(usageRes.status).toBe(200);
+    const usageData = await usageRes.json();
+    expect(usageData.total_requests).toBeGreaterThanOrEqual(1);
+    expect(usageData.tokens.total_tokens).toBeGreaterThan(0);
+
+    // 3. Verify request appears in /v1/admin/requests
+    const reqsRes = await app.request('/v1/admin/requests?limit=10');
+    expect(reqsRes.status).toBe(200);
+    const reqsData = await reqsRes.json();
+    expect(reqsData.requests.length).toBeGreaterThanOrEqual(1);
+    expect(reqsData.requests[0].model_used).toBe('mock/fast');
+    expect(reqsData.requests[0].provider).toBe('mock');
+
+    // 4. Execute SQLite VACUUM maintenance
+    const vacuumRes = await app.request('/v1/admin/storage/vacuum', {
+      method: 'POST',
+    });
+    expect(vacuumRes.status).toBe(200);
+    const vacuumData = await vacuumRes.json();
+    expect(vacuumData.success).toBe(true);
+
+    // 5. Execute JSON export
+    const exportRes = await app.request('/v1/admin/storage/export');
+    expect(exportRes.status).toBe(200);
+    const exportData = await exportRes.json();
+    expect(exportData.export_version).toBe('1.0');
+    expect(exportData.records_count).toBeGreaterThanOrEqual(1);
+
+    // Clean up temporary test persistence file if created
+    if (fs.existsSync('./test_workflow5_store.json')) {
+      try { fs.unlinkSync('./test_workflow5_store.json'); } catch {}
+    }
+  });
+
+  it('Workflow 6: Model Context Protocol (MCP) server JSON-RPC 2.0 tools', async () => {
+    const { app } = createApp(testConfig);
+
+    // 1. tools/list
+    const listRes = await app.request('/v1/mcp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/list',
+      }),
+    });
+    expect(listRes.status).toBe(200);
+    const listData = await listRes.json();
+    expect(listData.result.tools.length).toBeGreaterThanOrEqual(4);
+    const toolNames = listData.result.tools.map((t: any) => t.name);
+    expect(toolNames).toContain('list_models');
+    expect(toolNames).toContain('explain_route');
+    expect(toolNames).toContain('get_free_tier_quotas');
+    expect(toolNames).toContain('test_provider_health');
+
+    // 2. tools/call: list_models
+    const callModelsRes = await app.request('/v1/mcp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: {
+          name: 'list_models',
+          arguments: { free_only: false },
+        },
+      }),
+    });
+    expect(callModelsRes.status).toBe(200);
+    const callModelsData = await callModelsRes.json();
+    const modelsContent = JSON.parse(callModelsData.result.content[0].text);
+    expect(modelsContent.length).toBeGreaterThan(10);
+
+    // 3. tools/call: explain_route
+    const callExplainRes = await app.request('/v1/mcp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 3,
+        method: 'tools/call',
+        params: {
+          name: 'explain_route',
+          arguments: {
+            model: 'auto',
+            messages: [{ role: 'user', content: 'Ping MCP' }],
+          },
+        },
+      }),
+    });
+    expect(callExplainRes.status).toBe(200);
+    const callExplainData = await callExplainRes.json();
+    const explainContent = JSON.parse(callExplainData.result.content[0].text);
+    expect(explainContent.selected_model).toBeDefined();
+
+    // 4. tools/call: get_free_tier_quotas
+    const callQuotasRes = await app.request('/v1/mcp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 4,
+        method: 'tools/call',
+        params: {
+          name: 'get_free_tier_quotas',
+          arguments: {},
+        },
+      }),
+    });
+    expect(callQuotasRes.status).toBe(200);
+    const callQuotasData = await callQuotasRes.json();
+    const quotasContent = JSON.parse(callQuotasData.result.content[0].text);
+    expect(quotasContent.total_free_tokens_available).toBe('1.6 Billion+');
+    expect(quotasContent.providers.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+
 
 

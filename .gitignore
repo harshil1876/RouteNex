@@ -42,3 +42,7 @@ test_routenex*
 .omniroute-ref/
 .omniroute-ref
 
+# Proprietary Cloud SaaS private archive
+.cloud-private-archive/
+.cloud-private-archive
+

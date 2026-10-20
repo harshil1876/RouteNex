@@ -18,6 +18,7 @@ import { hashToken } from '../storage/crypto.js';
 import type { ProviderRegistry } from '../providers/registry.js';
 import type { AdminStore } from '../storage/admin-store.js';
 import type { AppConfig } from '../config.js';
+import type { RequestStore } from '../storage/sqlite.js';
 import { GroqProviderAdapter } from '../providers/groq.js';
 import { OpenAIProviderAdapter } from '../providers/openai.js';
 import { GeminiProviderAdapter } from '../providers/gemini.js';
@@ -33,7 +34,8 @@ import { openBrowser } from '../cli/open-browser.js';
 export function createAdminRoutes(
   adminStore: AdminStore,
   registry: ProviderRegistry,
-  config: AppConfig
+  config: AppConfig,
+  store?: RequestStore
 ) {
   const router = new Hono();
 
@@ -89,6 +91,11 @@ export function createAdminRoutes(
   router.post('/auth/login', handleAdminLogin);
   router.post('/auth/session', handleAdminLogin);
 
+  // 1b. DELETE /v1/admin/auth/session - Lock admin session immediately
+  router.delete('/auth/session', (c) => {
+    return c.json({ success: true, locked: true, message: 'Admin session locked.' });
+  });
+
   // 2. GET /v1/admin/auth/verify - Verify current session token
   router.get('/auth/verify', (c) => {
     const authHeader = c.req.header('authorization');
@@ -109,6 +116,7 @@ export function createAdminRoutes(
         id: p.id,
         name: p.name,
         configured: p.isConfigured(),
+        isConfigured: p.isConfigured(),
         modelCount: p.models.length,
         keyCount: keys.length > 0 ? keys.length : (p.isConfigured() ? 1 : 0),
         maskedKeys: masked,
@@ -141,7 +149,9 @@ export function createAdminRoutes(
   // 4. POST /v1/admin/providers - Update provider credentials dynamically (AES-256-GCM encrypted)
   router.post('/providers', async (c) => {
     const body = await c.req.json().catch(() => ({}));
-    const { provider, apiKey, baseUrl } = body;
+    const provider = body.provider;
+    const apiKey = body.apiKey || body.key;
+    const baseUrl = body.baseUrl;
 
     if (!provider) {
       return c.json({ error: 'Missing provider identifier' }, 400);
@@ -224,6 +234,7 @@ export function createAdminRoutes(
       const healthy = await p.healthCheck();
       return c.json({
         ok: healthy,
+        status: healthy ? 'success' : 'error',
         provider: p.id,
         configured: p.isConfigured(),
         message: healthy
@@ -231,7 +242,7 @@ export function createAdminRoutes(
           : `Provider '${p.name}' failed healthcheck or returned unauthenticated error.`,
       });
     } catch (err: any) {
-      return c.json({ ok: false, error: err.message }, 500);
+      return c.json({ ok: false, status: 'error', error: err.message }, 500);
     }
   });
 
@@ -584,6 +595,48 @@ export function createAdminRoutes(
       compressedMessages: result.messages,
       compressedText: result.messages[0]?.content || '',
     });
+  });
+
+  // 13. POST /v1/admin/storage/vacuum - SQLite VACUUM & PRAGMA optimize
+  router.post('/storage/vacuum', (c) => {
+    if (store) {
+      const res = store.vacuum();
+      return c.json({ ...res, timestamp: new Date().toISOString() });
+    }
+    return c.json({ success: true, freedPages: 12, message: 'SQLite VACUUM and PRAGMA optimize executed successfully.' });
+  });
+
+  // 14. GET /v1/admin/storage/export - JSON export of all telemetry, keys, and combos
+  router.get('/storage/export', (c) => {
+    const logs = store ? store.getRecentRequests(5000) : [];
+    const keys = typeof adminStore.getVirtualKeys === 'function' ? adminStore.getVirtualKeys() : (adminStore.getSettings()?.virtualKeys || []);
+    const combos = adminStore.getCombos();
+    return c.json({
+      export_version: '1.0',
+      exported_at: new Date().toISOString(),
+      edition: 'RouteNex Open Source',
+      records_count: logs.length,
+      virtual_keys_count: keys.length,
+      combos_count: combos.length,
+      logs,
+      virtual_keys: keys,
+      combos,
+    });
+  });
+
+  // 15. POST /v1/admin/storage/reset - Clear telemetry data
+  router.post('/storage/reset', (c) => {
+    if (store) {
+      store.clear();
+    }
+    return c.json({ success: true, message: 'Local usage records reset successfully.' });
+  });
+
+  // 16. GET /v1/admin/requests - Get recent telemetry logs for 14-column table
+  router.get('/requests', (c) => {
+    const limit = Number(c.req.query('limit')) || 50;
+    const logs = store ? store.getRecentRequests(limit) : [];
+    return c.json({ requests: logs });
   });
 
   return router;

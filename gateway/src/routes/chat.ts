@@ -140,6 +140,7 @@ export function createChatRoute(
 
       c.header('X-RouteNex-Request-Id', sanitizeHeader(requestId));
       c.header('X-RouteNex-Selected-Provider', sanitizeHeader(provider));
+      c.header('X-RouteNex-Provider-Used', sanitizeHeader(provider));
       c.header('X-RouteNex-Selected-Model', sanitizeHeader(modelUsed));
       c.header('X-RouteNex-Decision-Reason', sanitizeHeader(reason));
       c.header('X-RouteNex-Fallback-Count', '0');
@@ -240,6 +241,7 @@ export function createChatRoute(
 
       c.header('X-RouteNex-Request-Id', sanitizeHeader(requestId));
       c.header('X-RouteNex-Selected-Provider', sanitizeHeader(response.routenex?.provider || 'unknown'));
+      c.header('X-RouteNex-Provider-Used', sanitizeHeader(response.routenex?.provider || 'unknown'));
       c.header('X-RouteNex-Selected-Model', sanitizeHeader(response.routenex?.model_used || request.model));
       c.header('X-RouteNex-Decision-Reason', sanitizeHeader(response.routenex?.routing_reason || 'Direct route'));
       c.header('X-RouteNex-Fallback-Count', String(response.routenex?.fallback_attempts ?? 0));

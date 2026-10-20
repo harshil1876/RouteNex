@@ -94,7 +94,7 @@ export function createApp(appConfig: AppConfig = config) {
   const modelsRoute = createModelsRoute(registry, adminStore);
   const explainRoute = createExplainRoute(engine);
   const usageRoute = createUsageRoute(store);
-  const adminRoute = createAdminRoutes(adminStore, registry, appConfig);
+  const adminRoute = createAdminRoutes(adminStore, registry, appConfig, store);
   const messagesRoute = createMessagesRoute(engine, store, appConfig, responseCache);
   const mcpRoute = createMcpRoute(engine, registry, circuitBreaker, adminStore);
 

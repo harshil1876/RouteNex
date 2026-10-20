@@ -19,8 +19,8 @@ const tiers = [
       "Privacy-first embedded telemetry & request inspector",
       "One-command Docker Compose deployment"
     ],
-    cta: "Deploy Open Source",
-    ctaLink: "/docs",
+    cta: "Get Started — Open Source",
+    ctaLink: "/docs/getting-started/quick-start",
     ctaVariant: "primary"
   },
   {
@@ -29,7 +29,7 @@ const tiers = [
     frequency: "per seat / mo",
     description: "Fully hosted managed AI routing edge with multi-tenant workspaces, team key vaults, and zero server maintenance.",
     featured: false,
-    badge: "Managed Service",
+    badge: "Coming Soon — Private Beta",
     features: [
       "Everything in Open Source",
       "Hosted edge endpoints (https://api.routenex.com)",
@@ -40,8 +40,8 @@ const tiers = [
       "Hosted request logs with 90-day retention",
       "99.9% uptime SLA guarantee"
     ],
-    cta: "Get Started Free",
-    ctaLink: "/signup",
+    cta: "RouteNex Cloud (Join Waitlist)",
+    ctaLink: "/pricing#waitlist",
     ctaVariant: "secondary"
   },
   {
@@ -61,8 +61,8 @@ const tiers = [
       "99.99% uptime SLA with 15-min response guarantee",
       "Dedicated solutions architect"
     ],
-    cta: "Contact Enterprise",
-    ctaLink: "https://github.com/harshil1876/RouteNex",
+    cta: "Contact Enterprise Waitlist",
+    ctaLink: "/pricing#waitlist",
     ctaVariant: "secondary"
   }
 ];
@@ -144,6 +144,7 @@ const matrixRows = [
           <div class="mt-8 pt-4">
             <a
               href={tier.ctaLink}
+              {...(tier.ctaLink.includes('#waitlist') ? { 'data-waitlist-trigger': '' } : {})}
               class={`w-full inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold transition ${
                 tier.ctaVariant === 'primary'
                   ? 'bg-zinc-950 text-white dark:bg-zinc-100 dark:!text-zinc-950 hover:opacity-90 shadow-xs'

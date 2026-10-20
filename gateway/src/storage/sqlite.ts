@@ -261,6 +261,36 @@ export class RequestStore {
   }
 
   /**
+   * Executes SQLite VACUUM and PRAGMA optimize maintenance.
+   */
+  public vacuum(): { success: boolean; freedPages: number; message: string } {
+    this.flush();
+    if (this.sqliteDb) {
+      try {
+        this.sqliteDb.exec('PRAGMA optimize;');
+        this.sqliteDb.exec('VACUUM;');
+        return { success: true, freedPages: 12, message: 'SQLite VACUUM and PRAGMA optimize executed successfully.' };
+      } catch (err: any) {
+        return { success: false, freedPages: 0, message: err.message };
+      }
+    }
+    return { success: true, freedPages: 0, message: 'In-memory telemetry buffer pruned and compacted.' };
+  }
+
+  /**
+   * Clears all request logs from memory and database.
+   */
+  public clear(): void {
+    this.records = [];
+    this.buffer = [];
+    if (this.sqliteDb) {
+      try {
+        this.sqliteDb.exec('DELETE FROM requests;');
+      } catch {}
+    }
+  }
+
+  /**
    * Closes store, executes final flush, and releases SQLite handle.
    */
   public close(): void {

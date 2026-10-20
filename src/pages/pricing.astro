@@ -47,63 +47,72 @@ import Footer from '../components/Footer.astro';
           </ul>
         </div>
 
-        <a
-          href="/dashboard"
-          class="w-full py-3 rounded-xl bg-zinc-950 text-white dark:bg-zinc-100 dark:!text-zinc-950 font-semibold text-xs text-center font-mono transition-transform hover:scale-[1.02] shadow-xs"
-        >
-          Launch Local Dashboard →
-        </a>
+        <div class="space-y-2">
+          <a
+            href="/docs/getting-started/quick-start"
+            class="block w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold text-xs text-center font-sans transition-transform hover:scale-[1.02] shadow-xs"
+          >
+            Get Started — Open Source (npx routenex) →
+          </a>
+          <a
+            href="/dashboard"
+            class="block w-full py-2.5 rounded-xl border border-hairline bg-canvas hover:bg-elevated text-body text-[11px] text-center font-sans transition"
+          >
+            Open Local Gateway (:3001) →
+          </a>
+        </div>
       </div>
 
       {/* 2. Cloud Developer (Pro) */}
-      <div class="p-8 rounded-2xl border-2 border-ink dark:border-white bg-[#111113] text-white space-y-6 flex flex-col justify-between shadow-xl relative overflow-hidden">
+      <div id="waitlist" class="p-8 rounded-2xl border-2 border-sky-500/50 bg-[#111113] text-white space-y-6 flex flex-col justify-between shadow-xl relative overflow-hidden">
         <div class="space-y-4">
           <div class="flex justify-between items-center">
-            <span class="text-xs font-mono font-bold uppercase tracking-wider text-zinc-300">Cloud Pro</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white font-mono font-bold">
-              Popular
+            <span class="text-xs font-sans font-bold uppercase tracking-wider text-sky-400">RouteNex Cloud</span>
+            <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 font-sans font-semibold">
+              Private Beta Waitlist
             </span>
           </div>
 
           <div>
-            <div class="text-4xl font-bold text-white font-mono">$20 <span class="text-xs font-normal text-zinc-400">/ month</span></div>
-            <div class="text-xs text-zinc-400 mt-1">Managed Cloud Edge Gateway</div>
+            <div class="text-4xl font-bold text-white font-sans">$20 <span class="text-xs font-normal text-zinc-400">/ month (post-beta)</span></div>
+            <div class="text-xs text-zinc-400 mt-1">Managed Global Edge Gateway & Team Keystores</div>
           </div>
 
-          <ul class="space-y-2.5 text-xs text-zinc-300 font-mono">
+          <ul class="space-y-2.5 text-xs text-zinc-300 font-sans">
             <li class="flex items-center gap-2 text-white">✓ Everything in Open Source</li>
-            <li class="flex items-center gap-2 text-white">✓ Edge Worker global deployment (D1)</li>
-            <li class="flex items-center gap-2 text-white">✓ Team RBAC & Supabase Auth</li>
-            <li class="flex items-center gap-2 text-white">✓ Centralized multi-key pooling</li>
-            <li class="flex items-center gap-2 text-white">✓ Cloud Audit logging & Slack alerts</li>
-            <li class="flex items-center gap-2 text-white">✓ 99.99% edge uptime SLA</li>
+            <li class="flex items-center gap-2 text-white">✓ Managed Edge Endpoints with 99.99% uptime</li>
+            <li class="flex items-center gap-2 text-white">✓ Multi-tenant Team Workspace & RBAC</li>
+            <li class="flex items-center gap-2 text-white">✓ Centralized Multi-Key Pooling & Spend Caps</li>
+            <li class="flex items-center gap-2 text-white">✓ Real-time Audit Logging & Team Analytics</li>
+            <li class="flex items-center gap-2 text-white">✓ Zero server setup or maintenance</li>
           </ul>
         </div>
 
-        <a
-          href="/signup"
-          class="w-full py-3 rounded-xl bg-white text-black hover:bg-zinc-200 font-medium text-xs text-center font-mono shadow-md transition-transform hover:scale-[1.02]"
+        <button
+          type="button"
+          data-waitlist-trigger
+          class="w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold text-xs text-center font-sans shadow-md transition-transform hover:scale-[1.02] cursor-pointer"
         >
-          Start 14-Day Cloud Trial →
-        </a>
+          Join RouteNex Cloud Waitlist →
+        </button>
       </div>
 
       {/* 3. Enterprise */}
       <div class="p-8 rounded-2xl border-2 border-hairline bg-elevated space-y-6 flex flex-col justify-between shadow-sm">
         <div class="space-y-4">
           <div class="flex justify-between items-center">
-            <span class="text-xs font-mono font-bold uppercase tracking-wider text-mute">Enterprise</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-canvas border border-hairline text-body font-mono">
-              Custom
+            <span class="text-xs font-sans font-bold uppercase tracking-wider text-mute">Enterprise</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-canvas border border-hairline text-body font-sans font-medium">
+              VPC / Air-Gapped
             </span>
           </div>
 
           <div>
-            <div class="text-4xl font-bold text-ink font-mono">Custom</div>
+            <div class="text-4xl font-bold text-ink font-sans">Custom</div>
             <div class="text-xs text-mute mt-1">Dedicated VPC / Air-Gapped / Custom SLAs</div>
           </div>
 
-          <ul class="space-y-2.5 text-xs text-body font-mono">
+          <ul class="space-y-2.5 text-xs text-body font-sans">
             <li class="flex items-center gap-2 text-ink">✓ Everything in Cloud Pro</li>
             <li class="flex items-center gap-2 text-ink">✓ SSO / SAML & SCIM provisioning</li>
             <li class="flex items-center gap-2 text-ink">✓ Dedicated hardware isolation</li>
@@ -112,13 +121,13 @@ import Footer from '../components/Footer.astro';
           </ul>
         </div>
 
-        <a
-          href="https://github.com/harshil1876/RouteNex/issues"
-          target="_blank"
-          class="w-full py-3 rounded-xl border border-hairline bg-canvas hover:bg-elevated text-ink font-medium text-xs text-center font-mono transition-transform hover:scale-[1.02]"
+        <button
+          type="button"
+          data-waitlist-trigger
+          class="w-full py-3 rounded-xl border border-hairline bg-canvas hover:bg-elevated text-ink font-medium text-xs text-center font-sans transition-transform hover:scale-[1.02] cursor-pointer"
         >
-          Contact Enterprise Team →
-        </a>
+          Request Enterprise Consultation →
+        </button>
       </div>
     </div>
   </main>

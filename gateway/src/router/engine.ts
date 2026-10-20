@@ -424,11 +424,15 @@ export class RoutingEngine {
    */
   explain(request: ChatCompletionRequest, requestId: string): RoutingExplanation {
     const route = this.resolveRoute(request);
+    const primaryId = route.primary ? route.primary.id : null;
+    const primaryProvider = route.primary ? route.primary.provider : null;
     return {
       request_id: requestId,
       model_requested: request.model,
-      model_selected: route.primary ? route.primary.id : null,
-      provider_selected: route.primary ? route.primary.provider : null,
+      model_selected: primaryId,
+      selected_model: primaryId,
+      provider_selected: primaryProvider,
+      selected_provider: primaryProvider,
       reason: route.reason,
       reason_code: route.reasonCode,
       candidates_evaluated: route.candidates.map((c) => ({

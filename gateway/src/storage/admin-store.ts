@@ -224,6 +224,10 @@ export class AdminStore {
     return { ...this.settings };
   }
 
+  public getVirtualKeys(): VirtualKey[] {
+    return [...this.settings.virtualKeys];
+  }
+
   /**
    * Verifies an incoming admin authentication token against the stored hash.
    */
