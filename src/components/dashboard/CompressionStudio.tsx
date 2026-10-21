@@ -225,7 +225,7 @@ export default function CompressionStudio() {
               onChange={(e) => setStage4Caveman(e.target.checked)}
               className="rounded border-hairline text-ink focus:ring-ink"
             />
-            <span className="font-semibold text-ink">Stage 4: Caveman</span>
+            <span className="font-semibold text-ink">Stage 4: LexiPack Compact</span>
           </label>
 
           <label className="flex items-center gap-2 text-xs font-sans text-body cursor-pointer select-none">
@@ -280,7 +280,7 @@ export default function CompressionStudio() {
             <div>S1 Lite: {breakdown.stage1Saved} chars</div>
             <div>S2 Logs: {breakdown.stage2Saved} chars</div>
             <div>S3 Dedup: {breakdown.stage3Saved} chars</div>
-            <div>S4 Caveman: {breakdown.stage4Saved} chars</div>
+            <div>S4 LexiPack: {breakdown.stage4Saved} chars</div>
           </div>
         </div>
       </div>

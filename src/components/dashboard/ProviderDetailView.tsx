@@ -770,7 +770,7 @@ export default function ProviderDetailView({
                   className="rounded border-zinc-700 bg-zinc-900"
                 />
                 <span className="text-xs font-semibold text-zinc-100 font-sans">
-                  Auto-Learn from 400 Errors (OmniRoute Pattern)
+                  Auto-Learn from 400 Errors (Adaptive Self-Healing)
                 </span>
               </label>
               <p className="text-xs text-zinc-400 font-sans leading-relaxed pl-6">

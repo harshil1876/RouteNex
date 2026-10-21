@@ -494,7 +494,7 @@ export function createAdminRoutes(
     });
   });
 
-  // 14. Combos Management Endpoints (OmniRoute / OpenRouter Fallback Groups)
+  // 14. Combos Management Endpoints (Model Fallback Clusters)
   router.get('/combos', (c) => {
     return c.json({ combos: adminStore.getCombos() });
   });

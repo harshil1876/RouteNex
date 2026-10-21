@@ -28,7 +28,7 @@ export interface CircuitBreakerOptions {
 }
 
 /**
- * 3-Layer Resilience Engine for RouteNex (OmniRoute Core Architecture)
+ * 3-Layer Resilience Engine for RouteNex Gateway
  * 
  * Layer 1: Provider Circuit Breaker (Cascading 5xx & network isolation)
  * Layer 2: Key Cooldown (HTTP 429 rate limit backoff per provider API key)

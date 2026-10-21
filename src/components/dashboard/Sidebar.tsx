@@ -108,7 +108,7 @@ export default function Sidebar({
       title: 'COMPRESSION CONTEXT',
       icon: '',
       items: [
-        { id: 'caveman', label: 'Caveman 10 Langs', tooltip: '10 Language Rule Packs', badge: '-38%' },
+        { id: 'caveman', label: 'LexiPack 10 Langs', tooltip: '10 Language Rule Packs', badge: '-38%' },
         { id: 'compression', label: 'Compression Studio', tooltip: 'Live Diff & Multi-Engine Cascade' },
       ],
     },
@@ -276,7 +276,7 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* Bottom Process Control Bar (OmniRoute Pattern) */}
+        {/* Bottom Process Control Bar */}
         {!collapsed && (
           <div className="p-3 border-t border-[#222226] bg-[#0c0c0e] space-y-2">
             <div className="flex items-center justify-between text-[11px] text-zinc-400">

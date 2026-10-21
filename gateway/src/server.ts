@@ -161,7 +161,7 @@ export function startServer(appConfig: AppConfig = config) {
       console.log(`  RouteNex Gateway running on http://${info.address}:${info.port}`);
       if (adminStore.initialSetupToken) {
         console.log(`\x1b[35m  ┌─────────────────────────────────────────────────────────┐\x1b[0m`);
-        console.log(`\x1b[35m  │ RouteNex Admin Setup Password (OmniRoute Pattern):      │\x1b[0m`);
+        console.log(`\x1b[35m  │ RouteNex Local Admin Password:                          │\x1b[0m`);
         console.log(`\x1b[35m  │ \x1b[1m\x1b[36m${adminStore.initialSetupToken}\x1b[0m\x1b[35m │\x1b[0m`);
         console.log(`\x1b[35m  │ (One-time password for local web console access)        │\x1b[0m`);
         console.log(`\x1b[35m  └─────────────────────────────────────────────────────────┘\x1b[0m`);

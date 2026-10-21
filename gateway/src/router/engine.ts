@@ -117,7 +117,7 @@ export class RoutingEngine {
       ? this.aliasResolver(rawModel)
       : rawModel;
 
-    // 0.1 Check for Combo match (OmniRoute / OpenRouter fallback cluster)
+    // 0.1 Check for Combo match (Grouped fallback cluster)
     if (this.comboResolver && targetModelName) {
       const combo = this.comboResolver(targetModelName);
       if (combo) {
@@ -504,7 +504,7 @@ export class RoutingEngine {
         lastError = err;
         const status = err.status || (err instanceof ProviderError ? err.status : 500);
 
-        // Auto-learn from HTTP 400 unsupported parameter errors (OmniRoute Pattern)
+        // Auto-learn from HTTP 400 unsupported parameter errors (Adaptive Engine)
         if (status === 400 && err.message) {
           const match = String(err.message).match(/(?:unsupported|unknown|unrecognized|invalid parameter|extra fields not permitted)[^\w]+(\w+)/i);
           if (match && match[1]) {

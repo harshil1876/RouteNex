@@ -7,8 +7,9 @@ export interface CompressionOptions {
   stage2Logs?: boolean;
   /** Stage 3: Deduplication of large repeated paragraphs across conversation turns (default: true) */
   stage3Dedup?: boolean;
-  /** Stage 4: Caveman - Aggressive removal of conversational fluff/courtesies (default: false, opt-in) */
+  /** Stage 4: LexiPack - Aggressive removal of conversational fluff/courtesies (default: false, opt-in) */
   stage4Caveman?: boolean;
+  stage4LexiPack?: boolean;
   /** Guard preservation for code, URLs, markdown tables, JSON (default: true) */
   preserveGuards?: boolean;
 }
@@ -44,7 +45,8 @@ export class PromptCompressor {
       stage1Lite: options.stage1Lite ?? true,
       stage2Logs: options.stage2Logs ?? true,
       stage3Dedup: options.stage3Dedup ?? true,
-      stage4Caveman: options.stage4Caveman ?? false,
+      stage4Caveman: options.stage4LexiPack ?? options.stage4Caveman ?? false,
+      stage4LexiPack: options.stage4LexiPack ?? options.stage4Caveman ?? false,
       preserveGuards: options.preserveGuards ?? true,
     };
 

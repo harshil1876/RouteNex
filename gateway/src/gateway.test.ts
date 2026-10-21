@@ -584,7 +584,7 @@ describe('Secret Redaction & Privacy Guardrails (PRD Sec 52, 89)', () => {
   });
 });
 
-describe('Open Source Admin API & Virtual Keys (OmniRoute Pattern)', () => {
+describe('Open Source Admin API & Virtual Keys', () => {
   const { app, adminStore } = createApp(testConfig);
 
   it('GET /v1/admin/config returns open source edition details and virtual keys', async () => {
