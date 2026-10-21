@@ -36,7 +36,7 @@
     "LICENSE-APACHE"
   ],
   "bin": {
-    "routenex": "./bin/routenex.js"
+    "routenex": "bin/routenex.js"
   },
   "engines": {
     "node": ">=22.12.0"
