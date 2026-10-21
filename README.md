@@ -1,7 +1,7 @@
 # 🚀 RouteNex — The Intelligent Open-Source AI Gateway
 
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
-[![Tests Passing](https://img.shields.io/badge/Tests-31%2F31%20Passing-emerald.svg)](https://github.com/harshil1876/RouteNex)
+[![Tests Passing](https://img.shields.io/badge/Tests-73%2F73%20Passing-emerald.svg)](https://github.com/harshil1876/RouteNex)
 [![Free Tokens](https://img.shields.io/badge/Free%20Tokens-~1.62B%2Fmonth-purple.svg)](https://github.com/harshil1876/RouteNex)
 [![OpenAI Compatible](https://img.shields.io/badge/API-OpenAI%20Compatible-black.svg)](https://github.com/harshil1876/RouteNex)
 
@@ -65,7 +65,7 @@ Request ──▶ [Layer 1: Provider Circuit Breaker] (Isolates cascading 5xx & 
 
 ## 🔀 Provider Combos (Failover Clusters)
 
-Like OpenRouter and OmniRoute, RouteNex lets you request clusters that automatically cascade to the next target if the primary fails:
+RouteNex lets you define grouped model clusters that automatically cascade to the next target if the primary fails:
 
 ```json
 {
@@ -175,7 +175,7 @@ The gateway API and Web Console will be available immediately at `http://localho
 ## 🧪 Testing & Verification
 
 ```bash
-# Run Vitest API & Router test suite (31 tests)
+# Run Vitest API & Router test suite (73 tests)
 npm run test:api
 
 # Run full production build (Astro static + Gateway TypeScript)

@@ -39,7 +39,7 @@ npm install
 npm run dev
 
 # Terminal 2: Run the RouteNex Gateway Backend (port 3001)
-npm run dev:gateway
+npm run dev:api
 
 # Or start the unified CLI launcher
 npm start
@@ -50,7 +50,7 @@ npm start
 Before opening a pull request, ensure all tests pass and the full build succeeds:
 
 ```bash
-# Run Vitest API integration and unit test suite (34+ tests)
+# Run Vitest API integration and unit test suite (73 tests)
 npm run test:api
 
 # Compile both Astro frontend and Gateway TypeScript

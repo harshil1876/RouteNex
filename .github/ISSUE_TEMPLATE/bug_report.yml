@@ -1,0 +1,51 @@
+name: Bug Report
+description: Report a reproducible issue or error in RouteNex Gateway or Studio
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report an issue! Please ensure you do not share any private API keys.
+  - type: input
+    id: version
+    attributes:
+      label: RouteNex Version
+      description: What version of RouteNex are you running? (e.g. `npx routenex --version` or v0.2.0)
+      placeholder: "0.2.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment / OS
+      options:
+        - Linux (Ubuntu/Debian)
+        - macOS
+        - Windows
+        - Docker / Docker Compose
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps To Reproduce
+      description: Steps or cURL payload to reproduce the behavior.
+      placeholder: |
+        1. Start gateway with `npx routenex`
+        2. Send POST /v1/chat/completions with model 'auto'
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A clear description of what you expected to happen.
+    validations:
+      required: true

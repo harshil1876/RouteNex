@@ -1,0 +1,26 @@
+name: Feature Request / Provider Adapter Request
+description: Suggest a new provider adapter, routing strategy, or enhancement for RouteNex
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for suggesting an improvement for RouteNex!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear and concise description of what the problem is.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the Solution You'd Like
+      description: Explain the proposed feature or provider integration.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe Alternatives Considered
+      description: Any alternative solutions or workarounds you have considered.

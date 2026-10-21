@@ -38,10 +38,6 @@ test_routenex*
 # IDE & local settings
 .idea/
 
-# Local reference repositories
-.omniroute-ref/
-.omniroute-ref
-
 # Internal agent skills & instructions (private to development)
 .claude/
 .claude

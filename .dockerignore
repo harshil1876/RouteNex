@@ -1,0 +1,35 @@
+# Dependencies & Build artifacts
+node_modules/
+gateway/node_modules/
+dist/
+gateway/dist/
+.astro/
+
+# Git & IDE
+.git/
+.gitignore
+.idea/
+.vscode/
+
+# Local data & logs
+*.log
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.tmp
+*.key
+routenex.json
+routenex_admin.json
+test_routenex*
+
+# Reference & Private archives
+.omniroute-ref/
+.cloud-private-archive/
+.claude/
+.agents/skills/
+
+# OS files
+.DS_Store
+Thumbs.db

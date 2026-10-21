@@ -1,0 +1,50 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="404 — Page Not Found · RouteNex">
+  <Header />
+
+  <main class="min-h-[70vh] flex flex-col items-center justify-center px-4 py-20 text-center relative overflow-hidden">
+    <!-- Subtle technical grid background -->
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#27272a0f_1px,transparent_1px),linear-gradient(to_bottom,#27272a0f_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
+
+    <div class="relative z-10 max-w-md mx-auto">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-hairline bg-canvas-elevated text-xs font-mono text-mute mb-6">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+        <span>HTTP 404 · Route Not Found</span>
+      </div>
+
+      <h1 class="text-6xl font-bold tracking-tight text-ink font-mono mb-3">404</h1>
+      <h2 class="text-xl font-semibold text-ink tracking-tight mb-3">This route does not exist</h2>
+      <p class="text-sm text-body leading-relaxed mb-8">
+        The model, documentation guide, or resource you are looking for may have been relocated or renamed in RouteNex v0.2.0.
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-3">
+        <a
+          href="/"
+          class="px-5 py-2.5 rounded-full bg-ink text-white text-xs font-semibold hover:bg-neutral-800 transition"
+        >
+          Return Home
+        </a>
+        <a
+          href="/models"
+          class="px-5 py-2.5 rounded-full border border-hairline bg-canvas-elevated text-ink text-xs font-semibold hover:bg-neutral-100 transition"
+        >
+          Explore Models (200+)
+        </a>
+        <a
+          href="/docs"
+          class="px-5 py-2.5 rounded-full border border-hairline bg-canvas-elevated text-ink text-xs font-semibold hover:bg-neutral-100 transition"
+        >
+          Documentation
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
