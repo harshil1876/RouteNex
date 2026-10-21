@@ -25,11 +25,11 @@ const tiers = [
   },
   {
     name: "RouteNex Cloud",
-    price: "$29",
-    frequency: "per seat / mo",
+    price: "Managed",
+    frequency: "private beta",
     description: "Fully hosted managed AI routing edge with multi-tenant workspaces, team key vaults, and zero server maintenance.",
     featured: false,
-    badge: "Coming Soon — Private Beta",
+    badge: "Coming Soon — Waitlist",
     features: [
       "Everything in Open Source",
       "Hosted edge endpoints (https://api.routenex.com)",
@@ -65,24 +65,6 @@ const tiers = [
     ctaLink: "/pricing#waitlist",
     ctaVariant: "secondary"
   }
-];
-
-const matrixRows = [
-  { feature: "OpenAI Protocol Compatibility (/v1/chat/completions)", oss: "Included", cloud: "Included", ent: "Included" },
-  { feature: "Multi-Provider BYOK (Groq, OpenAI, Gemini, Anthropic, Ollama)", oss: "Included", cloud: "Included", ent: "Included" },
-  { feature: "Deterministic Auto Routing (Cost / Latency / Balanced)", oss: "Included", cloud: "Included", ent: "Included" },
-  { feature: "OpenRouter-style Fallback Chains (models: [...])", oss: "Included", cloud: "Included", ent: "Included" },
-  { feature: "3-State Circuit Breakers (Closed / Open / Half-Open)", oss: "Included", cloud: "Included", ent: "Included" },
-  { feature: "Prompt Token Compressor (Whitespace & comment stripping)", oss: "Included", cloud: "Included", ent: "Included" },
-  { feature: "Local Web Admin Console & Test Playground", oss: "Included", cloud: "Included", ent: "Included" },
-  { feature: "Local Virtual Access Keys (rn-local-...)", oss: "Included", cloud: "Included", ent: "Included" },
-  { feature: "Custom Model Aliases (e.g. fast-model -> groq)", oss: "Included", cloud: "Included", ent: "Included" },
-  { feature: "Hosted Global Edge Gateways (api.routenex.com)", oss: "Self-Hosted", cloud: "Managed Edge", ent: "Custom VPC" },
-  { feature: "Team Workspaces & Role-Based Access Control", oss: "Single Admin", cloud: "Included", ent: "Advanced RBAC" },
-  { feature: "Centralized Billing & Upstream Invoicing", oss: "Direct BYOK", cloud: "Planned", ent: "Custom PO" },
-  { feature: "SAML 2.0 / Okta Enterprise SSO", oss: "N/A", cloud: "Add-on", ent: "Included" },
-  { feature: "SOC2 Compliance & Long-Term Audit Trails", oss: "N/A", cloud: "30-Day Logs", ent: "Indefinite & Export" },
-  { feature: "Uptime SLA Guarantee", oss: "Community Support", cloud: "99.9%", ent: "99.99% Dedicated" },
 ];
 ---
 
@@ -156,61 +138,6 @@ const matrixRows = [
           </div>
         </div>
       ))}
-    </div>
-
-    <!-- Product Editions Feature Matrix Table -->
-    <div class="mt-20">
-      <div class="text-center max-w-xl mx-auto mb-8">
-        <h3 class="text-xl font-semibold text-ink tracking-tight">Detailed Feature Matrix</h3>
-        <p class="mt-2 text-sm text-mute">A transparent comparison between RouteNex Open Source and hosted cloud editions.</p>
-      </div>
-
-      <div class="overflow-x-auto rounded-lg border border-hairline bg-elevated">
-        <table class="w-full text-left text-sm">
-          <thead class="border-b border-hairline bg-canvas text-xs uppercase font-mono text-mute">
-            <tr>
-              <th scope="col" class="py-3.5 px-6 font-semibold">Capability</th>
-              <th scope="col" class="py-3.5 px-6 font-semibold text-center text-ink">RouteNex Open Source</th>
-              <th scope="col" class="py-3.5 px-6 font-semibold text-center text-ink">RouteNex Cloud</th>
-              <th scope="col" class="py-3.5 px-6 font-semibold text-center text-ink">Enterprise</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-hairline">
-            {matrixRows.map((row) => (
-              <tr class="hover:bg-canvas/50 transition-colors">
-                <td class="py-3 px-6 font-medium text-ink">{row.feature}</td>
-                <td class="py-3 px-6 text-center text-body font-mono text-xs">
-                  {row.oss === 'Included' ? (
-                    <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-                      ✓ Included
-                    </span>
-                  ) : (
-                    <span class="text-mute">{row.oss}</span>
-                  )}
-                </td>
-                <td class="py-3 px-6 text-center text-body font-mono text-xs">
-                  {row.cloud === 'Included' ? (
-                    <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-                      ✓ Included
-                    </span>
-                  ) : (
-                    <span class="text-mute">{row.cloud}</span>
-                  )}
-                </td>
-                <td class="py-3 px-6 text-center text-body font-mono text-xs">
-                  {row.ent === 'Included' ? (
-                    <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-                      ✓ Included
-                    </span>
-                  ) : (
-                    <span class="text-mute">{row.ent}</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   </div>
 </section>

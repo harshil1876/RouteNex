@@ -30,6 +30,7 @@ export default function RequestLog() {
   const [correlationFilter, setCorrelationFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
+  const [isSendingPulse, setIsSendingPulse] = useState(false);
 
   // 14 Toggleable Column Pills (matching Screenshot 597)
   const [columns, setColumns] = useState<Record<string, boolean>>({
@@ -70,38 +71,97 @@ export default function RequestLog() {
     setColumns((prev) => ({ ...prev, [colId]: !prev[colId] }));
   };
 
+  const normalizeLogEntry = (r: any): RequestItem => {
+    const isOk = r.isSuccess !== undefined ? Boolean(r.isSuccess) : (r.status === 'success' || r.statusCode === 200 || r.status === '200');
+    const totalTokens = r.tokens?.total ?? r.token_usage?.total_tokens ?? 0;
+    const promptTokens = r.tokens?.prompt ?? r.token_usage?.prompt_tokens ?? 0;
+    const completionTokens = r.tokens?.completion ?? r.token_usage?.completion_tokens ?? 0;
+    const latency = r.latencyMs ?? r.latency_ms ?? 0;
+    const tps = r.tps ?? (latency > 0 && completionTokens > 0 ? Math.round((completionTokens / (latency / 1000)) * 10) / 10 : 38.5);
+    const cost = r.costUsd ?? r.cost_estimate?.total_usd ?? 0;
+    const modelName = r.model || r.model_used || 'auto';
+    const reqModel = r.requestedModel || r.model_requested || modelName;
+    const timeFormatted = r.time || (r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString());
+
+    return {
+      id: r.id || r.request_id || `req_${Math.random().toString(36).substring(2, 9)}`,
+      time: timeFormatted,
+      model: modelName,
+      requestedModel: reqModel,
+      provider: r.provider || 'mock',
+      cacheSource: r.cacheSource || 'UPSTREAM',
+      protocol: r.protocol || 'HTTP /v1',
+      account: r.account || 'Local Admin',
+      apiKeyMasked: r.apiKeyMasked || 'rn-local-...',
+      combo: r.combo || r.routing_reason || 'direct',
+      tokens: {
+        prompt: promptTokens,
+        completion: completionTokens,
+        total: totalTokens,
+      },
+      tps,
+      latencyMs: latency,
+      costUsd: cost,
+      status: r.status || (isOk ? '200' : '500'),
+      statusCode: r.statusCode ?? (isOk ? 200 : 500),
+      isSuccess: isOk,
+      correlationId: r.correlationId || r.correlation_id,
+      conversationId: r.conversationId || r.conversation_id,
+    };
+  };
+
+  const fetchLiveRequests = async () => {
+    try {
+      const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
+      const res = await fetch('http://127.0.0.1:3001/v1/admin/requests', {
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => null);
+
+      if (res && res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.requests)) {
+          const mapped = data.requests.map(normalizeLogEntry);
+          setRequests(mapped);
+        }
+      }
+    } catch {
+      // Gateway offline or no requests yet
+    }
+  };
+
   // Fetch live requests from gateway database
   useEffect(() => {
-    async function fetchLiveRequests() {
-      try {
-        const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
-        const res = await fetch('http://127.0.0.1:3001/v1/admin/requests', {
-          headers: { Authorization: `Bearer ${token}` },
-        }).catch(() => null);
-
-        if (res && res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data.requests) && data.requests.length > 0) {
-            setRequests(data.requests);
-          }
-        }
-      } catch {
-        // Gateway offline or no requests yet
-      }
-    }
-
     fetchLiveRequests();
-    const interval = setInterval(fetchLiveRequests, 5000);
+    const interval = setInterval(fetchLiveRequests, 4000);
     return () => clearInterval(interval);
   }, []);
 
+  const handleSendTestPulse = async () => {
+    setIsSendingPulse(true);
+    try {
+      await fetch('http://127.0.0.1:3001/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'auto',
+          messages: [{ role: 'user', content: 'RouteNex telemetry connectivity ping.' }]
+        })
+      });
+      await fetchLiveRequests();
+    } catch {
+      // Ignore
+    } finally {
+      setIsSendingPulse(false);
+    }
+  };
+
   const filtered = useMemo(() => {
     return requests.filter((r) => {
-      const matchSearch =
-        searchFilter === '' ||
-        r.model.toLowerCase().includes(searchFilter.toLowerCase()) ||
-        r.provider.toLowerCase().includes(searchFilter.toLowerCase()) ||
-        r.id.toLowerCase().includes(searchFilter.toLowerCase());
+      const modelStr = (r.model || '').toLowerCase();
+      const provStr = (r.provider || '').toLowerCase();
+      const idStr = (r.id || '').toLowerCase();
+      const q = (searchFilter || '').toLowerCase();
+      const matchSearch = q === '' || modelStr.includes(q) || provStr.includes(q) || idStr.includes(q);
 
       const matchCorrelation =
         correlationFilter === '' ||
@@ -222,11 +282,21 @@ export default function RequestLog() {
             <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center mx-auto text-zinc-400 text-sm">
               📋
             </div>
-            <h3 className="text-sm font-semibold text-zinc-200">No requests recorded this week</h3>
+            <h3 className="text-sm font-semibold text-zinc-200">No requests recorded yet</h3>
             <p className="text-xs text-zinc-500 max-w-md mx-auto leading-relaxed">
               RouteNex is listening on <code className="text-zinc-300 font-mono">http://127.0.0.1:3001/v1</code>.
-              Send a completion request or run <code className="text-zinc-300 font-mono">routenex run claude</code> to see live execution telemetry.
+              Send a completion request from any OpenAI SDK, or send a quick test ping below to verify telemetry logging.
             </p>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleSendTestPulse}
+                disabled={isSendingPulse}
+                className="px-4 py-2 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs transition inline-flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                <span>{isSendingPulse ? 'Sending Pulse...' : '⚡ Send Test Ping Request'}</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">

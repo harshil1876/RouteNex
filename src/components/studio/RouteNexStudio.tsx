@@ -27,6 +27,18 @@ interface RouteNexStudioProps {
   mode?: 'oss' | 'cloud';
 }
 
+const TAB_TITLES: Record<StudioNavItemId, string> = {
+  overview: 'Overview',
+  providers: 'Providers & Models',
+  routing: 'Routing & Combos',
+  optimizer: 'Token Optimizer',
+  logs: 'Logs & Activity',
+  costs: 'Cost & Quotas',
+  agents: 'Coding Agents & MCP',
+  keys: 'Virtual API Keys',
+  settings: 'Guardrails & Settings',
+};
+
 export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
   // Navigation State
   const [activeItem, setActiveItem] = useState<StudioNavItemId>('overview');
@@ -101,6 +113,40 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
       return () => window.removeEventListener('keydown', handleKeyDown);
     }
   }, [mode]);
+
+  // Sync tab with URL query parameter & browser document title
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const title = TAB_TITLES[activeItem] || 'Studio';
+      document.title = `${title} — RouteNex Studio`;
+
+      const url = new URL(window.location.href);
+      if (activeItem === 'overview') {
+        url.searchParams.delete('tab');
+      } else {
+        url.searchParams.set('tab', activeItem);
+      }
+      if (window.location.search !== url.search) {
+        window.history.pushState({ tab: activeItem }, '', url.toString());
+      }
+    }
+  }, [activeItem]);
+
+  // Handle browser Back / Forward buttons
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') as StudioNavItemId | null;
+      if (tabParam && TAB_TITLES[tabParam]) {
+        setActiveItem(tabParam);
+      } else {
+        setActiveItem('overview');
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -260,8 +306,8 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
 
             {/* Breadcrumb / Title */}
             <div className="flex items-center gap-2 text-sm font-sans">
-              <span className="font-semibold text-zinc-100 tracking-tight capitalize">
-                {activeItem.replace('-', ' & ')}
+              <span className="font-semibold text-zinc-100 tracking-tight">
+                {TAB_TITLES[activeItem] || activeItem}
               </span>
               <span className="text-zinc-600 hidden sm:inline">•</span>
               <span className="text-xs text-zinc-400 hidden sm:inline">
