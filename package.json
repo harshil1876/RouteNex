@@ -49,6 +49,7 @@
     "dev:web": "astro dev",
     "dev:api": "npm --prefix gateway run dev",
     "build:api": "npm --prefix gateway run build",
+    "build:docs": "astro build",
     "test:api": "npm --prefix gateway test",
     "doctor": "npm --prefix gateway run doctor",
     "test:live": "npm --prefix gateway run test:live",
