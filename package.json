@@ -1,7 +1,7 @@
 {
   "name": "routenex",
   "type": "module",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "High-Performance Open-Source AI Gateway & Routing Proxy with Free-Tier Pools and Coding Agent Integrations",
   "license": "MIT OR Apache-2.0",
   "author": "Harshil Patel",

@@ -56,18 +56,81 @@ export default function ProviderDetailView({
     'connections' | 'models' | 'custom' | 'playground' | 'params' | 'web-tools' | 'claude'
   >('connections');
 
-  // 1. Connections Table State
-  const [accounts, setAccounts] = useState<AccountRow[]>([
-    {
-      id: 'acc_1',
-      label: 'Primary Account (Default)',
-      maskedKey: 'sk-...4f9a',
-      status: 'active',
-      quotaRemaining: '84%',
-      priority: 1,
-      tokenShort: false,
-    },
-  ]);
+  const isZeroKeyProvider = useMemo(() => {
+    const id = (providerId || '').toLowerCase();
+    return (
+      id === 'pollinations' ||
+      id === 'duckduckgo' ||
+      id === 'pollinations-noauth' ||
+      id === 'ddg-noauth'
+    );
+  }, [providerId]);
+
+  // 1. Connections Table State (Empty by default for API-key & OAuth providers until connected)
+  const [accounts, setAccounts] = useState<AccountRow[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(`rn_accounts_${providerId}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch {}
+    }
+    if (
+      providerId === 'pollinations' ||
+      providerId === 'duckduckgo' ||
+      providerId === 'pollinations-noauth' ||
+      providerId === 'ddg-noauth'
+    ) {
+      return [
+        {
+          id: 'acc_zero',
+          label: 'Public Gateway (Zero-Key)',
+          maskedKey: 'no-auth-required',
+          status: 'active',
+          quotaRemaining: 'Unlimited',
+          priority: 1,
+          tokenShort: false,
+        },
+      ];
+    }
+    return [];
+  });
+
+  // Sync configured accounts from Gateway backend if available
+  useEffect(() => {
+    async function syncBackendConfig() {
+      try {
+        const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
+        const res = await fetch('http://127.0.0.1:3001/v1/admin/config', {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => null);
+        if (res && res.ok) {
+          const data = await res.json();
+          const p = data.providers?.find((item: any) => item.id === providerId);
+          if (p && p.maskedKeys && p.maskedKeys.length > 0) {
+            setAccounts((prev) => {
+              if (prev.length > 0) return prev;
+              const synced: AccountRow[] = p.maskedKeys.map((k: string, idx: number) => ({
+                id: `acc_be_${idx}`,
+                label: `Configured Key #${idx + 1}`,
+                maskedKey: k,
+                status: 'active',
+                quotaRemaining: '100%',
+                priority: idx + 1,
+                tokenShort: false,
+              }));
+              localStorage.setItem(`rn_accounts_${providerId}`, JSON.stringify(synced));
+              return synced;
+            });
+          }
+        }
+      } catch {}
+    }
+    syncBackendConfig();
+  }, [providerId]);
+
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'error' | 'banned' | 'exhausted'>('all');
   const [distributeProxies, setDistributeProxies] = useState(false);
   const [globalProxy, setGlobalProxy] = useState('');
@@ -112,31 +175,117 @@ export default function ProviderDetailView({
     setIsAddAccountModalOpen(true);
   };
 
-  const handleStartGoogleOAuth = () => {
+  // Real OAuth PKCE Handshake with Google / Upstream (No fake setTimeout accounts!)
+  const handleStartGoogleOAuth = async () => {
     setOauthLoading(true);
-    const startUrl = `http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/oauth/start?open_browser=true`;
-    window.open(startUrl, '_blank', 'width=600,height=700');
-    setTimeout(() => {
-      setAccounts((prev) => [
-        ...prev,
-        {
+
+    // 1. Check if local environment or CLI has credentials to auto-import
+    try {
+      const cliRes = await fetch(
+        `http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/cli-token`
+      ).catch(() => null);
+      if (cliRes && cliRes.ok) {
+        const cliData = await cliRes.json();
+        if (cliData.found && cliData.token) {
+          const newAcc: AccountRow = {
+            id: `acc_cli_${Date.now()}`,
+            label: `Local CLI Token (${providerName})`,
+            maskedKey: cliData.maskedKey || `${cliData.token.slice(0, 6)}...${cliData.token.slice(-4)}`,
+            status: 'active',
+            quotaRemaining: '100% (Local)',
+            priority: accounts.length + 1,
+            tokenShort: false,
+          };
+          const nextAccounts = [...accounts, newAcc];
+          setAccounts(nextAccounts);
+          localStorage.setItem(`rn_accounts_${providerId}`, JSON.stringify(nextAccounts));
+          setOauthLoading(false);
+          setIsAddAccountModalOpen(false);
+          return;
+        }
+      }
+    } catch {
+      // Continue to browser OAuth PKCE popup
+    }
+
+    // 2. Launch real browser OAuth PKCE redirect
+    const startUrl = `http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/oauth/start?redirect=true`;
+    const popup = window.open(startUrl, 'routenex_oauth', 'width=600,height=700,status=yes,scrollbars=yes');
+
+    // 3. Listen for postMessage from the OAuth callback window
+    const messageListener = (event: MessageEvent) => {
+      if (
+        event.data &&
+        event.data.type === 'ROUTENEX_OAUTH_SUCCESS' &&
+        (event.data.provider === providerId ||
+          event.data.provider === 'antigravity-cli' ||
+          event.data.provider === 'antigravity')
+      ) {
+        window.removeEventListener('message', messageListener);
+        const token = event.data.token || 'session_token_authorized';
+        const masked = token.length > 8 ? `${token.slice(0, 4)}...${token.slice(-4)}` : 'session_active';
+        const newAcc: AccountRow = {
           id: `acc_oauth_${Date.now()}`,
           label: `Google OAuth (${providerName})`,
-          maskedKey: 'session_google_pkce_active',
+          maskedKey: masked,
           status: 'active',
           quotaRemaining: '100% (Free)',
-          priority: prev.length + 1,
+          priority: accounts.length + 1,
           tokenShort: false,
-        },
-      ]);
-      setOauthLoading(false);
-      setIsAddAccountModalOpen(false);
-    }, 2000);
+        };
+        const nextAccounts = [...accounts, newAcc];
+        setAccounts(nextAccounts);
+        localStorage.setItem(`rn_accounts_${providerId}`, JSON.stringify(nextAccounts));
+        setOauthLoading(false);
+        setIsAddAccountModalOpen(false);
+        try { popup?.close(); } catch {}
+      }
+    };
+    window.addEventListener('message', messageListener);
+
+    // 4. Poll backend status endpoint honestly (DO NOT inject fake rows on timeout!)
+    let polls = 0;
+    const pollInterval = setInterval(async () => {
+      polls++;
+      if (polls > 60 || (popup && popup.closed)) {
+        clearInterval(pollInterval);
+        window.removeEventListener('message', messageListener);
+        setOauthLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/oauth/status`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.token) {
+            clearInterval(pollInterval);
+            window.removeEventListener('message', messageListener);
+            const newAcc: AccountRow = {
+              id: `acc_oauth_${Date.now()}`,
+              label: `Google OAuth (${providerName})`,
+              maskedKey: data.maskedKey || `${data.token.slice(0, 4)}...${data.token.slice(-4)}`,
+              status: 'active',
+              quotaRemaining: '100% (Free)',
+              priority: accounts.length + 1,
+              tokenShort: false,
+            };
+            const nextAccounts = [...accounts, newAcc];
+            setAccounts(nextAccounts);
+            localStorage.setItem(`rn_accounts_${providerId}`, JSON.stringify(nextAccounts));
+            setOauthLoading(false);
+            setIsAddAccountModalOpen(false);
+            try { popup?.close(); } catch {}
+          }
+        }
+      } catch {}
+    }, 1500);
   };
 
-  // 2. Available Models State (Dynamic from Unified Catalog - All models shown)
+  // 2. Available Models State (Dynamic from Unified Catalog - Honest initial state based on credentials)
   const initialModels = useMemo<ProviderModel[]>(() => {
     const catalogModels = getModelsByProvider(providerId, providerName);
+    const hasCredentials = accounts.length > 0 || isZeroKeyProvider;
     return catalogModels.map((m, idx) => ({
       id: m.id,
       name: m.displayName,
@@ -144,10 +293,10 @@ export default function ProviderDetailView({
       isVisible: true,
       isFree: m.freeTier,
       context: m.context,
-      status: 'working',
-      latencyMs: Math.round(1000 / (m.speedTps || 100)) + 35,
+      status: hasCredentials ? 'working' : 'offline',
+      latencyMs: hasCredentials ? Math.round(1000 / (m.speedTps || 100)) + 35 : undefined,
     }));
-  }, [providerId, providerName]);
+  }, [providerId, providerName, isZeroKeyProvider, accounts.length > 0]);
 
   const [models, setModels] = useState<ProviderModel[]>(initialModels);
 
@@ -200,13 +349,25 @@ export default function ProviderDetailView({
   const [exposeInClaude, setExposeInClaude] = useState(true);
   const [claudeModelOverride, setClaudeModelOverride] = useState('');
 
-  // Single model test
-  const handleTestSingleModel = async (modelId: string) => {
+  // Single model test (Honest network execution - fails with 401 when 0 credentials)
+  const handleTestSingleModel = async (modelId: string): Promise<boolean> => {
     setModels((prev) =>
       prev.map((m) => (m.id === modelId ? { ...m, status: 'testing' } : m))
     );
     const start = Date.now();
     try {
+      if (accounts.length === 0 && !isZeroKeyProvider) {
+        // Honest fail: provider has 0 accounts and is not a zero-key endpoint
+        setModels((prev) =>
+          prev.map((m) =>
+            m.id === modelId
+              ? { ...m, status: 'offline', latencyMs: undefined }
+              : m
+          )
+        );
+        return false;
+      }
+
       const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
       const res = await fetch('http://127.0.0.1:3001/v1/chat/completions', {
         method: 'POST',
@@ -222,19 +383,21 @@ export default function ProviderDetailView({
       }).catch(() => null);
 
       const latency = Date.now() - start;
-      const success = res && res.ok;
+      const success = Boolean(res && res.ok);
 
       setModels((prev) =>
         prev.map((m) =>
           m.id === modelId
-            ? { ...m, status: success ? 'working' : 'offline', latencyMs: latency }
+            ? { ...m, status: success ? 'working' : 'offline', latencyMs: success ? latency : undefined }
             : m
         )
       );
+      return success;
     } catch {
       setModels((prev) =>
-        prev.map((m) => (m.id === modelId ? { ...m, status: 'offline' } : m))
+        prev.map((m) => (m.id === modelId ? { ...m, status: 'offline', latencyMs: undefined } : m))
       );
+      return false;
     }
   };
 
@@ -269,31 +432,58 @@ export default function ProviderDetailView({
         const data = await res.json();
         setPlaygroundResponse(data.choices?.[0]?.message?.content || 'Completed successfully.');
       } else {
-        setPlaygroundResponse(`[HTTP ${res?.status || 200}] Request executed successfully through provider ${providerName}.`);
+        const errText = res ? await res.text() : 'Provider connection error or missing credentials.';
+        setPlaygroundResponse(`[HTTP ${res?.status || 401} Error] ${errText}`);
       }
+    } catch (err: any) {
+      setPlaygroundResponse(`[Connection Error] ${err?.message || 'Failed to reach local RouteNex gateway'}`);
     } finally {
       setPlaygroundLoading(false);
     }
   };
 
-  const handleAddAccount = () => {
+  const handleAddAccount = async () => {
     if (!newKeyInput.trim()) return;
-    const masked = newKeyInput.length > 8 ? `${newKeyInput.slice(0, 4)}...${newKeyInput.slice(-4)}` : 'sk-...masked';
-    setAccounts((prev) => [
-      ...prev,
-      {
-        id: `acc_${Date.now()}`,
-        label: newLabelInput.trim() || `Account #${prev.length + 1}`,
-        maskedKey: masked,
-        status: 'active',
-        quotaRemaining: '100%',
-        priority: prev.length + 1,
-        tokenShort: false,
-      },
-    ]);
+    const rawKey = newKeyInput.trim();
+    const masked = rawKey.length > 8 ? `${rawKey.slice(0, 4)}...${rawKey.slice(-4)}` : 'sk-...masked';
+
+    // Encrypt and persist to Gateway backend in real time
+    try {
+      const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
+      await fetch('http://127.0.0.1:3001/v1/admin/providers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          provider: providerId,
+          apiKey: rawKey,
+        }),
+      }).catch(() => null);
+    } catch {}
+
+    const newAcc: AccountRow = {
+      id: `acc_${Date.now()}`,
+      label: newLabelInput.trim() || (isOAuthProvider ? `Session Token #${accounts.length + 1}` : `Account #${accounts.length + 1}`),
+      maskedKey: masked,
+      status: 'active',
+      quotaRemaining: '100%',
+      priority: accounts.length + 1,
+      tokenShort: false,
+    };
+    const nextAccounts = [...accounts, newAcc];
+    setAccounts(nextAccounts);
+    localStorage.setItem(`rn_accounts_${providerId}`, JSON.stringify(nextAccounts));
     setNewKeyInput('');
     setNewLabelInput('');
     setIsAddAccountModalOpen(false);
+  };
+
+  const handleDeleteAccount = (accId: string) => {
+    const updated = accounts.filter((a) => a.id !== accId);
+    setAccounts(updated);
+    localStorage.setItem(`rn_accounts_${providerId}`, JSON.stringify(updated));
   };
 
   const handleAddCustomModel = (e: React.FormEvent) => {
@@ -419,92 +609,118 @@ export default function ProviderDetailView({
             </div>
           </div>
 
-          <div className="rounded-xl border border-[#222226] bg-[#111113] overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[#222226] bg-[#09090b] text-[10px] text-zinc-500 uppercase">
-                  <th className="py-2.5 px-4 font-semibold">Priority</th>
-                  <th className="py-2.5 px-4 font-semibold">Account Label</th>
-                  <th className="py-2.5 px-4 font-semibold">Masked Key</th>
-                  <th className="py-2.5 px-4 font-semibold">Status</th>
-                  <th className="py-2.5 px-4 font-semibold">Quota Remaining</th>
-                  <th className="py-2.5 px-4 font-semibold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#222226]">
-                {accounts.map((acc, idx) => (
-                  <tr key={acc.id} className="hover:bg-zinc-800/30 transition">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          disabled={idx === 0}
-                          onClick={() => {
-                            const newAccs = [...accounts];
-                            [newAccs[idx - 1], newAccs[idx]] = [newAccs[idx], newAccs[idx - 1]];
-                            setAccounts(newAccs);
-                          }}
-                          className="text-zinc-500 hover:text-zinc-200 disabled:opacity-30"
-                        >
-                          ▲
-                        </button>
-                        <span className="w-4 text-center text-zinc-300 font-bold">{idx + 1}</span>
-                        <button
-                          type="button"
-                          disabled={idx === accounts.length - 1}
-                          onClick={() => {
-                            const newAccs = [...accounts];
-                            [newAccs[idx + 1], newAccs[idx]] = [newAccs[idx], newAccs[idx + 1]];
-                            setAccounts(newAccs);
-                          }}
-                          className="text-zinc-500 hover:text-zinc-200 disabled:opacity-30"
-                        >
-                          ▼
-                        </button>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="text-zinc-200 font-semibold">{acc.label}</span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <code className="text-zinc-400 bg-[#09090b] px-2 py-0.5 rounded border border-[#222226]">
-                        {acc.maskedKey}
-                      </code>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                        {acc.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="text-zinc-300 font-medium">{acc.quotaRemaining}</span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRetestingAccId(acc.id);
-                            setTimeout(() => setRetestingAccId(null), 1200);
-                          }}
-                          className="px-2 py-1 rounded bg-[#09090b] border border-[#222226] text-zinc-300 hover:text-white transition"
-                        >
-                          {retestingAccId === acc.id ? '✓ OK' : 'Retest'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setAccounts((prev) => prev.filter((a) => a.id !== acc.id))}
-                          className="text-red-400 hover:text-red-300 p-1"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </td>
+          {accounts.length === 0 ? (
+            <div className="p-8 text-center border border-[#222226] rounded-xl bg-[#111113] space-y-3">
+              <div className="w-10 h-10 rounded-full bg-zinc-900 border border-[#222226] flex items-center justify-center mx-auto text-zinc-500">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <div className="space-y-1">
+                <p className="text-zinc-300 font-sans text-xs font-semibold">No accounts or credentials connected</p>
+                <p className="text-zinc-500 font-sans text-[11px] max-w-sm mx-auto">
+                  {isOAuthProvider
+                    ? `Click "+ Add Connection" to sign in with Google OAuth PKCE or paste a session token.`
+                    : `Click "+ Add Connection" to add your API key for ${providerName}. Credentials are encrypted at rest.`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenAddConnection}
+                className="px-4 py-2 rounded-lg bg-zinc-100 text-zinc-950 font-semibold text-xs hover:bg-white transition inline-flex items-center gap-1.5 shadow-xs"
+              >
+                <span>+ Add Connection</span>
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-[#222226] bg-[#111113] overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[#222226] bg-[#09090b] text-[10px] text-zinc-500 uppercase">
+                    <th className="py-2.5 px-4 font-semibold">Priority</th>
+                    <th className="py-2.5 px-4 font-semibold">Account Label</th>
+                    <th className="py-2.5 px-4 font-semibold">Masked Key</th>
+                    <th className="py-2.5 px-4 font-semibold">Status</th>
+                    <th className="py-2.5 px-4 font-semibold">Quota Remaining</th>
+                    <th className="py-2.5 px-4 font-semibold text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-[#222226]">
+                  {accounts.map((acc, idx) => (
+                    <tr key={acc.id} className="hover:bg-zinc-800/30 transition">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => {
+                              const newAccs = [...accounts];
+                              [newAccs[idx - 1], newAccs[idx]] = [newAccs[idx], newAccs[idx - 1]];
+                              setAccounts(newAccs);
+                            }}
+                            className="text-zinc-500 hover:text-zinc-200 disabled:opacity-30"
+                          >
+                            ▲
+                          </button>
+                          <span className="w-4 text-center text-zinc-300 font-bold">{idx + 1}</span>
+                          <button
+                            type="button"
+                            disabled={idx === accounts.length - 1}
+                            onClick={() => {
+                              const newAccs = [...accounts];
+                              [newAccs[idx + 1], newAccs[idx]] = [newAccs[idx], newAccs[idx + 1]];
+                              setAccounts(newAccs);
+                            }}
+                            className="text-zinc-500 hover:text-zinc-200 disabled:opacity-30"
+                          >
+                            ▼
+                          </button>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-zinc-200 font-semibold">{acc.label}</span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <code className="text-zinc-400 bg-[#09090b] px-2 py-0.5 rounded border border-[#222226]">
+                          {acc.maskedKey}
+                        </code>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                          {acc.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-zinc-300 font-medium">{acc.quotaRemaining}</span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRetestingAccId(acc.id);
+                              setTimeout(() => setRetestingAccId(null), 1200);
+                            }}
+                            className="px-2 py-1 rounded bg-[#09090b] border border-[#222226] text-zinc-300 hover:text-white transition"
+                          >
+                            {retestingAccId === acc.id ? '✓ OK' : 'Retest'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAccount(acc.id)}
+                            className="text-red-400 hover:text-red-300 p-1"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -554,9 +770,18 @@ export default function ProviderDetailView({
           {/* Model Health Test Summary Banner (Matching OmniRoute pattern) */}
           <div className="p-3.5 rounded-xl bg-[#111113] border border-[#222226] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-sans">
             <div className="flex items-center gap-2.5">
-              <span className={`w-2.5 h-2.5 rounded-full ${models.filter((m) => m.status === 'working').length > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`}></span>
+              <span className={`w-2.5 h-2.5 rounded-full ${models.filter((m) => m.status === 'working').length > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-red-500/80'}`}></span>
               <span className="text-zinc-200">
-                Health Status: <strong className="text-emerald-400 font-semibold">{models.filter((m) => m.status === 'working').length} of {models.length} models working</strong>
+                Health Status:{' '}
+                {models.filter((m) => m.status === 'working').length > 0 ? (
+                  <strong className="text-emerald-400 font-semibold">
+                    {models.filter((m) => m.status === 'working').length} of {models.length} models working
+                  </strong>
+                ) : (
+                  <strong className="text-red-400 font-semibold">
+                    0 of {models.length} models working {accounts.length === 0 && !isZeroKeyProvider ? '(Missing credentials / 401)' : '(Offline)'}
+                  </strong>
+                )}
               </span>
             </div>
             <div className="flex items-center gap-4 text-xs text-zinc-400">
@@ -682,8 +907,22 @@ export default function ProviderDetailView({
 
                   <div className="flex items-center justify-between text-[11px] pt-2 border-t border-[#222226] text-zinc-500">
                     <span>Context: {m.context}</span>
-                    <span className={m.status === 'working' ? 'text-emerald-400' : m.status === 'testing' ? 'text-amber-400 animate-pulse' : 'text-red-400'}>
-                      {m.status === 'working' ? `✓ Healthy ${m.latencyMs ? `(${m.latencyMs}ms)` : ''}` : m.status}
+                    <span
+                      className={
+                        m.status === 'working'
+                          ? 'text-emerald-400'
+                          : m.status === 'testing'
+                          ? 'text-amber-400 animate-pulse'
+                          : 'text-zinc-500'
+                      }
+                    >
+                      {m.status === 'working'
+                        ? `✓ Healthy ${m.latencyMs ? `(${m.latencyMs}ms)` : ''}`
+                        : m.status === 'testing'
+                        ? 'Testing...'
+                        : accounts.length === 0 && !isZeroKeyProvider
+                        ? 'offline (401)'
+                        : 'offline'}
                     </span>
                   </div>
                 </div>

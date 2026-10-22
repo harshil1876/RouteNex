@@ -777,6 +777,47 @@ describe('Open Source Admin API & Virtual Keys', () => {
     expect(testBody.results.some((r: any) => r.status === 'WORKING')).toBe(true);
   });
 
+  it('initiates OAuth PKCE flow and status polling for providers', async () => {
+    // 1. Start OAuth for antigravity-cli
+    const startRes = await app.request('/v1/admin/providers/antigravity-cli/oauth/start', {
+      method: 'POST',
+    });
+    expect(startRes.status).toBe(200);
+    const startBody = await startRes.json();
+    expect(startBody.success).toBe(true);
+    expect(startBody.authUrl).toContain('accounts.google.com');
+    expect(startBody.authUrl).toContain('code_challenge=');
+
+    // 2. Check status before completion
+    const preStatusRes = await app.request('/v1/admin/providers/antigravity-cli/oauth/status');
+    expect(preStatusRes.status).toBe(200);
+    const preStatus = await preStatusRes.json();
+    expect(preStatus.providerId).toBe('antigravity-cli');
+
+    // 3. Complete callback
+    const cbRes = await app.request('/v1/admin/providers/antigravity-cli/oauth/callback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: 'test-google-auth-code-12345' }),
+    });
+    expect(cbRes.status).toBe(200);
+    const cbBody = await cbRes.json();
+    expect(cbBody.success).toBe(true);
+
+    // 4. Check status after completion
+    const postStatusRes = await app.request('/v1/admin/providers/antigravity-cli/oauth/status');
+    expect(postStatusRes.status).toBe(200);
+    const postStatus = await postStatusRes.json();
+    expect(postStatus.authenticated).toBe(true);
+    expect(postStatus.token).toContain('ya29.rn_antigravity-cli_');
+
+    // 5. Check cli-token endpoint
+    const cliRes = await app.request('/v1/admin/providers/antigravity-cli/cli-token');
+    expect(cliRes.status).toBe(200);
+    const cliBody = await cliRes.json();
+    expect(cliBody.found).toBe(true);
+  });
+
   it('POST /v1/messages handles native Anthropic protocol requests and maps responses', async () => {
     const res = await app.request('/v1/messages', {
       method: 'POST',
