@@ -1,0 +1,40 @@
+# Prevent credentials and local state from being packed
+.env*
+*.env
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+routenex.db*
+routenex.json*
+routenex_admin.json*
+*admin*.json
+*.tmp
+*.log
+
+# Git & CI/CD
+.git
+.github
+.gitignore
+.gitattributes
+
+# Development & source directories (only dist/ and gateway/dist/ should be packaged)
+src/
+gateway/src/
+cloud/
+docs/
+public/
+tests/
+*.test.ts
+*.spec.ts
+tsconfig*.json
+astro.config.*
+vitest.config.*
+
+# Cache and logs
+node_modules/
+gateway/node_modules/
+.astro/
+dist/.astro/

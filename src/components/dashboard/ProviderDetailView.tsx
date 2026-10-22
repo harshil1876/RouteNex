@@ -403,10 +403,13 @@ export default function ProviderDetailView({
 
   const handleTestAllModels = async () => {
     setIsTestingAllModels(true);
-    for (const m of models) {
-      await handleTestSingleModel(m.id);
+    try {
+      for (const m of models) {
+        await handleTestSingleModel(m.id);
+      }
+    } finally {
+      setIsTestingAllModels(false);
     }
-    setIsTestingAllModels(false);
   };
 
   const handleRunPlayground = async () => {
@@ -428,12 +431,28 @@ export default function ProviderDetailView({
         }),
       }).catch(() => null);
 
-      if (res && res.ok) {
-        const data = await res.json();
-        setPlaygroundResponse(data.choices?.[0]?.message?.content || 'Completed successfully.');
+      if (!res) {
+        setPlaygroundResponse('[Connection Error] Could not connect to RouteNex Gateway (http://127.0.0.1:3001)');
+        return;
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok) {
+        if (contentType.includes('application/json')) {
+          const data = await res.json();
+          setPlaygroundResponse(data.choices?.[0]?.message?.content || 'Completed successfully.');
+        } else {
+          const text = await res.text();
+          setPlaygroundResponse(text || 'Completed successfully.');
+        }
       } else {
-        const errText = res ? await res.text() : 'Provider connection error or missing credentials.';
-        setPlaygroundResponse(`[HTTP ${res?.status || 401} Error] ${errText}`);
+        if (contentType.includes('application/json')) {
+          const errData = await res.json().catch(() => ({}));
+          setPlaygroundResponse(`[HTTP ${res.status} Error] ${errData?.error?.message || errData?.message || 'Request failed'}`);
+        } else {
+          const errText = await res.text().catch(() => '');
+          setPlaygroundResponse(`[HTTP ${res.status} Error] ${errText.slice(0, 300) || 'Provider connection error or missing credentials.'}`);
+        }
       }
     } catch (err: any) {
       setPlaygroundResponse(`[Connection Error] ${err?.message || 'Failed to reach local RouteNex gateway'}`);

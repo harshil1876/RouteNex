@@ -154,18 +154,44 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
     const token = passwordInput.trim();
     if (!token) return;
 
-    if (token === 'routenex-admin' || token.startsWith('rn_local_') || token === 'rn-local-dev-default') {
-      sessionStorage.setItem('routenex_unlocked', 'true');
-      localStorage.setItem('routenex_admin_token', token);
-      setIsUnlocked(true);
-    } else {
-      setAuthError('Invalid password. Default password is routenex-admin.');
+    try {
+      const res = await fetch('http://127.0.0.1:3001/v1/admin/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      }).catch(() => null);
+
+      if (res && res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const sessionToken = data.token || token;
+        sessionStorage.setItem('routenex_unlocked', 'true');
+        localStorage.setItem('routenex_admin_token', sessionToken);
+        document.cookie = `routenex_admin_session=${encodeURIComponent(sessionToken)}; path=/; SameSite=Lax`;
+        setIsUnlocked(true);
+        return;
+      }
+
+      if (token === 'routenex-admin' || token.startsWith('rn_local_') || token === 'rn-local-dev-default') {
+        sessionStorage.setItem('routenex_unlocked', 'true');
+        localStorage.setItem('routenex_admin_token', token);
+        document.cookie = `routenex_admin_session=${encodeURIComponent(token)}; path=/; SameSite=Lax`;
+        setIsUnlocked(true);
+        return;
+      }
+
+      setAuthError('Invalid admin password. Default password is routenex-admin.');
+    } catch {
+      setAuthError('Failed to connect to gateway auth service.');
     }
   };
 
-  const handleLock = () => {
+  const handleLock = async () => {
+    try {
+      await fetch('http://127.0.0.1:3001/v1/admin/auth/session', { method: 'DELETE' }).catch(() => null);
+    } catch {}
     sessionStorage.removeItem('routenex_unlocked');
     localStorage.removeItem('routenex_admin_token');
+    document.cookie = 'routenex_admin_session=; path=/; Max-Age=0';
     setPasswordInput('routenex-admin');
     setIsUnlocked(false);
   };

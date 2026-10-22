@@ -30,7 +30,7 @@ export interface IProviderAdapter {
   readonly models: ModelEntry[];
   readonly tos_status?: 'official' | 'caution';
   chat(request: ChatCompletionRequest): Promise<ChatCompletionResponse>;
-  chatStream(request: ChatCompletionRequest): AsyncGenerator<StreamChunk>;
+  chatStream(request: ChatCompletionRequest, signal?: AbortSignal): AsyncGenerator<StreamChunk>;
   isConfigured(): boolean;
   healthCheck(): Promise<boolean>;
 }

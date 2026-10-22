@@ -76,6 +76,8 @@ export class AdminStore {
   private filePath: string;
   private settings: AdminSettings;
   private isMemoryOnly: boolean;
+  private writeQueue: Promise<void> = Promise.resolve();
+  private activeSessions = new Set<string>();
   public initialSetupToken?: string;
 
   constructor(filePath = './routenex_admin.json', memoryOnly = false) {
@@ -83,6 +85,26 @@ export class AdminStore {
     this.isMemoryOnly = memoryOnly;
     this.settings = this.load();
     this.ensureAdminToken();
+  }
+
+  public createSessionToken(): string {
+    const token = `rn_sess_${nanoid(32)}`;
+    this.activeSessions.add(token);
+    return token;
+  }
+
+  public revokeSessionToken(token: string): boolean {
+    return this.activeSessions.delete(token);
+  }
+
+  public static isMaskedKey(key: string): boolean {
+    if (!key || typeof key !== 'string') return false;
+    return (
+      key.includes('...') ||
+      key.includes('•••') ||
+      key.includes('***') ||
+      key.includes('masked')
+    );
   }
 
   /**
@@ -211,13 +233,22 @@ export class AdminStore {
 
   private save(): void {
     if (this.isMemoryOnly) return;
-    try {
-      const dir = path.dirname(this.filePath);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(this.filePath, JSON.stringify(this.settings, null, 2), 'utf-8');
-    } catch (err) {
-      console.error('Failed to persist admin settings:', err);
-    }
+    const data = JSON.stringify(this.settings, null, 2);
+    this.writeQueue = this.writeQueue.then(async () => {
+      try {
+        const dir = path.dirname(this.filePath);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        const tmpPath = `${this.filePath}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
+        fs.writeFileSync(tmpPath, data, { mode: 0o600, encoding: 'utf-8' });
+        fs.renameSync(tmpPath, this.filePath);
+      } catch (err) {
+        console.error('Failed to atomically persist admin settings:', err);
+      }
+    });
+  }
+
+  public async flush(): Promise<void> {
+    await this.writeQueue;
   }
 
   public getSettings(): AdminSettings {
@@ -229,14 +260,29 @@ export class AdminStore {
   }
 
   /**
-   * Verifies an incoming admin authentication token against the stored hash.
+   * Verifies an incoming admin authentication token against the active sessions,
+   * environment/default password, or the stored token hash.
    */
   public verifyAdminToken(candidate: string): boolean {
+    if (!candidate || typeof candidate !== 'string') return false;
+    const trimmed = candidate.trim();
+    if (!trimmed) return false;
+
+    // 1. Check active session tokens
+    if (this.activeSessions.has(trimmed)) return true;
+
+    // 2. Check default or configured admin password
     const defaultPassword = process.env.ROUTENEX_ADMIN_PASSWORD || 'routenex-admin';
-    if (candidate === defaultPassword || candidate === 'routenex-admin') return true;
-    if (!this.settings.adminTokenHash) return true;
-    if (!candidate) return false;
-    return secureTimingSafeEqual(this.settings.adminTokenHash, hashToken(candidate));
+    if (secureTimingSafeEqual(trimmed, defaultPassword) || secureTimingSafeEqual(trimmed, 'routenex-admin')) {
+      return true;
+    }
+
+    // 3. Check admin token hash if initialized
+    if (this.settings.adminTokenHash) {
+      return secureTimingSafeEqual(this.settings.adminTokenHash, hashToken(trimmed));
+    }
+
+    return false;
   }
 
   /**
@@ -310,6 +356,7 @@ export class AdminStore {
 
   /**
    * Sets or replaces the primary provider API key, encrypted with AES-256-GCM.
+   * Preserves existing key if candidate is a masked string (e.g. sk-...xxxx or ••••••••).
    */
   public setProviderKey(provider: string, key?: string): void {
     if (!key || key.trim().length === 0) {
@@ -321,7 +368,15 @@ export class AdminStore {
       return;
     }
 
-    const encrypted = encryptValue(key.trim());
+    const trimmed = key.trim();
+    if (AdminStore.isMaskedKey(trimmed)) {
+      // Do not overwrite real secret with masked display string
+      if (this.settings.providerKeys[provider] || this.settings.providerPools?.[provider]?.keys?.length) {
+        return;
+      }
+    }
+
+    const encrypted = encryptValue(trimmed);
     this.settings.providerKeys[provider] = encrypted;
 
     // Ensure pool structure
@@ -337,10 +392,16 @@ export class AdminStore {
 
   /**
    * Adds an additional key to a provider's key pool for multi-account load distribution.
+   * Silently ignores masked strings to prevent pool corruption.
    */
   public addKeyToPool(provider: string, key: string): number {
     if (!key || key.trim().length === 0) return 0;
-    const encrypted = encryptValue(key.trim());
+    const trimmed = key.trim();
+    if (AdminStore.isMaskedKey(trimmed)) {
+      return this.settings.providerPools?.[provider]?.keys?.length || 0;
+    }
+
+    const encrypted = encryptValue(trimmed);
 
     if (!this.settings.providerPools) this.settings.providerPools = {};
     if (!this.settings.providerPools[provider]) {

@@ -12,11 +12,12 @@
  * - In-browser Doctor diagnostics
  */
 
+import crypto from 'node:crypto';
 import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
 import { hashToken } from '../storage/crypto.js';
 import type { ProviderRegistry } from '../providers/registry.js';
-import type { AdminStore } from '../storage/admin-store.js';
+import { AdminStore } from '../storage/admin-store.js';
 import type { AppConfig } from '../config.js';
 import type { RequestStore } from '../storage/sqlite.js';
 import { GroqProviderAdapter } from '../providers/groq.js';
@@ -31,6 +32,14 @@ import { SiliconFlowProviderAdapter } from '../providers/siliconflow.js';
 import { PromptCompressor, type CompressionOptions } from '../router/compression.js';
 import { openBrowser } from '../cli/open-browser.js';
 
+function safeCompare(a: string, b: string): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const bufA = Buffer.from(a, 'utf-8');
+  const bufB = Buffer.from(b, 'utf-8');
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 export function createAdminRoutes(
   adminStore: AdminStore,
   registry: ProviderRegistry,
@@ -39,18 +48,45 @@ export function createAdminRoutes(
 ) {
   const router = new Hono();
 
-  // In-memory brute-force guard for admin login (max 10 failed attempts/min per IP)
+  // In-memory brute-force guards for admin login
   const loginAttempts = new Map<string, { count: number; resetTime: number }>();
+  let globalFailedAttempts = 0;
+  let globalResetTime = Date.now() + 60000;
 
   const handleAdminLogin = async (c: any) => {
-    const ip = c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || '127.0.0.1';
     const now = Date.now();
-    const record = loginAttempts.get(ip);
-    if (record && now <= record.resetTime && record.count >= 10) {
+    // Only trust X-Forwarded-For / X-Real-IP if explicitly configured
+    const trustProxy = process.env.ROUTENEX_TRUST_PROXY === 'true';
+    const ip = trustProxy
+      ? (c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || c.req.header('x-real-ip') || '127.0.0.1')
+      : '127.0.0.1';
+
+    // Global rate limit check (max 50 failed attempts/minute across all callers)
+    if (now > globalResetTime) {
+      globalFailedAttempts = 0;
+      globalResetTime = now + 60000;
+    }
+    if (globalFailedAttempts >= 50) {
+      c.header('Retry-After', '60');
       return c.json(
         {
           error: {
-            message: 'Too many login attempts. Please wait 1 minute before retrying.',
+            message: 'Too many global login attempts. Please wait 1 minute before retrying.',
+            code: 'GLOBAL_BRUTE_FORCE_PROTECTION',
+            type: 'rate_limit_error',
+          },
+        },
+        429
+      );
+    }
+
+    const record = loginAttempts.get(ip);
+    if (record && now <= record.resetTime && record.count >= 10) {
+      c.header('Retry-After', '60');
+      return c.json(
+        {
+          error: {
+            message: 'Too many login attempts from this IP. Please wait 1 minute before retrying.',
             code: 'BRUTE_FORCE_PROTECTION',
             type: 'rate_limit_error',
           },
@@ -60,16 +96,17 @@ export function createAdminRoutes(
     }
 
     const body = await c.req.json().catch(() => ({}));
-    const token = body.token?.trim() || '';
+    const token = (body.token || body.password || '').trim();
     const defaultPassword = process.env.ROUTENEX_ADMIN_PASSWORD || 'routenex-admin';
 
     const isValid =
-      token === defaultPassword ||
-      token === 'routenex-admin' ||
+      safeCompare(token, defaultPassword) ||
+      safeCompare(token, 'routenex-admin') ||
       adminStore.verifyAdminToken(token) ||
-      (config.apiKey && token === config.apiKey);
+      (config.apiKey && safeCompare(token, config.apiKey));
 
     if (!isValid) {
+      globalFailedAttempts++;
       if (!record || now > record.resetTime) {
         loginAttempts.set(ip, { count: 1, resetTime: now + 60000 });
       } else {
@@ -79,9 +116,11 @@ export function createAdminRoutes(
     }
 
     loginAttempts.delete(ip);
+    const sessionToken = adminStore.createSessionToken ? adminStore.createSessionToken() : `rn_session_${nanoid(32)}`;
+    c.header('Set-Cookie', `routenex_admin_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`);
     return c.json({
       success: true,
-      token,
+      token: sessionToken,
       edition: 'RouteNex Open Source',
       message: 'Admin session authenticated successfully.',
     });
@@ -93,6 +132,7 @@ export function createAdminRoutes(
 
   // 1b. DELETE /v1/admin/auth/session - Lock admin session immediately
   router.delete('/auth/session', (c) => {
+    c.header('Set-Cookie', 'routenex_admin_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
     return c.json({ success: true, locked: true, message: 'Admin session locked.' });
   });
 
@@ -100,7 +140,21 @@ export function createAdminRoutes(
   router.get('/auth/verify', (c) => {
     const authHeader = c.req.header('authorization');
     const xAdmin = c.req.header('x-admin-token');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : (xAdmin || '');
+    const cookieHeader = c.req.header('cookie');
+    const cookieSession = cookieHeader?.match(/(?:^|;\s*)routenex_admin_session=([^;]*)/)?.[1];
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : (xAdmin || cookieSession || '');
+
+    const isValid = adminStore.verifyAdminToken(token) || (config.apiKey && token === config.apiKey);
+    return c.json({ authenticated: Boolean(isValid) });
+  });
+
+  // 2b. GET /v1/admin/auth/status
+  router.get('/auth/status', (c) => {
+    const authHeader = c.req.header('authorization');
+    const xAdmin = c.req.header('x-admin-token');
+    const cookieHeader = c.req.header('cookie');
+    const cookieSession = cookieHeader?.match(/(?:^|;\s*)routenex_admin_session=([^;]*)/)?.[1];
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : (xAdmin || cookieSession || '');
 
     const isValid = adminStore.verifyAdminToken(token) || (config.apiKey && token === config.apiKey);
     return c.json({ authenticated: Boolean(isValid) });
@@ -119,6 +173,7 @@ export function createAdminRoutes(
         isConfigured: p.isConfigured(),
         modelCount: p.models.length,
         keyCount: keys.length > 0 ? keys.length : (p.isConfigured() ? 1 : 0),
+        accountsCount: keys.length > 0 ? keys.length : (p.isConfigured() ? 1 : 0),
         maskedKeys: masked,
       };
     });
@@ -150,11 +205,20 @@ export function createAdminRoutes(
   router.post('/providers', async (c) => {
     const body = await c.req.json().catch(() => ({}));
     const provider = body.provider;
-    const apiKey = body.apiKey || body.key;
+    const rawApiKey = body.apiKey || body.key;
     const baseUrl = body.baseUrl;
 
     if (!provider) {
       return c.json({ error: 'Missing provider identifier' }, 400);
+    }
+
+    // Preserve existing secret key if incoming value is a masked string
+    let apiKey = rawApiKey;
+    if (rawApiKey && AdminStore.isMaskedKey(rawApiKey)) {
+      const existing = adminStore.getProviderKey(provider);
+      if (existing) {
+        apiKey = existing;
+      }
     }
 
     try {

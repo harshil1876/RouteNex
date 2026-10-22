@@ -40,6 +40,35 @@ export interface RouteExplainResult {
   }>;
 }
 
+/**
+ * Safely parses any HTTP response to guard against HTML 502/500 errors and plain text stack traces.
+ */
+export async function safeParseResponse<T = any>(res: Response | null | undefined): Promise<{ ok: boolean; status: number; data: T | null; error?: string }> {
+  if (!res) {
+    return { ok: false, status: 0, data: null, error: 'Network request failed or gateway unreachable' };
+  }
+  const status = res.status;
+  const contentType = res.headers?.get('content-type') || '';
+  try {
+    if (contentType.includes('application/json')) {
+      const json = await res.json();
+      return { ok: res.ok, status, data: json, error: res.ok ? undefined : json?.error?.message || json?.message || `HTTP ${status}` };
+    }
+    const text = await res.text();
+    if (res.ok) {
+      try {
+        const parsed = JSON.parse(text);
+        return { ok: true, status, data: parsed };
+      } catch {
+        return { ok: true, status, data: text as any };
+      }
+    }
+    return { ok: false, status, data: null, error: text.slice(0, 300) || `HTTP ${status}` };
+  } catch (err: any) {
+    return { ok: false, status, data: null, error: err.message || 'Failed to parse response body' };
+  }
+}
+
 export class RouteNexClient {
   private static instance: RouteNexClient;
   private baseUrl: string = 'http://127.0.0.1:3001';

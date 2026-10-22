@@ -586,9 +586,10 @@ describe('Secret Redaction & Privacy Guardrails (PRD Sec 52, 89)', () => {
 
 describe('Open Source Admin API & Virtual Keys', () => {
   const { app, adminStore } = createApp(testConfig);
+  const adminHeaders = { 'x-admin-token': 'routenex-admin' };
 
   it('GET /v1/admin/config returns open source edition details and virtual keys', async () => {
-    const res = await app.request('/v1/admin/config');
+    const res = await app.request('/v1/admin/config', { headers: adminHeaders });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.edition).toBe('RouteNex Open Source');
@@ -601,7 +602,7 @@ describe('Open Source Admin API & Virtual Keys', () => {
     // 1. Create a new local virtual key
     const createRes = await app.request('/v1/admin/keys', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...adminHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: 'Cursor IDE', rateLimitRpm: 120 }),
     });
     expect(createRes.status).toBe(200);
@@ -622,7 +623,7 @@ describe('Open Source Admin API & Virtual Keys', () => {
     // Set alias "my-alias" -> "mock/fast"
     const aliasRes = await app.request('/v1/admin/aliases', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...adminHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({ alias: 'my-alias', targetModel: 'mock/fast' }),
     });
     expect(aliasRes.status).toBe(200);
@@ -643,7 +644,7 @@ describe('Open Source Admin API & Virtual Keys', () => {
   });
 
   it('GET /v1/admin/doctor returns full diagnostic report', async () => {
-    const docRes = await app.request('/v1/admin/doctor');
+    const docRes = await app.request('/v1/admin/doctor', { headers: adminHeaders });
     expect(docRes.status).toBe(200);
     const docBody = await docRes.json();
     expect(docBody.diagnostics.length).toBeGreaterThanOrEqual(4);
@@ -652,7 +653,7 @@ describe('Open Source Admin API & Virtual Keys', () => {
 
   it('manages Combos (grouped fallback clusters) and routes through them', async () => {
     // 1. GET /v1/admin/combos returns default combos
-    const combosRes = await app.request('/v1/admin/combos');
+    const combosRes = await app.request('/v1/admin/combos', { headers: adminHeaders });
     expect(combosRes.status).toBe(200);
     const combosBody = await combosRes.json();
     expect(combosBody.combos.length).toBeGreaterThanOrEqual(2);
@@ -661,7 +662,7 @@ describe('Open Source Admin API & Virtual Keys', () => {
     // 2. Create custom combo
     const createRes = await app.request('/v1/admin/combos', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...adminHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'Unit Test Combo',
         slug: 'combo/test-cluster',
@@ -744,14 +745,14 @@ describe('Open Source Admin API & Virtual Keys', () => {
     // Add two keys to Cerebras pool
     const poolRes1 = await app.request('/v1/admin/providers/pool', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...adminHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({ provider: 'cerebras', apiKey: 'csk-key-alpha-1111' }),
     });
     expect(poolRes1.status).toBe(200);
 
     const poolRes2 = await app.request('/v1/admin/providers/pool', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...adminHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({ provider: 'cerebras', apiKey: 'csk-key-beta-2222' }),
     });
     expect(poolRes2.status).toBe(200);
@@ -769,6 +770,7 @@ describe('Open Source Admin API & Virtual Keys', () => {
   it('runs batch model health testing across registered models', async () => {
     const testRes = await app.request('/v1/admin/providers/mock/test-models', {
       method: 'POST',
+      headers: adminHeaders,
     });
     expect(testRes.status).toBe(200);
     const testBody = await testRes.json();
@@ -960,7 +962,7 @@ Visit https://example.com/api/v1?query=test
 
     const res = await app.request('/v1/admin/compress/preview', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': 'routenex-admin' },
       body: JSON.stringify({
         text: '<!-- comment --> Hello world   with   spaces.\n\n\n\nParagraph 2.',
         options: { stage1Lite: true },
@@ -1447,7 +1449,7 @@ describe('Open Source Pre-Launch E2E Feature Verification', () => {
     // 2. Save provider key via AES-256-GCM
     const saveKeyRes = await app.request('/v1/admin/providers', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': 'routenex-admin' },
       body: JSON.stringify({
         provider: 'groq',
         key: 'gsk_test_mock_secret_key_1234567890',
@@ -1458,7 +1460,7 @@ describe('Open Source Pre-Launch E2E Feature Verification', () => {
     expect(saveKeyData.success).toBe(true);
 
     // 3. Verify key is masked in UI and not plaintext
-    const configRes = await app.request('/v1/admin/config');
+    const configRes = await app.request('/v1/admin/config', { headers: { 'x-admin-token': 'routenex-admin' } });
     expect(configRes.status).toBe(200);
     const configData = await configRes.json();
     const groqEntry = configData.providers.find((p: any) => p.id === 'groq');
@@ -1469,7 +1471,7 @@ describe('Open Source Pre-Launch E2E Feature Verification', () => {
     // 4. Test provider endpoint health check
     const testRes = await app.request('/v1/admin/providers/test', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': 'routenex-admin' },
       body: JSON.stringify({ provider: 'mock' }),
     });
     expect(testRes.status).toBe(200);
@@ -1566,7 +1568,7 @@ describe('Open Source Pre-Launch E2E Feature Verification', () => {
 
     const res = await app.request('/v1/admin/compress/preview', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': 'routenex-admin' },
       body: JSON.stringify({
         text: testPromptWithCode,
         options: {
@@ -1608,7 +1610,7 @@ describe('Open Source Pre-Launch E2E Feature Verification', () => {
     expect(usageData.tokens.total_tokens).toBeGreaterThan(0);
 
     // 3. Verify request appears in /v1/admin/requests
-    const reqsRes = await app.request('/v1/admin/requests?limit=10');
+    const reqsRes = await app.request('/v1/admin/requests?limit=10', { headers: { 'x-admin-token': 'routenex-admin' } });
     expect(reqsRes.status).toBe(200);
     const reqsData = await reqsRes.json();
     expect(reqsData.requests.length).toBeGreaterThanOrEqual(1);
@@ -1618,13 +1620,14 @@ describe('Open Source Pre-Launch E2E Feature Verification', () => {
     // 4. Execute SQLite VACUUM maintenance
     const vacuumRes = await app.request('/v1/admin/storage/vacuum', {
       method: 'POST',
+      headers: { 'x-admin-token': 'routenex-admin' },
     });
     expect(vacuumRes.status).toBe(200);
     const vacuumData = await vacuumRes.json();
     expect(vacuumData.success).toBe(true);
 
     // 5. Execute JSON export
-    const exportRes = await app.request('/v1/admin/storage/export');
+    const exportRes = await app.request('/v1/admin/storage/export', { headers: { 'x-admin-token': 'routenex-admin' } });
     expect(exportRes.status).toBe(200);
     const exportData = await exportRes.json();
     expect(exportData.export_version).toBe('1.0');

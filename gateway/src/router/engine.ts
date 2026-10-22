@@ -538,7 +538,8 @@ export class RoutingEngine {
    */
   async executeStream(
     request: ChatCompletionRequest,
-    requestId: string
+    requestId: string,
+    signal?: AbortSignal
   ): Promise<{
     generator: AsyncGenerator<StreamChunk>;
     provider: string;
@@ -564,7 +565,7 @@ export class RoutingEngine {
 
       try {
         const reqForTarget: ChatCompletionRequest = { ...request, model: targetModel.id };
-        const streamGen = adapter.chatStream(reqForTarget);
+        const streamGen = adapter.chatStream(reqForTarget, signal);
 
         // Track circuit breaker on stream lifecycle
         const circuitBreaker = this.circuitBreaker;
@@ -577,14 +578,25 @@ export class RoutingEngine {
         async function* wrappedStream(): AsyncGenerator<StreamChunk> {
           try {
             for await (const chunk of streamGen) {
+              if (signal?.aborted) {
+                try {
+                  await streamGen.return?.(undefined as any);
+                } catch {}
+                break;
+              }
               yield chunk;
             }
-            circuitBreaker.recordSuccess(providerId);
-            circuitBreaker.recordModelSuccess(modelId);
-            circuitBreaker.recordKeySuccess(providerId);
-            lastKnownGood.set(modelId, providerId);
-            lastKnownGood.set(requestedModelKey, providerId);
+            if (!signal?.aborted) {
+              circuitBreaker.recordSuccess(providerId);
+              circuitBreaker.recordModelSuccess(modelId);
+              circuitBreaker.recordKeySuccess(providerId);
+              lastKnownGood.set(modelId, providerId);
+              lastKnownGood.set(requestedModelKey, providerId);
+            }
           } catch (err: any) {
+            if (signal?.aborted || err.name === 'AbortError') {
+              return;
+            }
             const status = err.status || 500;
             if (status === 429) {
               circuitBreaker.recordKeyCooldown(providerId, 30000, err.message);
@@ -594,6 +606,10 @@ export class RoutingEngine {
               circuitBreaker.recordFailure(providerId);
             }
             throw err;
+          } finally {
+            try {
+              await streamGen.return?.(undefined as any);
+            } catch {}
           }
         }
 

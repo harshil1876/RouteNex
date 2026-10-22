@@ -152,7 +152,7 @@ export function createMessagesRoute(
     // 3. Streaming Execution (Anthropic SSE Protocol)
     let streamContext;
     try {
-      streamContext = await engine.executeStream(chatRequest, requestId);
+      streamContext = await engine.executeStream(chatRequest, requestId, c.req.raw?.signal);
     } catch (err: any) {
       return c.json(
         {
@@ -168,7 +168,22 @@ export function createMessagesRoute(
 
     const { generator, provider, model: modelUsed, reason, modelEntry } = streamContext;
     const encoder = new TextEncoder();
+    let aborted = false;
+
+    if (c.req.raw?.signal) {
+      c.req.raw.signal.addEventListener('abort', () => {
+        aborted = true;
+        generator.return?.(undefined as any).catch(() => {});
+      }, { once: true });
+    }
+
     const streamResponse = new ReadableStream({
+      async cancel() {
+        aborted = true;
+        try {
+          await generator.return?.(undefined as any);
+        } catch {}
+      },
       async start(controller) {
         // Event 1: message_start
         controller.enqueue(

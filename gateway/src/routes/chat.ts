@@ -111,7 +111,7 @@ export function createChatRoute(
     if (effectiveRequest.stream) {
       let streamContext;
       try {
-        streamContext = await engine.executeStream(effectiveRequest, requestId);
+        streamContext = await engine.executeStream(effectiveRequest, requestId, c.req.raw?.signal);
       } catch (err: any) {
         store.logRequest({
           request_id: requestId,
@@ -151,6 +151,10 @@ export function createChatRoute(
         let chunkCount = 0;
         let promptTokens = 0;
         let completionTokens = 0;
+
+        stream.onAbort(() => {
+          generator.return?.(undefined as any).catch(() => {});
+        });
 
         try {
           for await (const chunk of generator) {

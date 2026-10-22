@@ -165,7 +165,7 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
     };
   }
 
-  async *chatStream(request: ChatCompletionRequest): AsyncGenerator<StreamChunk> {
+  async *chatStream(request: ChatCompletionRequest, clientSignal?: AbortSignal): AsyncGenerator<StreamChunk> {
     if (!this.isConfigured()) {
       throw new ProviderError(`${this.name} API key is not configured`, {
         status: 401,
@@ -186,15 +186,21 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
     if (request.top_p !== undefined) body.top_p = request.top_p;
     if (request.stop !== undefined) body.stop = request.stop;
 
+    const timeoutSignal = AbortSignal.timeout(60000);
+    const combinedSignal = clientSignal ? AbortSignal.any([clientSignal, timeoutSignal]) : timeoutSignal;
+
     let res: Response;
     try {
       res = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(60000),
+        signal: combinedSignal,
       });
     } catch (err: unknown) {
+      if (clientSignal?.aborted) {
+        return;
+      }
       const message = err instanceof Error ? err.message : String(err);
       throw new ProviderError(`${this.name} streaming connection failed: ${message}`, {
         status: 503,
@@ -220,6 +226,13 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
     const decoder = new TextDecoder();
     const chunks: StreamChunk[] = [];
     let isDone = false;
+
+    const onAbort = () => {
+      reader.cancel().catch(() => {});
+    };
+    if (clientSignal) {
+      clientSignal.addEventListener('abort', onAbort, { once: true });
+    }
 
     const parser = createParser({
       onEvent(event) {
@@ -250,6 +263,10 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
 
     try {
       while (!isDone) {
+        if (clientSignal?.aborted) {
+          await reader.cancel().catch(() => {});
+          break;
+        }
         const { done, value } = await reader.read();
         if (done) break;
         parser.feed(decoder.decode(value, { stream: true }));
@@ -258,6 +275,9 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
         }
       }
     } finally {
+      if (clientSignal) {
+        clientSignal.removeEventListener('abort', onAbort);
+      }
       reader.releaseLock();
     }
   }

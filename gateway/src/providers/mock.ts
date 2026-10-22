@@ -193,7 +193,7 @@ export class MockProviderAdapter implements IProviderAdapter {
     };
   }
 
-  async *chatStream(request: ChatCompletionRequest): AsyncGenerator<StreamChunk> {
+  async *chatStream(request: ChatCompletionRequest, signal?: AbortSignal): AsyncGenerator<StreamChunk> {
     this.checkSpecialSimulations(request.model);
 
     const initialDelay = request.model === 'mock/fast' ? 10 : Math.min(this.latencyMs, 100);
@@ -221,7 +221,13 @@ export class MockProviderAdapter implements IProviderAdapter {
     const words = reply.split(' ');
 
     for (let i = 0; i < words.length; i++) {
+      if (signal?.aborted) {
+        break;
+      }
       await sleep(request.model === 'mock/fast' ? 5 : 20);
+      if (signal?.aborted) {
+        break;
+      }
       const isLast = i === words.length - 1;
       const piece = isLast ? words[i] : `${words[i]} `;
 

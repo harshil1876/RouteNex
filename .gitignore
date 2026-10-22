@@ -23,6 +23,7 @@ pnpm-debug.log*
 routenex.json
 routenex_admin.json
 test_routenex*
+test_*.json
 *.db
 *.db-shm
 *.db-wal
