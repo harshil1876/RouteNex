@@ -53,3 +53,9 @@ test_*.json
 .agents/skills/processize/
 .agents/skills/validate-idea/
 
+# Private launch & social media distribution materials
+LAUNCH_KIT.md
+*LAUNCH_KIT*
+*launch-kit*
+
+
