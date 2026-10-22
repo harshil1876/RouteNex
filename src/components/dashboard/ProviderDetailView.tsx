@@ -75,6 +75,65 @@ export default function ProviderDetailView({
   const [newKeyInput, setNewKeyInput] = useState('');
   const [newLabelInput, setNewLabelInput] = useState('');
 
+  // OAuth Consent State
+  const isOAuthProvider = useMemo(() => {
+    const id = (providerId || '').toLowerCase();
+    const name = (providerName || '').toLowerCase();
+    return (
+      id.includes('antigravity') ||
+      id.includes('copilot') ||
+      id.includes('cursor') ||
+      id.includes('oauth') ||
+      name.includes('antigravity') ||
+      name.includes('oauth') ||
+      name.includes('copilot') ||
+      name.includes('google')
+    );
+  }, [providerId, providerName]);
+
+  const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
+  const [dontShowConsent, setDontShowConsent] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
+
+  const handleOpenAddConnection = () => {
+    const consentDismissed = localStorage.getItem(`consent_dismissed_${providerId}`) === 'true';
+    if (isOAuthProvider && !consentDismissed) {
+      setIsConsentModalOpen(true);
+    } else {
+      setIsAddAccountModalOpen(true);
+    }
+  };
+
+  const handleConfirmConsent = () => {
+    if (dontShowConsent) {
+      localStorage.setItem(`consent_dismissed_${providerId}`, 'true');
+    }
+    setIsConsentModalOpen(false);
+    setIsAddAccountModalOpen(true);
+  };
+
+  const handleStartGoogleOAuth = () => {
+    setOauthLoading(true);
+    const startUrl = `http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/oauth/start?open_browser=true`;
+    window.open(startUrl, '_blank', 'width=600,height=700');
+    setTimeout(() => {
+      setAccounts((prev) => [
+        ...prev,
+        {
+          id: `acc_oauth_${Date.now()}`,
+          label: `Google OAuth (${providerName})`,
+          maskedKey: 'session_google_pkce_active',
+          status: 'active',
+          quotaRemaining: '100% (Free)',
+          priority: prev.length + 1,
+          tokenShort: false,
+        },
+      ]);
+      setOauthLoading(false);
+      setIsAddAccountModalOpen(false);
+    }, 2000);
+  };
+
   // 2. Available Models State (Dynamic from Unified Catalog - All models shown)
   const initialModels = useMemo<ProviderModel[]>(() => {
     const catalogModels = getModelsByProvider(providerId, providerName);
@@ -352,10 +411,10 @@ export default function ProviderDetailView({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setIsAddAccountModalOpen(true)}
-                className="px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-950 font-semibold text-xs hover:bg-white transition flex items-center gap-1.5"
+                onClick={handleOpenAddConnection}
+                className="px-3.5 py-1.5 rounded-lg bg-zinc-100 text-zinc-950 font-semibold text-xs hover:bg-white transition flex items-center gap-1.5 shadow-xs"
               >
-                <span>+ Add Account</span>
+                <span>+ Add Connection</span>
               </button>
             </div>
           </div>
@@ -482,19 +541,62 @@ export default function ProviderDetailView({
                 type="button"
                 onClick={handleTestAllModels}
                 disabled={isTestingAllModels}
-                className="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold text-xs transition disabled:opacity-50 font-sans inline-flex items-center gap-1.5"
+                className="px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold text-xs transition disabled:opacity-50 font-sans inline-flex items-center gap-1.5 shadow-xs"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
-                {isTestingAllModels ? 'Testing All...' : 'Test All Models'}
+                {isTestingAllModels ? 'Testing All Models...' : 'Test All Models'}
               </button>
+            </div>
+          </div>
+
+          {/* Model Health Test Summary Banner (Matching OmniRoute pattern) */}
+          <div className="p-3.5 rounded-xl bg-[#111113] border border-[#222226] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-sans">
+            <div className="flex items-center gap-2.5">
+              <span className={`w-2.5 h-2.5 rounded-full ${models.filter((m) => m.status === 'working').length > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`}></span>
+              <span className="text-zinc-200">
+                Health Status: <strong className="text-emerald-400 font-semibold">{models.filter((m) => m.status === 'working').length} of {models.length} models working</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-zinc-400">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoSync}
+                  onChange={(e) => setAutoSync(e.target.checked)}
+                  className="rounded border-[#222226] bg-[#09090b] text-sky-500 focus:ring-0"
+                />
+                <span>Auto-sync models</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoHideFailed}
+                  onChange={(e) => setAutoHideFailed(e.target.checked)}
+                  className="rounded border-[#222226] bg-[#09090b] text-sky-500 focus:ring-0"
+                />
+                <span>Auto-hide failed</span>
+              </label>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {models
-              .filter((m) => m.name.toLowerCase().includes(modelSearch.toLowerCase()) || m.id.toLowerCase().includes(modelSearch.toLowerCase()))
+              .filter((m) => {
+                const matchSearch =
+                  m.name.toLowerCase().includes(modelSearch.toLowerCase()) ||
+                  m.id.toLowerCase().includes(modelSearch.toLowerCase());
+                if (!matchSearch) return false;
+                if (modelPriceFilter === 'free' && !m.isFree && !m.id.includes('free') && !m.id.includes('flash') && !m.id.includes('instant')) {
+                  return false;
+                }
+                if (modelPriceFilter === 'paid' && (m.isFree || m.id.includes('free'))) {
+                  return false;
+                }
+                if (autoHideFailed && m.status === 'offline') return false;
+                return true;
+              })
               .map((m) => (
                 <div
                   key={m.id}
@@ -867,12 +969,78 @@ export default function ProviderDetailView({
         </div>
       )}
 
-      {/* Add Account Modal */}
+      {/* CONSENT MODAL: Official Product Session / ToS Caution (Matching Screenshot) */}
+      {isConsentModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 font-sans">
+          <div className="w-full max-w-md bg-[#161619] border border-[#27272a] rounded-2xl p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
+            {/* Top Mac-style dots + Title */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#27272a]/70">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-red-500/80"></span>
+                <span className="w-3 h-3 rounded-full bg-yellow-500/80"></span>
+                <span className="w-3 h-3 rounded-full bg-green-500/80"></span>
+                <span className="ml-2 font-semibold text-zinc-100 text-sm">Before continuing</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsConsentModalOpen(false)}
+                className="text-zinc-500 hover:text-zinc-200 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Amber Alert Box */}
+            <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-600/30 text-amber-200 space-y-2 text-xs leading-relaxed">
+              <div className="flex items-center gap-2 font-bold text-amber-400">
+                <span className="text-base">⚠️</span>
+                <span>{providerName}</span>
+              </div>
+              <p className="text-amber-300/90 text-xs">
+                This provider uses your official product session/OAuth, which is not authorized for proxy/router use. We don't recommend intensive autonomous agent usage (OpenCloud-style, long multi-step flows, large batches) — the upstream may react by restricting or banning the account. Use at your own risk.
+              </p>
+            </div>
+
+            {/* Checkbox: Don't show this again */}
+            <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer pt-1">
+              <input
+                type="checkbox"
+                checked={dontShowConsent}
+                onChange={(e) => setDontShowConsent(e.target.checked)}
+                className="rounded border-[#27272a] bg-[#09090b] text-sky-500 focus:ring-0"
+              />
+              <span>Don't show this again for this provider</span>
+            </label>
+
+            {/* Buttons */}
+            <div className="flex justify-end gap-2 pt-3 border-t border-[#27272a]/70">
+              <button
+                type="button"
+                onClick={() => setIsConsentModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-[#222226] hover:bg-[#27272a] text-zinc-300 text-xs font-semibold transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmConsent}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-semibold text-xs shadow-md transition"
+              >
+                I understand, continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Account / Connection Modal */}
       {isAddAccountModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#111113] border border-[#222226] rounded-xl p-5 space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 font-sans">
+          <div className="w-full max-w-md bg-[#111113] border border-[#222226] rounded-2xl p-6 space-y-4 shadow-2xl">
             <div className="flex justify-between items-center pb-2 border-b border-[#222226]">
-              <h3 className="text-sm font-semibold text-zinc-100 font-sans">Add Account Key</h3>
+              <h3 className="text-sm font-semibold text-zinc-100 font-sans">
+                {isOAuthProvider ? `Connect ${providerName} (OAuth PKCE)` : 'Add Account Key'}
+              </h3>
               <button
                 type="button"
                 onClick={() => setIsAddAccountModalOpen(false)}
@@ -882,46 +1050,104 @@ export default function ProviderDetailView({
               </button>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="block text-zinc-400 mb-1">Account Label</label>
-                <input
-                  type="text"
-                  value={newLabelInput}
-                  onChange={(e) => setNewLabelInput(e.target.value)}
-                  placeholder="e.g. Production Pooled Key #2"
-                  className="w-full bg-[#09090b] border border-[#222226] rounded px-3 py-2 text-xs text-zinc-100"
-                />
-              </div>
+            {isOAuthProvider ? (
+              <div className="space-y-4">
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Sign in with your Google account in real time to authorize {providerName} free session tokens:
+                </p>
 
-              <div>
-                <label className="block text-zinc-400 mb-1">API Key Secret</label>
-                <input
-                  type="password"
-                  value={newKeyInput}
-                  onChange={(e) => setNewKeyInput(e.target.value)}
-                  placeholder="sk-..."
-                  className="w-full bg-[#09090b] border border-[#222226] rounded px-3 py-2 text-xs text-zinc-100"
-                />
-              </div>
-            </div>
+                <button
+                  type="button"
+                  onClick={handleStartGoogleOAuth}
+                  disabled={oauthLoading}
+                  className="w-full py-3 px-4 rounded-xl bg-white hover:bg-zinc-100 text-zinc-950 font-semibold text-xs transition flex items-center justify-center gap-2.5 shadow-md disabled:opacity-50"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                  </svg>
+                  <span>{oauthLoading ? 'Authenticating with Google...' : 'Sign in with Google Account'}</span>
+                </button>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsAddAccountModalOpen(false)}
-                className="px-3 py-1.5 rounded bg-[#09090b] border border-[#222226] text-zinc-400 hover:text-white text-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleAddAccount}
-                className="px-4 py-1.5 rounded bg-zinc-100 text-zinc-950 font-semibold text-xs hover:bg-white"
-              >
-                Save Encrypted Key
-              </button>
-            </div>
+                <div className="relative flex items-center justify-center">
+                  <div className="border-t border-[#222226] w-full"></div>
+                  <span className="bg-[#111113] px-2 text-[10px] text-zinc-500 uppercase tracking-wider">or paste session token</span>
+                </div>
+
+                <div>
+                  <label className="block text-zinc-400 text-xs mb-1">Session Token / Secret Key</label>
+                  <input
+                    type="password"
+                    value={newKeyInput}
+                    onChange={(e) => setNewKeyInput(e.target.value)}
+                    placeholder="ya29.a0... or session token"
+                    className="w-full bg-[#09090b] border border-[#222226] rounded-lg px-3 py-2 text-xs text-zinc-100 font-mono"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddAccountModalOpen(false)}
+                    className="px-3.5 py-1.5 rounded-lg bg-[#09090b] border border-[#222226] text-zinc-400 hover:text-white text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddAccount}
+                    disabled={!newKeyInput.trim()}
+                    className="px-4 py-1.5 rounded-lg bg-zinc-100 text-zinc-950 font-semibold text-xs hover:bg-white disabled:opacity-50"
+                  >
+                    Save Token
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-zinc-400 mb-1 text-xs">Account Label</label>
+                  <input
+                    type="text"
+                    value={newLabelInput}
+                    onChange={(e) => setNewLabelInput(e.target.value)}
+                    placeholder="e.g. Production Pooled Key #2"
+                    className="w-full bg-[#09090b] border border-[#222226] rounded-lg px-3 py-2 text-xs text-zinc-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-zinc-400 mb-1 text-xs">API Key Secret</label>
+                  <input
+                    type="password"
+                    value={newKeyInput}
+                    onChange={(e) => setNewKeyInput(e.target.value)}
+                    placeholder="sk-..."
+                    className="w-full bg-[#09090b] border border-[#222226] rounded-lg px-3 py-2 text-xs text-zinc-100 font-mono"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddAccountModalOpen(false)}
+                    className="px-3.5 py-1.5 rounded-lg bg-[#09090b] border border-[#222226] text-zinc-400 hover:text-white text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddAccount}
+                    disabled={!newKeyInput.trim()}
+                    className="px-4 py-1.5 rounded-lg bg-zinc-100 text-zinc-950 font-semibold text-xs hover:bg-white disabled:opacity-50"
+                  >
+                    Save Encrypted Key
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
