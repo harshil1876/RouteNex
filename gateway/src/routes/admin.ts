@@ -180,7 +180,7 @@ export function createAdminRoutes(
 
     return c.json({
       edition: 'RouteNex Open Source',
-      version: '0.2.4',
+      version: '0.2.3',
       host: config.host,
       port: config.port,
       compressionEnabled: settings.compressionEnabled,
