@@ -6,7 +6,7 @@
 
 [![npm version](https://img.shields.io/npm/v/routenex.svg?color=blue)](https://www.npmjs.com/package/routenex)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
-[![Tests Passing](https://img.shields.io/badge/Tests-139%2F139%20Passing-emerald.svg)](https://github.com/harshil1876/RouteNex)
+[![Tests Passing](https://img.shields.io/badge/Tests-143%2F143%20Passing-emerald.svg)](https://github.com/harshil1876/RouteNex)
 [![Free Tokens](https://img.shields.io/badge/Free%20Tokens-~1.62B%2Fmonth-purple.svg)](https://github.com/harshil1876/RouteNex)
 [![Overhead](https://img.shields.io/badge/Overhead-%3C2ms%20Latency-brightgreen.svg)](https://github.com/harshil1876/RouteNex)
 [![OpenAI Compatible](https://img.shields.io/badge/API-OpenAI%20%26%20Anthropic%20Compatible-black.svg)](https://github.com/harshil1876/RouteNex)

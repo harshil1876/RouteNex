@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createApp } from './server.js';
 import type { AppConfig } from './config.js';
+import { reconcileWorkerSchedules } from './workers/runtime.js';
 
 const testConfig: AppConfig = {
   port: 3001,
@@ -341,21 +342,169 @@ describe('Suite: NexWorkers (Autonomous Routed Workers & Action Shield)', () => 
     expect(resPost.status).toBe(401);
   });
 
-  // 12. External Webhook Trigger Ingress
-  it('Webhook Trigger: POST /v1/workers/:slug/trigger runs worker task and returns run status', async () => {
+  // 12. External Webhook Trigger Security & Ingress
+  it('Webhook Trigger Security: rejects unauthenticated trigger with 401, accepts valid admin token or webhook secret', async () => {
     const { app } = createApp(testConfig);
 
-    const res = await app.request('/v1/workers/inbox-triage/trigger', {
+    // 1. Unauthenticated to /v1/workers/inbox-triage/trigger -> 401
+    const unauthV1Res = await app.request('/v1/workers/inbox-triage/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'Unauthorized ping' }),
+    });
+    expect(unauthV1Res.status).toBe(401);
+
+    // 2. Unauthenticated to /workers/inbox-triage/trigger -> 401
+    const unauthRootRes = await app.request('/workers/inbox-triage/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'Unauthorized ping' }),
+    });
+    expect(unauthRootRes.status).toBe(401);
+
+    // 3. Authenticated via x-admin-token -> 200
+    const authAdminRes = await app.request('/v1/workers/inbox-triage/trigger', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': 'routenex-admin',
+      },
+      body: JSON.stringify({ prompt: 'GitHub Webhook: Push event to main with 3 commits.' }),
+    });
+    expect(authAdminRes.status).toBe(200);
+    const authAdminData = await authAdminRes.json();
+    expect(authAdminData.run.triggerType).toBe('webhook');
+    expect(authAdminData.run.workerSlug).toBe('inbox-triage');
+
+    // 4. Authenticated via x-webhook-secret -> 200
+    const authSecretRes = await app.request('/workers/inbox-triage/trigger', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-webhook-secret': 'routenex-admin',
+      },
+      body: JSON.stringify({ prompt: 'Webhook via secret' }),
+    });
+    expect(authSecretRes.status).toBe(200);
+  });
+
+  // 13. Streaming SSE Support for Virtual Model (stream: true)
+  it('Streaming SSE: POST /v1/chat/completions with model "worker/pr-guardian" and stream: true returns text/event-stream with chunks and [DONE]', async () => {
+    const { app } = createApp(testConfig);
+
+    const res = await app.request('/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt: 'GitHub Webhook: Push event to main with 3 commits.',
+        model: 'worker/pr-guardian',
+        stream: true,
+        messages: [
+          { role: 'user', content: 'Turn 1: Initial query about codebase' },
+          { role: 'assistant', content: 'Turn 1 answer: Ready to help.' },
+          { role: 'user', content: 'Turn 2: Audit repository diff for security vulnerabilities' },
+        ],
       }),
     });
 
     expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('text/event-stream');
+    expect(res.headers.get('X-RouteNex-Worker-Status')).toBe('completed');
+    expect(res.headers.get('X-RouteNex-Worker-Id')).toBeDefined();
+
+    const rawText = await res.text();
+    expect(rawText).toContain('data: ');
+    expect(rawText).toContain('chat.completion.chunk');
+    expect(rawText).toContain('[DONE]');
+  });
+
+  // 14. Discovery: Expose worker/<slug> in GET /v1/models
+  it('Model Catalog Discovery: GET /v1/models includes all configured specialist workers with id worker/<slug>', async () => {
+    const { app } = createApp(testConfig);
+
+    const res = await app.request('/v1/models');
+    expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.run.triggerType).toBe('webhook');
-    expect(data.run.workerSlug).toBe('inbox-triage');
+    expect(Array.isArray(data.data)).toBe(true);
+
+    const modelIds = data.data.map((m: any) => m.id);
+    expect(modelIds).toContain('worker/pr-guardian');
+    expect(modelIds).toContain('worker/inbox-triage');
+    expect(modelIds).toContain('worker/cost-watchdog');
+    expect(modelIds).toContain('worker/release-architect');
+
+    const prGuardianModel = data.data.find((m: any) => m.id === 'worker/pr-guardian');
+    expect(prGuardianModel.owned_by).toBe('routenex-worker');
+    expect(prGuardianModel.routenex.provider).toBe('nexworker');
+  });
+
+  // 15. Anthropic Protocol Parity: POST /v1/messages with model "worker/pr-guardian"
+  it('Anthropic Protocol Ingress: POST /v1/messages works with model "worker/pr-guardian" in both non-streaming and streaming mode', async () => {
+    const { app } = createApp(testConfig);
+
+    // Non-streaming
+    const res = await app.request('/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'worker/pr-guardian',
+        messages: [
+          { role: 'user', content: 'Review recent auth changes for timing attacks' },
+        ],
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('X-RouteNex-Worker-Status')).toBe('completed');
+    const data = await res.json();
+    expect(data.type).toBe('message');
+    expect(data.role).toBe('assistant');
+    expect(Array.isArray(data.content)).toBe(true);
+    expect(data.content[0].type).toBe('text');
+    expect(data.content[0].text).toBeDefined();
+
+    // Streaming
+    const streamRes = await app.request('/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'worker/pr-guardian',
+        stream: true,
+        messages: [
+          { role: 'user', content: 'Stream review for timing attacks' },
+        ],
+      }),
+    });
+
+    expect(streamRes.status).toBe(200);
+    expect(streamRes.headers.get('content-type')).toContain('text/event-stream');
+    const streamText = await streamRes.text();
+    expect(streamText).toContain('event: message_start');
+    expect(streamText).toContain('event: content_block_delta');
+    expect(streamText).toContain('event: message_stop');
+  });
+
+  // 16. Schedule Reconciliation & Missed-Run Detection
+  it('Schedule Reconciliation: reconcileWorkerSchedules detects missed windows and flags missedRun = true', async () => {
+    const { adminStore, engine } = createApp(testConfig);
+
+    const worker = adminStore.findWorker('pr-guardian');
+    expect(worker).toBeDefined();
+
+    // Configure an enabled schedule with nextRunAt in the past
+    worker!.schedule = {
+      enabled: true,
+      cron: '0 9 * * 1-5',
+      label: 'Weekdays',
+      prompt: 'Audit git diff',
+      nextRunAt: new Date(Date.now() - 3600 * 1000).toISOString(), // 1 hour ago
+      missedRun: false,
+    };
+    adminStore.upsertWorker(worker!);
+
+    const result = await reconcileWorkerSchedules(adminStore, engine);
+    expect(result.missed).toBeGreaterThanOrEqual(1);
+
+    const updatedWorker = adminStore.findWorker('pr-guardian');
+    expect(updatedWorker!.schedule.missedRun).toBe(true);
   });
 });

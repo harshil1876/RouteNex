@@ -501,3 +501,44 @@ ${run.prompt}
   adminStore.saveSkill(skill);
   return skill;
 }
+
+/**
+ * Reconciles worker cron schedules on startup or periodic tick:
+ * - If worker.schedule.enabled is true and worker.schedule.nextRunAt is in the past, marks missedRun = true.
+ * - If worker.schedule.enabled is true and nextRunAt is not set, computes and sets the next scheduled timestamp.
+ */
+export async function reconcileWorkerSchedules(
+  adminStore: AdminStore,
+  engine?: RoutingEngine
+): Promise<{ checked: number; missed: number }> {
+  const workers = adminStore.getWorkers();
+  let missed = 0;
+  const now = Date.now();
+
+  for (const worker of workers) {
+    if (!worker.schedule || !worker.schedule.enabled) continue;
+
+    let updated = false;
+    if (worker.schedule.nextRunAt) {
+      const nextTime = new Date(worker.schedule.nextRunAt).getTime();
+      if (!isNaN(nextTime) && nextTime < now) {
+        if (!worker.schedule.missedRun) {
+          worker.schedule.missedRun = true;
+          updated = true;
+          missed++;
+        }
+      }
+    } else {
+      // Default next run window to 1 hour from now
+      worker.schedule.nextRunAt = new Date(now + 60 * 60 * 1000).toISOString();
+      updated = true;
+    }
+
+    if (updated) {
+      adminStore.upsertWorker(worker);
+    }
+  }
+
+  return { checked: workers.length, missed };
+}
+

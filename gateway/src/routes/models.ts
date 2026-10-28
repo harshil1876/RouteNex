@@ -37,9 +37,36 @@ export function createModelsRoute(registry: ProviderRegistry, adminStore?: Admin
         }))
       : [];
 
+    const workerModels = adminStore
+      ? adminStore.getWorkers().map((w) => ({
+          id: `worker/${w.slug}`,
+          object: 'model',
+          created: Math.floor(new Date(w.createdAt || Date.now()).getTime() / 1000),
+          owned_by: 'routenex-worker',
+          routenex: {
+            provider: 'nexworker',
+            capabilities: {
+              chat: true,
+              streaming: true,
+              tool_calls: true,
+              vision: false,
+              json_mode: true,
+            },
+            pricing: {
+              prompt_per_million: 0,
+              completion_per_million: 0,
+              provenance: 'ESTIMATED' as const,
+              updated_at: w.updatedAt || new Date().toISOString(),
+            },
+            description: w.role || `${w.name} Specialist Worker`,
+            targets: [w.brainModel],
+          },
+        }))
+      : [];
+
     return c.json({
       object: 'list',
-      data: [...comboModels, ...catalog],
+      data: [...workerModels, ...comboModels, ...catalog],
     });
   });
 

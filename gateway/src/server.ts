@@ -27,7 +27,7 @@ import { mountStaticDashboard } from './middleware/static-dashboard.js';
 import { ResponseCache } from './router/cache.js';
 import { createMcpRoute } from './routes/mcp.js';
 import { createProtocolsRoute } from './routes/protocols.js';
-import { executeWorkerTask, WorkerBudgetExceededError } from './workers/runtime.js';
+import { executeWorkerTask, WorkerBudgetExceededError, reconcileWorkerSchedules } from './workers/runtime.js';
 
 export function createApp(appConfig: AppConfig = config) {
   const app = new Hono();
@@ -97,7 +97,7 @@ export function createApp(appConfig: AppConfig = config) {
   const explainRoute = createExplainRoute(engine);
   const usageRoute = createUsageRoute(store);
   const adminRoute = createAdminRoutes(adminStore, registry, appConfig, store, engine);
-  const messagesRoute = createMessagesRoute(engine, store, appConfig, responseCache);
+  const messagesRoute = createMessagesRoute(engine, store, appConfig, responseCache, adminStore);
   const mcpRoute = createMcpRoute(engine, registry, circuitBreaker, adminStore);
   const protocolsRoute = createProtocolsRoute(engine, store, appConfig, registry);
 
@@ -107,8 +107,53 @@ export function createApp(appConfig: AppConfig = config) {
   // Admin routes (for self-hosted Open Source Web Console)
   app.route('/v1/admin', adminRoute);
 
+  // Reconcile worker schedules on boot
+  reconcileWorkerSchedules(adminStore, engine).catch(() => {});
+
+  // Background unref'd timer for periodic schedule checks (every 60s)
+  const schedulerTimer = setInterval(() => {
+    reconcileWorkerSchedules(adminStore, engine).catch(() => {});
+  }, 60_000);
+  if (typeof schedulerTimer.unref === 'function') {
+    schedulerTimer.unref();
+  }
+
   // External Webhook Trigger Ingress (for GitHub/Slack/Composio webhooks)
   const handleWorkerWebhook = async (c: any) => {
+    // Authenticate caller via webhook secret, admin token, master API key, or virtual key
+    const webhookSecretHeader = c.req.header('x-webhook-secret');
+    const configuredSecret = process.env.ROUTENEX_WEBHOOK_SECRET;
+    const isSecretValid = Boolean(
+      webhookSecretHeader && (
+        (configuredSecret && webhookSecretHeader === configuredSecret) ||
+        adminStore.verifyAdminToken(webhookSecretHeader)
+      )
+    );
+
+    const authHeader = c.req.header('authorization');
+    const xAdminToken = c.req.header('x-admin-token');
+    const cookieHeader = c.req.header('cookie');
+    const cookieSession = cookieHeader?.match(/(?:^|;\s*)routenex_admin_session=([^;]*)/)?.[1];
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.slice(7).trim()
+      : (xAdminToken || (cookieSession ? decodeURIComponent(cookieSession) : ''));
+
+    const isMasterKey = Boolean(appConfig.apiKey && token === appConfig.apiKey);
+    const isAdminToken = Boolean(token && adminStore.verifyAdminToken(token));
+    const isVirtualKey = Boolean(token && adminStore.isValidKey(token, appConfig.apiKey));
+
+    if (!isSecretValid && !isMasterKey && !isAdminToken && !isVirtualKey) {
+      return c.json(
+        {
+          error: {
+            message: 'Unauthorized webhook trigger request. Valid admin token, API key, or webhook secret required.',
+            code: 'unauthorized',
+          },
+        },
+        401
+      );
+    }
+
     const slug = c.req.param('slug');
     const body = await c.req.json().catch(() => ({}));
     try {

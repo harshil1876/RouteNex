@@ -63,8 +63,19 @@ export function createChatRoute(
     // Virtual Model Ingress: model: "worker/<slug>"
     if (request.model.startsWith('worker/')) {
       const workerSlug = request.model.replace(/^worker\//, '').trim();
-      const lastMsg = request.messages[request.messages.length - 1];
-      const prompt = typeof lastMsg?.content === 'string' ? lastMsg.content : JSON.stringify(lastMsg?.content || '');
+      let prompt: string;
+      if (request.messages.length > 1) {
+        prompt = request.messages
+          .map((m) => {
+            const role = m.role ? `${m.role.toUpperCase()}: ` : '';
+            const content = typeof m.content === 'string' ? m.content : JSON.stringify(m.content || '');
+            return `${role}${content}`;
+          })
+          .join('\n\n');
+      } else {
+        const lastMsg = request.messages[0];
+        prompt = typeof lastMsg?.content === 'string' ? lastMsg.content : JSON.stringify(lastMsg?.content || '');
+      }
 
       try {
         const storeToUse = adminStore || (engine as any).adminStore || new AdminStore('./routenex_admin.json', true);
@@ -100,6 +111,65 @@ export function createChatRoute(
           cost_estimate: { total_usd: run.totalCostUsd, provenance: 'ESTIMATED', price_timestamp: null },
           routing_reason: `Autonomous worker/${workerSlug} execution (${run.status})`,
         });
+
+        if (request.stream) {
+          const chunkId = `chatcmpl_worker_${run.id}`;
+          const created = Math.floor(Date.now() / 1000);
+
+          return streamSSE(c, async (stream) => {
+            await stream.writeSSE({
+              data: JSON.stringify({
+                id: chunkId,
+                object: 'chat.completion.chunk',
+                created,
+                model: request.model,
+                choices: [
+                  {
+                    index: 0,
+                    delta: { role: 'assistant' },
+                    finish_reason: null,
+                  },
+                ],
+              }),
+            });
+
+            await stream.writeSSE({
+              data: JSON.stringify({
+                id: chunkId,
+                object: 'chat.completion.chunk',
+                created,
+                model: request.model,
+                choices: [
+                  {
+                    index: 0,
+                    delta: { content: responseContent },
+                    finish_reason: null,
+                  },
+                ],
+              }),
+            });
+
+            await stream.writeSSE({
+              data: JSON.stringify({
+                id: chunkId,
+                object: 'chat.completion.chunk',
+                created,
+                model: request.model,
+                choices: [
+                  {
+                    index: 0,
+                    delta: {},
+                    finish_reason: 'stop',
+                  },
+                ],
+              }),
+            });
+
+            await stream.writeSSE({
+              data: '[DONE]',
+            });
+          });
+        }
 
         return c.json({
           id: `chatcmpl_worker_${run.id}`,

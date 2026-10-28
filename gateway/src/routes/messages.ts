@@ -17,12 +17,15 @@ import type { RequestStore } from '../storage/sqlite.js';
 import type { ResponseCache } from '../router/cache.js';
 import type { AppConfig } from '../config.js';
 import type { ChatCompletionRequest, Message } from '../schemas.js';
+import { AdminStore } from '../storage/admin-store.js';
+import { executeWorkerTask, WorkerBudgetExceededError } from '../workers/runtime.js';
 
 export function createMessagesRoute(
   engine: RoutingEngine,
   store: RequestStore,
   config: AppConfig,
-  cache?: ResponseCache
+  cache?: ResponseCache,
+  adminStore?: AdminStore
 ) {
   const router = new Hono();
 
@@ -94,6 +97,151 @@ export function createMessagesRoute(
     };
 
     const requestId = `msg_${nanoid(20)}`;
+
+    // Virtual Model Ingress: model: "worker/<slug>" (Anthropic Protocol)
+    if (model.startsWith('worker/')) {
+      const workerSlug = model.replace(/^worker\//, '').trim();
+      let prompt: string;
+      if (normalizedMessages.length > 1) {
+        prompt = normalizedMessages
+          .map((m) => `${m.role ? m.role.toUpperCase() + ': ' : ''}${typeof m.content === 'string' ? m.content : JSON.stringify(m.content || '')}`)
+          .join('\n\n');
+      } else {
+        const lastMsg = normalizedMessages[0];
+        prompt = typeof lastMsg?.content === 'string' ? lastMsg.content : JSON.stringify(lastMsg?.content || '');
+      }
+
+      const startTime = Date.now();
+      try {
+        const storeToUse = adminStore || (engine as any).adminStore || new AdminStore('./routenex_admin.json', true);
+        const run = await executeWorkerTask(workerSlug, { prompt, triggerType: 'api_chat' }, storeToUse, engine);
+
+        c.header('X-RouteNex-Request-Id', sanitizeHeader(requestId));
+        c.header('X-RouteNex-Worker-Id', sanitizeHeader(run.workerId));
+        c.header('X-RouteNex-Worker-Status', sanitizeHeader(run.status));
+        c.header('X-RouteNex-Tokens-Saved', String(run.totalTokensSaved || 0));
+        c.header('X-RouteNex-Selected-Provider', 'nexworker');
+        c.header('X-RouteNex-Selected-Model', sanitizeHeader(model));
+
+        const responseContent =
+          run.status === 'awaiting_approval'
+            ? `[ACTION SHIELD PAUSED] Action requires human approval. Run ID: ${run.id}. Awaiting operator review in RouteNex Studio.`
+            : run.finalResponse || `Task completed by worker/${run.workerSlug}. Output brief generated: ${run.outputBriefId || 'none'}.`;
+
+        const usage = {
+          input_tokens: Math.max(10, Math.ceil(prompt.length / 4)),
+          output_tokens: Math.max(10, Math.ceil(responseContent.length / 4)),
+        };
+
+        store.logRequest({
+          request_id: requestId,
+          timestamp: new Date().toISOString(),
+          model_requested: model,
+          model_used: model,
+          provider: 'nexworker',
+          latency_ms: Date.now() - startTime,
+          status: run.status === 'denied' ? 'error' : 'success',
+          token_usage: { prompt_tokens: usage.input_tokens, completion_tokens: usage.output_tokens, total_tokens: usage.input_tokens + usage.output_tokens },
+          cost_estimate: { total_usd: run.totalCostUsd, provenance: 'ESTIMATED', price_timestamp: null },
+          routing_reason: `Autonomous worker/${workerSlug} execution (${run.status})`,
+        });
+
+        if (stream) {
+          const encoder = new TextEncoder();
+          const streamResponse = new ReadableStream({
+            start(controller) {
+              controller.enqueue(
+                encoder.encode(
+                  `event: message_start\ndata: ${JSON.stringify({
+                    type: 'message_start',
+                    message: {
+                      id: requestId,
+                      type: 'message',
+                      role: 'assistant',
+                      content: [],
+                      model,
+                      stop_reason: null,
+                      stop_sequence: null,
+                      usage: { input_tokens: usage.input_tokens, output_tokens: 1 },
+                    },
+                  })}\n\n`
+                )
+              );
+
+              controller.enqueue(
+                encoder.encode(
+                  `event: content_block_start\ndata: ${JSON.stringify({
+                    type: 'content_block_start',
+                    index: 0,
+                    content_block: { type: 'text', text: '' },
+                  })}\n\n`
+                )
+              );
+
+              controller.enqueue(
+                encoder.encode(
+                  `event: content_block_delta\ndata: ${JSON.stringify({
+                    type: 'content_block_delta',
+                    index: 0,
+                    delta: { type: 'text_delta', text: responseContent },
+                  })}\n\n`
+                )
+              );
+
+              controller.enqueue(
+                encoder.encode(`event: content_block_stop\ndata: ${JSON.stringify({ type: 'content_block_stop', index: 0 })}\n\n`)
+              );
+
+              controller.enqueue(
+                encoder.encode(
+                  `event: message_delta\ndata: ${JSON.stringify({
+                    type: 'message_delta',
+                    delta: { stop_reason: 'end_turn', stop_sequence: null },
+                    usage: { output_tokens: usage.output_tokens },
+                  })}\n\n`
+                )
+              );
+
+              controller.enqueue(encoder.encode(`event: message_stop\ndata: ${JSON.stringify({ type: 'message_stop' })}\n\n`));
+              controller.close();
+            },
+          });
+
+          return new Response(streamResponse, {
+            headers: {
+              'Content-Type': 'text/event-stream; charset=utf-8',
+              'Cache-Control': 'no-cache',
+              'Connection': 'keep-alive',
+              'X-RouteNex-Request-Id': sanitizeHeader(requestId),
+              'X-RouteNex-Worker-Id': sanitizeHeader(run.workerId),
+              'X-RouteNex-Worker-Status': sanitizeHeader(run.status),
+              'X-RouteNex-Tokens-Saved': String(run.totalTokensSaved || 0),
+            },
+          });
+        }
+
+        return c.json({
+          id: requestId,
+          type: 'message',
+          role: 'assistant',
+          content: [
+            {
+              type: 'text',
+              text: responseContent,
+            },
+          ],
+          model,
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage,
+        });
+      } catch (err: any) {
+        if (err instanceof WorkerBudgetExceededError || err?.code === 'worker_budget_exceeded') {
+          return c.json({ type: 'error', error: { type: 'rate_limit_error', message: err.message } }, 429);
+        }
+        return c.json({ type: 'error', error: { type: 'api_error', message: err.message || 'Worker execution failed' } }, 500);
+      }
+    }
 
     // 2. Non-streaming Execution
     if (!stream) {
