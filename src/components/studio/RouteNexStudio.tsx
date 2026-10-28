@@ -9,6 +9,7 @@ import ModelAliases from '../dashboard/ModelAliases';
 import DoctorPanel from '../dashboard/DoctorPanel';
 import Combos from '../dashboard/Combos';
 import AgentSetupHub from '../dashboard/AgentSetupHub';
+import NexWorkersHub from './NexWorkersHub';
 import FreeTierGauges from '../dashboard/FreeTierGauges';
 import CompressionStudio from '../dashboard/CompressionStudio';
 import Playground from '../dashboard/Playground';
@@ -34,7 +35,7 @@ const TAB_TITLES: Record<StudioNavItemId, string> = {
   optimizer: 'Token Optimizer',
   logs: 'Logs & Activity',
   costs: 'Cost & Quotas',
-  agents: 'Coding Agents & MCP',
+  agents: 'NexWorkers & Agents',
   keys: 'Virtual API Keys',
   settings: 'Guardrails & Settings',
 };
@@ -49,6 +50,7 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
   const [providersSubView, setProvidersSubView] = useState<'providers' | 'models' | 'playground'>('providers');
   const [routingSubView, setRoutingSubView] = useState<'combos' | 'policies' | 'simulator' | 'circuits'>('combos');
   const [optimizerSubView, setOptimizerSubView] = useState<'lexipack' | 'studio' | 'memory'>('lexipack');
+  const [agentsSubView, setAgentsSubView] = useState<'workers' | 'connectors'>('workers');
 
   // Gateway Connection Status
   const [isGatewayConnected, setIsGatewayConnected] = useState(true);
@@ -212,7 +214,7 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
     { label: 'Token Optimizer & LexiPack', action: () => setActiveItem('optimizer') },
     { label: 'Logs & Request Stream', action: () => setActiveItem('logs') },
     { label: 'Cost & Quotas Ledger', action: () => setActiveItem('costs') },
-    { label: 'Coding Agents & MCP', action: () => setActiveItem('agents') },
+    { label: 'NexWorkers & Coding Agents', action: () => setActiveItem('agents') },
     { label: 'Virtual API Keys', action: () => setActiveItem('keys') },
     { label: 'Guardrails & Settings', action: () => setActiveItem('settings') },
     { label: 'Documentation (/docs)', action: () => (window.location.href = '/docs') },
@@ -617,9 +619,9 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
                       </div>
                       <span className="text-zinc-500 group-hover:text-zinc-200 transition">›</span>
                     </div>
-                    <h3 className="text-sm font-semibold text-zinc-100 font-sans">Coding Agents & MCP</h3>
+                    <h3 className="text-sm font-semibold text-zinc-100 font-sans">NexWorkers & Agents</h3>
                     <p className="text-[13px] leading-5 text-zinc-400 font-sans">
-                      Connect Claude Code, Cursor, Cline, and MCP stdio.
+                      Autonomous routed specialists with Action Shield, Claude Code & MCP.
                     </p>
                   </div>
                 </div>
@@ -863,18 +865,46 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
             </div>
           )}
 
-          {/* TAB 7: CODING AGENTS & MCP */}
+          {/* TAB 7: NEXWORKERS & CODING AGENTS */}
           {activeItem === 'agents' && (
             <div className="space-y-6">
-              <div>
-                <h1 className="text-[22px] font-semibold tracking-tight text-zinc-50 font-sans">
-                  Coding Agents & MCP
-                </h1>
-                <p className="text-sm text-zinc-400 font-sans mt-1">
-                  One-command configuration for Claude Code, Cursor, Cline, and Model Context Protocol.
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h1 className="text-[22px] font-semibold tracking-tight text-zinc-50 font-sans">
+                    NexWorkers & Coding Agents
+                  </h1>
+                  <p className="text-sm text-zinc-400 font-sans mt-1">
+                    Autonomous routed specialists with Action Shield, Claude Code, Cursor, and MCP.
+                  </p>
+                </div>
+                <div className="inline-flex rounded-lg bg-[#111113] border border-[#222226] p-1 text-xs font-sans self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setAgentsSubView('workers')}
+                    className={`px-3 py-1.5 rounded-md transition ${
+                      agentsSubView === 'workers' ? 'bg-sky-500 !text-zinc-950 font-semibold' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    NexWorkers Control Plane
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAgentsSubView('connectors')}
+                    className={`px-3 py-1.5 rounded-md transition ${
+                      agentsSubView === 'connectors' ? 'bg-sky-500 !text-zinc-950 font-semibold' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    CLI & Agent Connectors (Claude, Cursor)
+                  </button>
+                </div>
               </div>
-              <AgentSetupHub />
+
+              {agentsSubView === 'workers' && (
+                <div className="h-[780px] min-h-[640px] rounded-xl overflow-hidden border border-[#222226] shadow-2xl">
+                  <NexWorkersHub onNavigateTab={(tab) => setActiveItem(tab as StudioNavItemId)} />
+                </div>
+              )}
+              {agentsSubView === 'connectors' && <AgentSetupHub />}
             </div>
           )}
 

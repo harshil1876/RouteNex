@@ -6,7 +6,7 @@
 
 [![npm version](https://img.shields.io/npm/v/routenex.svg?color=blue)](https://www.npmjs.com/package/routenex)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
-[![Tests Passing](https://img.shields.io/badge/Tests-127%2F127%20Passing-emerald.svg)](https://github.com/harshil1876/RouteNex)
+[![Tests Passing](https://img.shields.io/badge/Tests-139%2F139%20Passing-emerald.svg)](https://github.com/harshil1876/RouteNex)
 [![Free Tokens](https://img.shields.io/badge/Free%20Tokens-~1.62B%2Fmonth-purple.svg)](https://github.com/harshil1876/RouteNex)
 [![Overhead](https://img.shields.io/badge/Overhead-%3C2ms%20Latency-brightgreen.svg)](https://github.com/harshil1876/RouteNex)
 [![OpenAI Compatible](https://img.shields.io/badge/API-OpenAI%20%26%20Anthropic%20Compatible-black.svg)](https://github.com/harshil1876/RouteNex)
@@ -23,6 +23,7 @@
 - [⚡ Instant Start (Zero Install)](#-instant-start-zero-install)
 - [💻 30-Second SDK Drop-In](#-30-second-sdk-drop-in)
 - [🤖 Coding Agent Integrations (Cursor, Claude Code, Cline, Aider)](#-coding-agent-integrations)
+- [⚡ NexWorkers: Autonomous Routed Workers & Action Shield](#-nexworkers-autonomous-routed-workers--action-shield)
 - [🎁 Free-Tier Pool Aggregator (~1.62B Free Tokens/mo)](#-free-tier-pool-aggregator-162b-free-tokensmo)
 - [🔑 Multi-Key Pooling (Multiply Free RPM Limits)](#-multi-key-pooling-multiply-free-rpm-limits)
 - [🛡️ 3-Layer Resilience Engine](#️-3-layer-resilience-engine)
@@ -195,6 +196,88 @@ In `~/.continue/config.json`:
   ]
 }
 ```
+
+---
+
+## ⚡ NexWorkers: Autonomous Routed Workers & Action Shield
+
+NexWorkers are background and interactive autonomous specialists running inside RouteNex, orchestrated with **Tri-Model Routing**, **Token Optimizer Compression**, and **Action Shield Human-in-the-Loop policy gating**.
+
+Every worker is exposed as a first-class **Virtual Model ID** on `/v1/chat/completions` (e.g. `model: "worker/pr-guardian"`), so you can invoke them directly from Cursor, Claude Code, Python, or curl.
+
+```
+                    ┌────────────────────────────────────────────────────────┐
+                    │                   Incoming Task / Webhook              │
+                    └───────────────────────────┬────────────────────────────┘
+                                                │
+                                                ▼
+                                    ┌───────────────────────┐
+                                    │      Pulse Model      │  (auto:floor / free triage)
+                                    └───────────┬───────────┘
+                                                │
+                                                ▼
+                                    ┌───────────────────────┐
+                                    │    Token Optimizer    │  (-48% tokens via LogPrune & TurnDedup)
+                                    └───────────┬───────────┘
+                                                │
+                                                ▼
+                                    ┌───────────────────────┐
+                                    │     Brain Combo       │  (auto:balanced / combo/coding-power)
+                                    └───────────┬───────────┘
+                                                │
+                                    ┌───────────┴───────────┐
+                      Read Tool (auto)                      Write / Destructive Tool (ask)
+                            │                                     │
+                            ▼                                     ▼
+                     Execute Directly                     [ Action Shield Gate ]
+                                                                  │
+                                                        ┌─────────┴─────────┐
+                                                        ▼                   ▼
+                                                     Approve               Deny
+```
+
+### 1. 4 Default Pre-Configured Specialists
+
+| Specialist | Virtual Model ID | Brain Combo | Primary Mission |
+| :--- | :--- | :--- | :--- |
+| **PR & Security Guardian** | `worker/pr-guardian` | `auto:balanced` | Audits pull requests, flags CVEs, OWASP vulnerabilities, and credential leaks. |
+| **Inbox & Webhook Triage** | `worker/inbox-triage` | `auto:floor` | Categorizes incoming GitHub issues, alerts, and webhooks with automated labeling. |
+| **Cost & Latency Watchdog** | `worker/cost-watchdog` | `auto:balanced` | Audits provider spend ledgers, flags quota anomalies, and enforces budget caps. |
+| **Release Notes & Docs Architect** | `worker/release-architect` | `combo/coding-power` | Compiles git commit diffs into user-facing release notes and documentation. |
+
+### 2. Invoke as a Virtual Model (OpenAI SDK Drop-In)
+
+Call any worker as a standard model name from any client:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://127.0.0.1:3001/v1",
+    api_key="rn-local-dev-default"
+)
+
+# Triggers the PR & Security Guardian worker pipeline
+response = client.chat.completions.create(
+    model="worker/pr-guardian",
+    messages=[{"role": "user", "content": "Review recent commit b6aa133 for auth bypasses"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+### 3. Action Shield Human-in-the-Loop Gating
+
+* **Auto-Execute Read-Only Tools**: Benign tools (`git.log`, `read_file`, `fetch_metrics`) run automatically.
+* **Pause on Write / Destructive Tools**: Whenever a worker invokes write tools (`github.merge_pr`, `exec_command`, `slack.post`), Action Shield pauses the execution in SQLite and surfaces an interactive Approval Card in RouteNex Studio.
+* **Sensitive Argument Scrubbing**: High-entropy API tokens, Authorization headers, and private keys are scrubbed before rendering in the approval queue.
+* **Operator Controls**: 1-click **Approve & Execute**, **Deny & Skip Step**, or **Always Allow Tool** for that worker.
+
+### 4. Tri-Model Cost Efficiency
+
+* **Brain Combo**: Frontier model for deep reasoning and code generation (`auto:balanced` or `combo/coding-power`).
+* **Guard Model**: Fast, sub-30ms policy evaluator (`auto:free` or local model) screening tool calls against safety rules.
+* **Pulse Model**: Ultra-cheap floor model (`auto:floor`) for high-frequency webhook or cron triage.
 
 ---
 

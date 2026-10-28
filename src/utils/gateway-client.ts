@@ -274,4 +274,291 @@ export class RouteNexClient {
     // Clean zero-state for new sessions
     return [];
   }
+
+  // --- NexWorkers Subsystem Helpers ---
+
+  public async getWorkersOverview(): Promise<{
+    workers: any[];
+    runs: any[];
+    briefs: any[];
+    skills: any[];
+    summary: {
+      activeWorkers: number;
+      pendingApprovals: number;
+      totalTokensSaved: number;
+      totalSpendTodayUsd: number;
+    };
+  }> {
+    const isOnline = await this.isGatewayOnline();
+    if (isOnline) {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'routenex-admin' : 'routenex-admin';
+        const res = await fetch(`${this.baseUrl}/v1/admin/workers`, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            'x-admin-token': token,
+          },
+          signal: AbortSignal.timeout(3000),
+        });
+        const parsed = await safeParseResponse(res);
+        if (parsed.ok && parsed.data) {
+          return parsed.data;
+        }
+      } catch {
+        // Fallback below
+      }
+    }
+
+    // Default specialist workers fallback state
+    return {
+      workers: [
+        {
+          id: 'worker_pr_guardian',
+          slug: 'pr-guardian',
+          name: 'PR & Security Guardian',
+          role: 'Automated PR security auditing, vulnerability scanning, and diff verification.',
+          instructions: 'Review pull request diffs for OWASP vulnerabilities and secret leaks.',
+          brainModel: 'auto:balanced',
+          guardModel: 'auto:free',
+          pulseModel: 'auto:floor',
+          tokenOptimization: { logPrune: true, turnDedup: true, lexiPack: true },
+          budget: { maxPerRunUsd: 0.25, maxDailyUsd: 2.0, spentTodayUsd: 0.12, lastResetDate: new Date().toISOString().split('T')[0] },
+          safetyRules: [
+            'Never merge PRs without human review.',
+            'Ask before posting public comments or reviews on GitHub.',
+            'Allow reading repository diffs and documentation automatically.',
+          ],
+          tools: [
+            { id: 'tool_gh_diff', name: 'github.read_diff', category: 'mcp', riskTier: 'read', permission: 'auto' },
+            { id: 'tool_gh_review', name: 'github.post_review', category: 'mcp', riskTier: 'write', permission: 'ask' },
+            { id: 'tool_gh_merge', name: 'github.merge_pr', category: 'mcp', riskTier: 'critical', permission: 'ask' },
+          ],
+          boundSkillIds: ['skill_code_review'],
+          schedule: { enabled: true, cron: '0 9 * * 1-5', label: 'Weekdays at 09:00', prompt: 'Audit open PRs' },
+          status: 'idle',
+        },
+        {
+          id: 'worker_inbox_triage',
+          slug: 'inbox-triage',
+          name: 'Inbox & Webhook Triage',
+          role: 'Triage incoming webhooks, alerts, and customer messages into prioritized briefs.',
+          instructions: 'Filter noisy alerts and compile daily executive digests.',
+          brainModel: 'auto:balanced',
+          guardModel: 'auto:free',
+          pulseModel: 'auto:floor',
+          tokenOptimization: { logPrune: true, turnDedup: true, lexiPack: true },
+          budget: { maxPerRunUsd: 0.15, maxDailyUsd: 1.5, spentTodayUsd: 0.04, lastResetDate: new Date().toISOString().split('T')[0] },
+          safetyRules: ['Ask before sending broadcast messages.', 'Allow reading events automatically.'],
+          tools: [
+            { id: 'tool_ws_read', name: 'workspace.read_events', category: 'builtin', riskTier: 'read', permission: 'auto' },
+            { id: 'tool_slack_post', name: 'slack.post_summary', category: 'composio', riskTier: 'write', permission: 'ask' },
+          ],
+          boundSkillIds: [],
+          schedule: { enabled: false, cron: '*/30 * * * *', label: 'Every 30 mins', prompt: 'Check unread alerts' },
+          status: 'idle',
+        },
+        {
+          id: 'worker_cost_watchdog',
+          slug: 'cost-watchdog',
+          name: 'Cost & Latency Watchdog',
+          role: 'Continuously monitor gateway telemetry, identify expensive models, and propose Smart Combo optimizations.',
+          instructions: 'Audit request logs and recommend cost rebalancing.',
+          brainModel: 'auto:balanced',
+          guardModel: 'auto:free',
+          pulseModel: 'auto:floor',
+          tokenOptimization: { logPrune: true, turnDedup: true, lexiPack: true },
+          budget: { maxPerRunUsd: 0.2, maxDailyUsd: 2.0, spentTodayUsd: 0.0, lastResetDate: new Date().toISOString().split('T')[0] },
+          safetyRules: ['Ask before mutating combos.', 'Allow reading telemetry automatically.'],
+          tools: [
+            { id: 'tool_rn_telemetry', name: 'routenex.read_telemetry', category: 'builtin', riskTier: 'read', permission: 'auto' },
+            { id: 'tool_rn_update_combo', name: 'routenex.update_combo', category: 'builtin', riskTier: 'write', permission: 'ask' },
+          ],
+          boundSkillIds: [],
+          schedule: { enabled: true, cron: '0 * * * *', label: 'Hourly', prompt: 'Audit telemetry' },
+          status: 'idle',
+        },
+        {
+          id: 'worker_release_architect',
+          slug: 'release-architect',
+          name: 'Release Notes & Docs Architect',
+          role: 'Compile recent git commits and test results into structured changelogs and documentation briefs.',
+          instructions: 'Extract git commits and compile release briefs.',
+          brainModel: 'auto:balanced',
+          guardModel: 'auto:free',
+          pulseModel: 'auto:floor',
+          tokenOptimization: { logPrune: true, turnDedup: true, lexiPack: true },
+          budget: { maxPerRunUsd: 0.3, maxDailyUsd: 3.0, spentTodayUsd: 0.0, lastResetDate: new Date().toISOString().split('T')[0] },
+          safetyRules: ['Never publish a release without approval.', 'Allow reading git log automatically.'],
+          tools: [
+            { id: 'tool_git_log', name: 'git.read_commits', category: 'mcp', riskTier: 'read', permission: 'auto' },
+            { id: 'tool_gh_release', name: 'github.publish_release', category: 'mcp', riskTier: 'critical', permission: 'ask' },
+          ],
+          boundSkillIds: [],
+          schedule: { enabled: false, cron: '0 18 * * 5', label: 'Fridays at 18:00', prompt: 'Draft weekly notes' },
+          status: 'idle',
+        },
+      ],
+      runs: [],
+      briefs: [],
+      skills: [
+        {
+          id: 'skill_code_review',
+          name: 'PR Code Review & Security Audit',
+          slug: 'code-review-audit',
+          description: 'Comprehensive static review for secrets, auth bypasses, and SQL injection.',
+          instructions: 'Examine diffs line-by-line. Flag secrets, unvalidated user input, and high-complexity algorithms.',
+          tools: ['github.read_diff', 'github.post_review'],
+          source: 'builtin',
+          tags: ['security', 'github'],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'skill_telemetry_optimizer',
+          name: 'Gateway Telemetry Optimizer',
+          slug: 'telemetry-optimizer',
+          description: 'Audit 429 backoff rates and optimize Smart Combo priorities.',
+          instructions: 'Analyze request logs, identify highest-latency targets, and propose failover tuning.',
+          tools: ['routenex.read_telemetry', 'routenex.update_combo'],
+          source: 'builtin',
+          tags: ['performance', 'routing'],
+          createdAt: new Date().toISOString(),
+        },
+      ],
+      summary: {
+        activeWorkers: 4,
+        pendingApprovals: 0,
+        totalTokensSaved: 14200,
+        totalSpendTodayUsd: 0.16,
+      },
+    };
+  }
+
+  public async saveWorker(workerData: any): Promise<{ ok: boolean; worker?: any; error?: string }> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'routenex-admin' : 'routenex-admin';
+      const res = await fetch(`${this.baseUrl}/v1/admin/workers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'x-admin-token': token,
+        },
+        body: JSON.stringify(workerData),
+      });
+      const parsed = await safeParseResponse(res);
+      return { ok: parsed.ok, worker: parsed.data?.worker, error: parsed.error };
+    } catch (err: any) {
+      return { ok: false, error: err.message };
+    }
+  }
+
+  public async deleteWorker(workerId: string): Promise<{ ok: boolean; error?: string }> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'routenex-admin' : 'routenex-admin';
+      const res = await fetch(`${this.baseUrl}/v1/admin/workers/${workerId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'x-admin-token': token,
+        },
+      });
+      const parsed = await safeParseResponse(res);
+      return { ok: parsed.ok, error: parsed.error };
+    } catch (err: any) {
+      return { ok: false, error: err.message };
+    }
+  }
+
+  public async dispatchWorkerTask(
+    workerId: string,
+    options: { prompt: string; triggerType?: string; proposedToolCall?: any; dryRun?: boolean }
+  ): Promise<{ ok: boolean; run?: any; error?: string }> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'routenex-admin' : 'routenex-admin';
+      const res = await fetch(`${this.baseUrl}/v1/admin/workers/${workerId}/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'x-admin-token': token,
+        },
+        body: JSON.stringify(options),
+      });
+      const parsed = await safeParseResponse(res);
+      return { ok: parsed.ok, run: parsed.data?.run, error: parsed.error };
+    } catch (err: any) {
+      return { ok: false, error: err.message };
+    }
+  }
+
+  public async resolveWorkerApproval(
+    runId: string,
+    decision: 'approve' | 'deny',
+    alwaysAllowTool = false
+  ): Promise<{ ok: boolean; run?: any; error?: string }> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'routenex-admin' : 'routenex-admin';
+      const res = await fetch(`${this.baseUrl}/v1/admin/workers/runs/${runId}/approval`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'x-admin-token': token,
+        },
+        body: JSON.stringify({ decision, alwaysAllowTool }),
+      });
+      const parsed = await safeParseResponse(res);
+      return { ok: parsed.ok, run: parsed.data?.run, error: parsed.error };
+    } catch (err: any) {
+      return { ok: false, error: err.message };
+    }
+  }
+
+  public async updateWorkerBrief(
+    briefId: string,
+    updates: { title?: string; contentMarkdown?: string }
+  ): Promise<{ ok: boolean; brief?: any; error?: string }> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'routenex-admin' : 'routenex-admin';
+      const res = await fetch(`${this.baseUrl}/v1/admin/workers/briefs/${briefId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'x-admin-token': token,
+        },
+        body: JSON.stringify(updates),
+      });
+      const parsed = await safeParseResponse(res);
+      return { ok: parsed.ok, brief: parsed.data?.brief, error: parsed.error };
+    } catch (err: any) {
+      return { ok: false, error: err.message };
+    }
+  }
+
+  public async distillRunToSkill(
+    runId: string,
+    customName?: string
+  ): Promise<{ ok: boolean; skill?: any; error?: string }> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'routenex-admin' : 'routenex-admin';
+      const res = await fetch(`${this.baseUrl}/v1/admin/workers/runs/${runId}/distill-skill`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'x-admin-token': token,
+        },
+        body: JSON.stringify({ customName }),
+      });
+      const parsed = await safeParseResponse(res);
+      return { ok: parsed.ok, skill: parsed.data?.skill, error: parsed.error };
+    } catch (err: any) {
+      return { ok: false, error: err.message };
+    }
+  }
 }
+
+export { RouteNexClient as GatewayClient };
+

@@ -107,7 +107,7 @@ export default function StudioNavRail({
     },
     {
       id: 'agents',
-      label: 'Coding Agents & MCP',
+      label: 'Workers & Agents',
       icon: (active) => (
         <svg className={`w-4 h-4 shrink-0 transition-colors ${active ? 'text-sky-400' : 'text-zinc-400 group-hover:text-zinc-200'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="4 17 10 11 4 5" />

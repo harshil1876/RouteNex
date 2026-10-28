@@ -27,6 +27,7 @@ import { mountStaticDashboard } from './middleware/static-dashboard.js';
 import { ResponseCache } from './router/cache.js';
 import { createMcpRoute } from './routes/mcp.js';
 import { createProtocolsRoute } from './routes/protocols.js';
+import { executeWorkerTask, WorkerBudgetExceededError } from './workers/runtime.js';
 
 export function createApp(appConfig: AppConfig = config) {
   const app = new Hono();
@@ -91,11 +92,11 @@ export function createApp(appConfig: AppConfig = config) {
 
   // 3. Mount Route Handlers
   const healthRoute = createHealthRoute(registry, startTime);
-  const chatRoute = createChatRoute(engine, store, appConfig, responseCache);
+  const chatRoute = createChatRoute(engine, store, appConfig, responseCache, adminStore);
   const modelsRoute = createModelsRoute(registry, adminStore);
   const explainRoute = createExplainRoute(engine);
   const usageRoute = createUsageRoute(store);
-  const adminRoute = createAdminRoutes(adminStore, registry, appConfig, store);
+  const adminRoute = createAdminRoutes(adminStore, registry, appConfig, store, engine);
   const messagesRoute = createMessagesRoute(engine, store, appConfig, responseCache);
   const mcpRoute = createMcpRoute(engine, registry, circuitBreaker, adminStore);
   const protocolsRoute = createProtocolsRoute(engine, store, appConfig, registry);
@@ -105,6 +106,29 @@ export function createApp(appConfig: AppConfig = config) {
 
   // Admin routes (for self-hosted Open Source Web Console)
   app.route('/v1/admin', adminRoute);
+
+  // External Webhook Trigger Ingress (for GitHub/Slack/Composio webhooks)
+  const handleWorkerWebhook = async (c: any) => {
+    const slug = c.req.param('slug');
+    const body = await c.req.json().catch(() => ({}));
+    try {
+      const prompt = body.prompt || body.message || 'Incoming Webhook Event';
+      const run = await executeWorkerTask(slug, {
+        prompt,
+        triggerType: 'webhook',
+        proposedToolCall: body.proposedToolCall,
+      }, adminStore, engine);
+      return c.json({ run, status: 'ok' });
+    } catch (err: any) {
+      if (err instanceof WorkerBudgetExceededError || err?.code === 'worker_budget_exceeded') {
+        return c.json({ error: { code: 'worker_budget_exceeded', message: err.message } }, 429);
+      }
+      return c.json({ error: err.message || 'Webhook trigger execution failed' }, 500);
+    }
+  };
+  app.post('/v1/workers/:slug/trigger', handleWorkerWebhook);
+  app.post('/workers/:slug/trigger', handleWorkerWebhook);
+
 
   // Model Context Protocol (MCP) Server
   app.route('/v1', mcpRoute);

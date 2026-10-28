@@ -31,6 +31,13 @@ import { MistralProviderAdapter } from '../providers/mistral.js';
 import { SiliconFlowProviderAdapter } from '../providers/siliconflow.js';
 import { PromptCompressor, type CompressionOptions } from '../router/compression.js';
 import { openBrowser } from '../cli/open-browser.js';
+import {
+  executeWorkerTask,
+  resolveWorkerApproval,
+  distillRunToSkill,
+  WorkerBudgetExceededError,
+} from '../workers/runtime.js';
+import type { RoutingEngine } from '../router/engine.js';
 
 function safeCompare(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -44,7 +51,8 @@ export function createAdminRoutes(
   adminStore: AdminStore,
   registry: ProviderRegistry,
   config: AppConfig,
-  store?: RequestStore
+  store?: RequestStore,
+  engine?: RoutingEngine
 ) {
   const router = new Hono();
 
@@ -787,5 +795,136 @@ export function createAdminRoutes(
     return c.json({ requests: logs });
   });
 
+  // --- NexWorkers (Autonomous Routed Workers & Action Shield) ---
+
+  // 17. GET /v1/admin/workers - List workers, runs, briefs, skills, summary telemetry
+  router.get('/workers', (c) => {
+    const workers = adminStore.getWorkers();
+    const runs = adminStore.getWorkerRuns();
+    const briefs = adminStore.getWorkerBriefs();
+    const skills = adminStore.getSkills();
+
+    const activeWorkers = workers.filter((w) => w.status !== 'error').length;
+    const pendingApprovals = runs.filter((r) => r.status === 'awaiting_approval').length;
+    const totalTokensSaved = runs.reduce((acc, r) => acc + (r.totalTokensSaved || 0), 0);
+    const totalSpendTodayUsd = workers.reduce((acc, w) => acc + (w.budget.spentTodayUsd || 0), 0);
+
+    return c.json({
+      workers,
+      runs,
+      briefs,
+      skills,
+      summary: {
+        activeWorkers,
+        pendingApprovals,
+        totalTokensSaved,
+        totalSpendTodayUsd: Math.round(totalSpendTodayUsd * 10000) / 10000,
+      },
+    });
+  });
+
+  // 18. POST /v1/admin/workers - Create or update a worker
+  router.post('/workers', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    if (!body || typeof body !== 'object' || !body.name) {
+      return c.json({ error: 'Worker name is required' }, 400);
+    }
+    const worker = adminStore.upsertWorker(body);
+    return c.json({ worker, status: 'ok' });
+  });
+
+  // 19. DELETE /v1/admin/workers/:id - Delete a worker
+  router.delete('/workers/:id', (c) => {
+    const id = c.req.param('id');
+    const success = adminStore.deleteWorker(id);
+    if (!success) {
+      return c.json({ error: `Worker '${id}' not found` }, 404);
+    }
+    return c.json({ success: true, message: `Worker '${id}' deleted successfully.` });
+  });
+
+  // 20. POST /v1/admin/workers/:id/run - Dispatch a task to a worker
+  router.post('/workers/:id/run', async (c) => {
+    const id = c.req.param('id');
+    const body = await c.req.json().catch(() => ({}));
+    try {
+      const run = await executeWorkerTask(id, body, adminStore, engine);
+      return c.json({ run, status: 'ok' });
+    } catch (err: any) {
+      if (err instanceof WorkerBudgetExceededError || err?.code === 'worker_budget_exceeded') {
+        return c.json(
+          {
+            error: {
+              code: 'worker_budget_exceeded',
+              message: err.message,
+            },
+          },
+          429
+        );
+      }
+      return c.json({ error: err.message || 'Worker execution failed' }, 500);
+    }
+  });
+
+  // 21. POST /v1/admin/workers/runs/:runId/approval - Resolve Action Shield approval
+  router.post('/workers/runs/:runId/approval', async (c) => {
+    const runId = c.req.param('runId');
+    const body = await c.req.json().catch(() => ({}));
+    const decision = body.decision;
+    if (decision !== 'approve' && decision !== 'deny') {
+      return c.json({ error: "Invalid approval decision. Must be 'approve' or 'deny'." }, 400);
+    }
+    try {
+      const run = await resolveWorkerApproval(runId, decision, body.alwaysAllowTool, adminStore, engine);
+      return c.json({ run, status: 'ok' });
+    } catch (err: any) {
+      return c.json({ error: err.message || 'Failed to resolve approval' }, 400);
+    }
+  });
+
+  // 22. PUT /v1/admin/workers/briefs/:briefId - Update a WorkerBrief
+  router.put('/workers/briefs/:briefId', async (c) => {
+    const briefId = c.req.param('briefId');
+    const body = await c.req.json().catch(() => ({}));
+    const updated = adminStore.updateWorkerBrief(briefId, body);
+    if (!updated) {
+      return c.json({ error: `Brief '${briefId}' not found` }, 404);
+    }
+    return c.json({ brief: updated, status: 'ok' });
+  });
+
+  // 23. POST /v1/admin/workers/runs/:runId/distill-skill - Distill run into a NexSkill
+  router.post('/workers/runs/:runId/distill-skill', async (c) => {
+    const runId = c.req.param('runId');
+    const body = await c.req.json().catch(() => ({}));
+    try {
+      const skill = await distillRunToSkill(runId, body.customName, adminStore);
+      return c.json({ skill, status: 'ok' });
+    } catch (err: any) {
+      return c.json({ error: err.message || 'Failed to distill skill' }, 400);
+    }
+  });
+
+  // 24. POST /v1/admin/workers/:slug/trigger - Webhook trigger
+  router.post('/workers/:slug/trigger', async (c) => {
+    const slug = c.req.param('slug');
+    const body = await c.req.json().catch(() => ({}));
+    try {
+      const prompt = body.prompt || body.message || 'Incoming Webhook Event';
+      const run = await executeWorkerTask(slug, {
+        prompt,
+        triggerType: 'webhook',
+        proposedToolCall: body.proposedToolCall,
+      }, adminStore, engine);
+      return c.json({ run, status: 'ok' });
+    } catch (err: any) {
+      if (err instanceof WorkerBudgetExceededError || err?.code === 'worker_budget_exceeded') {
+        return c.json({ error: { code: 'worker_budget_exceeded', message: err.message } }, 429);
+      }
+      return c.json({ error: err.message || 'Webhook trigger execution failed' }, 500);
+    }
+  });
+
   return router;
 }
+

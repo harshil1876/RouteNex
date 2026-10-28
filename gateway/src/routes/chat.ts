@@ -12,6 +12,8 @@ import {
 import { ProviderError } from '../providers/types.js';
 import { PromptCompressor } from '../router/compression.js';
 import type { ResponseCache } from '../router/cache.js';
+import { executeWorkerTask, WorkerBudgetExceededError } from '../workers/runtime.js';
+import { AdminStore } from '../storage/admin-store.js';
 
 /**
  * Creates the chat completions route handler.
@@ -20,7 +22,8 @@ export function createChatRoute(
   engine: RoutingEngine,
   store: RequestStore,
   config: AppConfig,
-  cache?: ResponseCache
+  cache?: ResponseCache,
+  adminStore?: AdminStore
 ) {
   const router = new Hono();
 
@@ -56,6 +59,91 @@ export function createChatRoute(
     const request = parseResult.data;
     const requestId = `req_${nanoid()}`;
     const startTime = Date.now();
+
+    // Virtual Model Ingress: model: "worker/<slug>"
+    if (request.model.startsWith('worker/')) {
+      const workerSlug = request.model.replace(/^worker\//, '').trim();
+      const lastMsg = request.messages[request.messages.length - 1];
+      const prompt = typeof lastMsg?.content === 'string' ? lastMsg.content : JSON.stringify(lastMsg?.content || '');
+
+      try {
+        const storeToUse = adminStore || (engine as any).adminStore || new AdminStore('./routenex_admin.json', true);
+        const run = await executeWorkerTask(workerSlug, { prompt, triggerType: 'api_chat' }, storeToUse, engine);
+
+        c.header('X-RouteNex-Request-Id', sanitizeHeader(requestId));
+        c.header('X-RouteNex-Worker-Id', sanitizeHeader(run.workerId));
+        c.header('X-RouteNex-Worker-Status', sanitizeHeader(run.status));
+        c.header('X-RouteNex-Tokens-Saved', String(run.totalTokensSaved || 0));
+        c.header('X-RouteNex-Selected-Provider', 'nexworker');
+        c.header('X-RouteNex-Selected-Model', sanitizeHeader(request.model));
+
+        const responseContent =
+          run.status === 'awaiting_approval'
+            ? `[ACTION SHIELD PAUSED] Action requires human approval. Run ID: ${run.id}. Awaiting operator review in RouteNex Studio.`
+            : run.finalResponse || `Task completed by worker/${run.workerSlug}. Output brief generated: ${run.outputBriefId || 'none'}.`;
+
+        const usage = {
+          prompt_tokens: Math.max(10, Math.ceil(prompt.length / 4)),
+          completion_tokens: Math.max(10, Math.ceil(responseContent.length / 4)),
+          total_tokens: Math.max(20, Math.ceil((prompt.length + responseContent.length) / 4)),
+        };
+
+        store.logRequest({
+          request_id: requestId,
+          timestamp: new Date().toISOString(),
+          model_requested: request.model,
+          model_used: request.model,
+          provider: 'nexworker',
+          latency_ms: Date.now() - startTime,
+          status: run.status === 'denied' ? 'error' : 'success',
+          token_usage: usage,
+          cost_estimate: { total_usd: run.totalCostUsd, provenance: 'ESTIMATED', price_timestamp: null },
+          routing_reason: `Autonomous worker/${workerSlug} execution (${run.status})`,
+        });
+
+        return c.json({
+          id: `chatcmpl_worker_${run.id}`,
+          object: 'chat.completion',
+          created: Math.floor(Date.now() / 1000),
+          model: request.model,
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: 'assistant',
+                content: responseContent,
+              },
+              finish_reason: 'stop',
+            },
+          ],
+          usage,
+        });
+      } catch (err: any) {
+        if (err instanceof WorkerBudgetExceededError || err?.code === 'worker_budget_exceeded') {
+          return c.json(
+            {
+              error: {
+                message: err.message,
+                code: 'worker_budget_exceeded',
+                type: 'rate_limit_error',
+              },
+            },
+            429
+          );
+        }
+        return c.json(
+          {
+            error: {
+              message: err.message || 'Worker execution failed',
+              type: 'worker_error',
+              code: 'WORKER_ERROR',
+            },
+          },
+          500
+        );
+      }
+    }
+
 
     // Check for optional prompt compression flag
     const compressHeader = c.req.header('x-routenex-compress');

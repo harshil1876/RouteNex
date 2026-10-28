@@ -20,6 +20,14 @@ import {
   hashToken,
   secureTimingSafeEqual,
 } from './crypto.js';
+import type {
+  NexWorker,
+  WorkerRun,
+  WorkerBrief,
+  NexSkill,
+  WorkerStatus,
+} from '../workers/types.js';
+import { DEFAULT_SPECIALIST_WORKERS } from '../workers/types.js';
 
 export interface VirtualKey {
   id: string;
@@ -70,6 +78,10 @@ export interface AdminSettings {
   providerKeys: Record<string, string>; // providerId -> AES-256-GCM encrypted string
   providerPools?: Record<string, ProviderPoolEntry>;
   providerBlockedParams?: Record<string, string[]>;
+  workers?: NexWorker[];
+  workerRuns?: WorkerRun[];
+  workerBriefs?: WorkerBrief[];
+  skills?: NexSkill[];
 }
 
 export class AdminStore {
@@ -180,6 +192,33 @@ export class AdminStore {
       defaultStrategy: 'balanced',
       providerKeys: {},
       providerPools: {},
+      workers: [...DEFAULT_SPECIALIST_WORKERS],
+      workerRuns: [],
+      workerBriefs: [],
+      skills: [
+        {
+          id: 'skill_code_review',
+          name: 'PR Code Review & Security Audit',
+          slug: 'code-review-audit',
+          description: 'Comprehensive static review for secrets, auth bypasses, and SQL injection.',
+          instructions: 'Examine diffs line-by-line. Flag secrets, unvalidated user input, and high-complexity algorithms.',
+          tools: ['github.read_diff', 'github.post_review'],
+          source: 'builtin',
+          tags: ['security', 'github'],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'skill_telemetry_optimizer',
+          name: 'Gateway Telemetry Optimizer',
+          slug: 'telemetry-optimizer',
+          description: 'Audit 429 backoff rates and optimize Smart Combo priorities.',
+          instructions: 'Analyze request logs, identify highest-latency targets, and propose failover tuning.',
+          tools: ['routenex.read_telemetry', 'routenex.update_combo'],
+          source: 'builtin',
+          tags: ['performance', 'routing'],
+          createdAt: new Date().toISOString(),
+        },
+      ],
     };
 
     if (this.isMemoryOnly) return defaultSettings;
@@ -196,6 +235,10 @@ export class AdminStore {
           combos: parsed.combos || defaultSettings.combos,
           providerKeys: parsed.providerKeys || {},
           providerPools: parsed.providerPools || {},
+          workers: parsed.workers && parsed.workers.length > 0 ? parsed.workers : [...DEFAULT_SPECIALIST_WORKERS],
+          workerRuns: parsed.workerRuns || [],
+          workerBriefs: parsed.workerBriefs || [],
+          skills: parsed.skills && parsed.skills.length > 0 ? parsed.skills : defaultSettings.skills,
         };
 
         // Migration: Encrypt any legacy plaintext provider keys
@@ -548,5 +591,217 @@ export class AdminStore {
       this.settings.providerBlockedParams[provider].push(normalized);
       this.save();
     }
+  }
+
+  // --- NexWorkers & Action Shield Subsystem ---
+
+  public getWorkers(): NexWorker[] {
+    if (!this.settings.workers || this.settings.workers.length === 0) {
+      this.settings.workers = [...DEFAULT_SPECIALIST_WORKERS];
+    }
+    return [...this.settings.workers];
+  }
+
+  public findWorker(idOrSlug: string): NexWorker | undefined {
+    if (!idOrSlug) return undefined;
+    const clean = idOrSlug.replace(/^worker\//, '').toLowerCase().trim();
+    return this.getWorkers().find(
+      (w) => w.id === idOrSlug || w.slug.toLowerCase() === clean
+    );
+  }
+
+  public upsertWorker(workerData: Partial<NexWorker> & { name: string; role?: string; instructions?: string }): NexWorker {
+    const workers = this.getWorkers();
+    const slug = workerData.slug || workerData.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    const existingIdx = workers.findIndex(
+      (w) => (workerData.id && w.id === workerData.id) || w.slug.toLowerCase() === slug.toLowerCase()
+    );
+
+    const now = new Date().toISOString();
+    if (existingIdx >= 0) {
+      const existing = workers[existingIdx];
+      const updated: NexWorker = {
+        ...existing,
+        ...workerData,
+        id: existing.id,
+        slug: workerData.slug || existing.slug,
+        tokenOptimization: {
+          ...existing.tokenOptimization,
+          ...(workerData.tokenOptimization || {}),
+        },
+        budget: {
+          ...existing.budget,
+          ...(workerData.budget || {}),
+        },
+        tools: workerData.tools || existing.tools,
+        safetyRules: workerData.safetyRules || existing.safetyRules,
+        updatedAt: now,
+      };
+      workers[existingIdx] = updated;
+      this.settings.workers = workers;
+      this.save();
+      return updated;
+    }
+
+    const newWorker: NexWorker = {
+      id: workerData.id || `worker_${nanoid(8)}`,
+      slug,
+      name: workerData.name,
+      role: workerData.role || 'Autonomous Routed Worker',
+      instructions: workerData.instructions || 'You are an autonomous RouteNex specialist.',
+      brainModel: workerData.brainModel || 'auto:balanced',
+      guardModel: workerData.guardModel || 'auto:free',
+      pulseModel: workerData.pulseModel || 'auto:floor',
+      tokenOptimization: workerData.tokenOptimization || {
+        logPrune: true,
+        turnDedup: true,
+        lexiPack: true,
+      },
+      budget: workerData.budget || {
+        maxPerRunUsd: 0.25,
+        maxDailyUsd: 2.00,
+        spentTodayUsd: 0.00,
+        lastResetDate: now.split('T')[0],
+      },
+      safetyRules: workerData.safetyRules || [
+        'Ask before executing mutating actions.',
+        'Allow reading resources automatically.',
+      ],
+      tools: workerData.tools || [],
+      boundSkillIds: workerData.boundSkillIds || [],
+      schedule: workerData.schedule || {
+        enabled: false,
+        cron: '0 9 * * 1-5',
+        label: 'Weekdays at 09:00',
+        prompt: `Run scheduled routine for ${workerData.name}.`,
+        missedRun: false,
+      },
+      status: workerData.status || 'idle',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    workers.push(newWorker);
+    this.settings.workers = workers;
+    this.save();
+    return newWorker;
+  }
+
+  public deleteWorker(idOrSlug: string): boolean {
+    const clean = idOrSlug.replace(/^worker\//, '').toLowerCase().trim();
+    const workers = this.getWorkers();
+    const initialLen = workers.length;
+    this.settings.workers = workers.filter(
+      (w) => w.id !== idOrSlug && w.slug.toLowerCase() !== clean
+    );
+    const changed = this.settings.workers.length !== initialLen;
+    if (changed) this.save();
+    return changed;
+  }
+
+  public updateWorkerStatus(idOrSlug: string, status: WorkerStatus): void {
+    const worker = this.findWorker(idOrSlug);
+    if (worker) {
+      worker.status = status;
+      worker.updatedAt = new Date().toISOString();
+      this.save();
+    }
+  }
+
+  public incrementWorkerSpend(idOrSlug: string, usdAmount: number): void {
+    const worker = this.findWorker(idOrSlug);
+    if (worker) {
+      worker.budget.spentTodayUsd = Math.round((worker.budget.spentTodayUsd + usdAmount) * 10000) / 10000;
+      worker.updatedAt = new Date().toISOString();
+      this.save();
+    }
+  }
+
+  public getWorkerRuns(workerId?: string): WorkerRun[] {
+    const runs = this.settings.workerRuns || [];
+    if (!workerId) return [...runs];
+    return runs.filter((r) => r.workerId === workerId || r.workerSlug === workerId);
+  }
+
+  public findWorkerRun(runId: string): WorkerRun | undefined {
+    return (this.settings.workerRuns || []).find((r) => r.id === runId);
+  }
+
+  public saveWorkerRun(run: WorkerRun): void {
+    if (!this.settings.workerRuns) this.settings.workerRuns = [];
+    const idx = this.settings.workerRuns.findIndex((r) => r.id === run.id);
+    if (idx >= 0) {
+      this.settings.workerRuns[idx] = run;
+    } else {
+      this.settings.workerRuns.unshift(run);
+      if (this.settings.workerRuns.length > 100) {
+        this.settings.workerRuns.length = 100;
+      }
+    }
+    this.save();
+  }
+
+  public getWorkerBriefs(workerId?: string): WorkerBrief[] {
+    const briefs = this.settings.workerBriefs || [];
+    if (!workerId) return [...briefs];
+    return briefs.filter((b) => b.workerId === workerId);
+  }
+
+  public findWorkerBrief(briefId: string): WorkerBrief | undefined {
+    return (this.settings.workerBriefs || []).find((b) => b.id === briefId);
+  }
+
+  public saveWorkerBrief(brief: WorkerBrief): void {
+    if (!this.settings.workerBriefs) this.settings.workerBriefs = [];
+    const idx = this.settings.workerBriefs.findIndex((b) => b.id === brief.id);
+    if (idx >= 0) {
+      this.settings.workerBriefs[idx] = brief;
+    } else {
+      this.settings.workerBriefs.unshift(brief);
+    }
+    this.save();
+  }
+
+  public updateWorkerBrief(briefId: string, updates: { title?: string; contentMarkdown?: string }): WorkerBrief | undefined {
+    const brief = this.findWorkerBrief(briefId);
+    if (!brief) return undefined;
+    if (updates.title) brief.title = updates.title;
+    if (updates.contentMarkdown !== undefined) brief.contentMarkdown = updates.contentMarkdown;
+    brief.revision = (brief.revision || 1) + 1;
+    brief.updatedAt = new Date().toISOString();
+    this.save();
+    return brief;
+  }
+
+  public getSkills(): NexSkill[] {
+    return this.settings.skills || [];
+  }
+
+  public findSkill(idOrSlug: string): NexSkill | undefined {
+    return (this.settings.skills || []).find(
+      (s) => s.id === idOrSlug || s.slug === idOrSlug
+    );
+  }
+
+  public saveSkill(skill: NexSkill): void {
+    if (!this.settings.skills) this.settings.skills = [];
+    const idx = this.settings.skills.findIndex((s) => s.id === skill.id || s.slug === skill.slug);
+    if (idx >= 0) {
+      this.settings.skills[idx] = skill;
+    } else {
+      this.settings.skills.push(skill);
+    }
+    this.save();
+  }
+
+  public deleteSkill(idOrSlug: string): boolean {
+    if (!this.settings.skills) return false;
+    const initialLen = this.settings.skills.length;
+    this.settings.skills = this.settings.skills.filter(
+      (s) => s.id !== idOrSlug && s.slug !== idOrSlug
+    );
+    const changed = this.settings.skills.length !== initialLen;
+    if (changed) this.save();
+    return changed;
   }
 }

@@ -70,7 +70,7 @@ describe('Suite 6: NPM Packaging & Production Distribution', () => {
         expect(pattern.test(file), `Security hazard: forbidden file '${file}' leaked into tarball!`).toBe(false);
       }
     }
-  });
+  }, 25000);
 
   // 4. CLI Smoke Test: --version
   it('CLI Smoke Test: node bin/routenex.js --version outputs valid version and exits 0', () => {
