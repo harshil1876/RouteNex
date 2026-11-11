@@ -283,7 +283,26 @@ export class AdminStore {
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         const tmpPath = `${this.filePath}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
         fs.writeFileSync(tmpPath, data, { mode: 0o600, encoding: 'utf-8' });
-        fs.renameSync(tmpPath, this.filePath);
+        let renamed = false;
+        for (let i = 0; i < 5; i++) {
+          try {
+            fs.renameSync(tmpPath, this.filePath);
+            renamed = true;
+            break;
+          } catch (e) {
+            if (i === 4) {
+              try {
+                fs.copyFileSync(tmpPath, this.filePath);
+                try { fs.unlinkSync(tmpPath); } catch {}
+                renamed = true;
+              } catch (copyErr) {
+                throw copyErr;
+              }
+            } else {
+              await new Promise((r) => setTimeout(r, 20 * (i + 1)));
+            }
+          }
+        }
       } catch (err) {
         console.error('Failed to atomically persist admin settings:', err);
       }

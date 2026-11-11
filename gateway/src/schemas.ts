@@ -28,6 +28,7 @@ export const ProviderPreferencesSchema = z.object({
   allow_fallbacks: z.boolean().default(true),
   sort: z.enum([
     'price',
+    'cost',
     'latency',
     'throughput',
     'balanced',

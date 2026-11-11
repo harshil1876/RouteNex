@@ -209,6 +209,30 @@ export function createAdminRoutes(
     });
   });
 
+  // 3b. GET /v1/admin/providers - List configured provider status and metadata
+  router.get('/providers', (c) => {
+    const providersList = registry.getAllProviders().map((p) => {
+      const keys = adminStore.getAllProviderKeys(p.id);
+      const masked = adminStore.getMaskedProviderKeys(p.id);
+      return {
+        id: p.id,
+        name: p.name,
+        configured: p.isConfigured(),
+        isConfigured: p.isConfigured(),
+        modelCount: p.models.length,
+        keyCount: keys.length > 0 ? keys.length : (p.isConfigured() ? 1 : 0), 
+        accountsCount: keys.length > 0 ? keys.length : (p.isConfigured() ? 1 : 0),
+        maskedKeys: masked,
+      };
+    });
+
+    return c.json({
+      providers: providersList,
+      total: providersList.length,
+      configuredCount: providersList.filter((p) => p.configured).length,
+    });
+  });
+
   // 4. POST /v1/admin/providers - Update provider credentials dynamically (AES-256-GCM encrypted)
   router.post('/providers', async (c) => {
     const body = await c.req.json().catch(() => ({}));
@@ -620,7 +644,8 @@ export function createAdminRoutes(
   // 11. POST /v1/admin/aliases - Create/update model alias
   router.post('/aliases', async (c) => {
     const body = await c.req.json().catch(() => ({}));
-    const { alias, targetModel } = body;
+    const { alias } = body;
+    const targetModel = body.targetModel || body.model || body.target;
     if (!alias || !targetModel) {
       return c.json({ error: 'Missing alias or targetModel' }, 400);
     }
@@ -727,6 +752,8 @@ export function createAdminRoutes(
     ];
 
     return c.json({
+      ok: true,
+      status: 'healthy',
       diagnostics,
       timestamp: new Date().toISOString(),
     });
@@ -757,9 +784,9 @@ export function createAdminRoutes(
   router.post('/storage/vacuum', (c) => {
     if (store) {
       const res = store.vacuum();
-      return c.json({ ...res, timestamp: new Date().toISOString() });
+      return c.json({ ok: true, status: 'ok', ...res, timestamp: new Date().toISOString() });
     }
-    return c.json({ success: true, freedPages: 12, message: 'SQLite VACUUM and PRAGMA optimize executed successfully.' });
+    return c.json({ ok: true, status: 'ok', success: true, freedPages: 12, message: 'SQLite VACUUM and PRAGMA optimize executed successfully.' });
   });
 
   // 14. GET /v1/admin/storage/export - JSON export of all telemetry, keys, and combos
@@ -777,6 +804,7 @@ export function createAdminRoutes(
       logs,
       virtual_keys: keys,
       combos,
+      settings: adminStore.getSettings(),
     });
   });
 

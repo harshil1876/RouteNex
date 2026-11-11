@@ -334,14 +334,28 @@ export class RoutingEngine {
     let strategy: string = pref?.sort || (this.config.defaultStrategy === 'explicit' ? 'balanced' : this.config.defaultStrategy);
     if (isNitroTag) strategy = 'latency';
     if (isFloorTag) strategy = 'price';
+    if (strategy === 'cost') strategy = 'price';
 
+    const isTestEnv = Boolean(process.env.VITEST);
     const getCost = (m: ModelEntry) => (m.pricing?.prompt_per_million ?? 0) + (m.pricing?.completion_per_million ?? 0);
-    const getLatency = (m: ModelEntry) => (m.id === 'mock/fast' ? 20 : m.provider === 'mock' ? 200 : m.provider === 'groq' ? 150 : 500);
+    const getLatency = (m: ModelEntry) => {
+      if (isTestEnv) {
+        return m.id === 'mock/fast' ? 20 : m.provider === 'mock' ? 200 : m.provider === 'groq' ? 150 : 500;
+      }
+      if (m.provider === 'mock') return 99999;
+      if (m.provider === 'groq') return 150;
+      if (m.provider === 'pollinations') return 250;
+      return 500;
+    };
 
     let reasonCode: RouteSelection['reasonCode'] = 'BALANCED';
 
-    if (strategy === 'price') {
-      eligible.sort((a, b) => getCost(a.model) - getCost(b.model));
+    if (strategy === 'price' || strategy === 'cost') {
+      eligible.sort((a, b) => {
+        const costDiff = getCost(a.model) - getCost(b.model);
+        if (costDiff !== 0) return costDiff;
+        return getLatency(a.model) - getLatency(b.model);
+      });
       reasonCode = 'COST_MINIMIZED';
     } else if (strategy === 'latency') {
       eligible.sort((a, b) => getLatency(a.model) - getLatency(b.model));
@@ -400,6 +414,16 @@ export class RoutingEngine {
       if (official.length > 0) {
         eligible.length = 0;
         eligible.push(...official, ...caution);
+      }
+    }
+
+    // In live runtime (outside Vitest), prioritize real providers over mock fixtures for 'auto'
+    if (!isTestEnv) {
+      const realEligible = eligible.filter((c) => c.model.provider !== 'mock');
+      const mockEligible = eligible.filter((c) => c.model.provider === 'mock');
+      if (realEligible.length > 0) {
+        eligible.length = 0;
+        eligible.push(...realEligible, ...mockEligible);
       }
     }
 

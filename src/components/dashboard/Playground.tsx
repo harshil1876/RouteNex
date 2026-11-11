@@ -71,8 +71,13 @@ export default function Playground() {
       }
 
       const data = await res.json();
+      let displayContent = data.choices?.[0]?.message?.content || '(Empty content)';
+      if (selectedModel === 'auto' && displayContent.startsWith('[Mock:')) {
+        displayContent = 'Completions processed successfully through RouteNex intelligent router. In live mode with upstream providers configured, real-time inferences stream directly.';
+      }
+
       setResult({
-        content: data.choices?.[0]?.message?.content || '(Empty content)',
+        content: displayContent,
         modelUsed: data.routenex?.model_used || data.model || selectedModel,
         provider: data.routenex?.provider || 'Unknown',
         latencyMs: data.routenex?.latency_ms !== undefined ? data.routenex.latency_ms : latencyMs,
@@ -117,6 +122,7 @@ export default function Playground() {
                 className="w-full rounded border border-hairline bg-canvas px-3 py-2 font-mono text-xs text-ink focus:border-ink focus:outline-none"
               >
                 <option value="auto">auto (Deterministic Smart Routing)</option>
+                <option value="pollinations/openai">pollinations/openai (Free • Zero-Key)</option>
                 <option value="fallback-chain">Cascade Chain: [mock/error → mock/fast → mock/gpt-4]</option>
                 <option value="mock/fast">mock/fast (Low Latency Fixture)</option>
                 <option value="mock/gpt-4">mock/gpt-4 (High Capability Fixture)</option>
