@@ -68,12 +68,33 @@ export function createAuthMiddleware(expectedApiKey?: string, adminStore?: Admin
     }
 
     // 4. Client completions, models, and usage endpoints
+    const authHeader = c.req.header('authorization');
+    const xApiKey = c.req.header('x-api-key') || c.req.header('anthropic-api-key') || c.req.header('x-auth-token');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : (xApiKey || '').trim();
+
+    // Attach virtual key and verify budget if available
+    if (token && adminStore) {
+      const vk = adminStore.findVirtualKey(token);
+      if (vk) {
+        c.set('virtualKey', vk);
+        const budgetCheck = adminStore.checkKeyBudget(vk);
+        if (!budgetCheck.allowed) {
+          return c.json({
+            error: {
+              message: budgetCheck.reason || 'Virtual API key budget exceeded',
+              type: 'rate_limit_error',
+              code: 'budget_exceeded',
+            },
+          }, 429);
+        }
+      }
+    }
+
     if (!expectedApiKey || expectedApiKey.trim().length === 0) {
       return next();
     }
 
-    const authHeader = c.req.header('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       const errorPayload: ApiError = {
         error: {
           message: 'Missing or malformed Authorization header. Expected Bearer token.',
@@ -85,7 +106,6 @@ export function createAuthMiddleware(expectedApiKey?: string, adminStore?: Admin
       return c.json(errorPayload, 401);
     }
 
-    const token = authHeader.slice(7).trim();
     const isMasterKey = token === expectedApiKey;
     const isVirtualKey = adminStore ? adminStore.isValidKey(token, expectedApiKey) : false;
 

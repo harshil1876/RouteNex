@@ -9,6 +9,7 @@ import type { ProviderRegistry } from '../providers/registry.js';
 import { type ModelEntry, ProviderError } from '../providers/types.js';
 import type { CircuitBreaker } from './circuit-breaker.js';
 import type { ComboDefinition } from '../storage/admin-store.js';
+import { PromptCompressor } from './compression.js';
 
 export interface RouteCandidate {
   model: ModelEntry;
@@ -34,7 +35,9 @@ export interface RouteSelection {
     | 'LKGP_PINNED'
     | 'HEADROOM_MAXIMIZED'
     | 'RESET_WINDOW_OPTIMIZED'
-    | 'CACHE_AFFINITY';
+    | 'CACHE_AFFINITY'
+    | 'CONTEXT_RELAY_OPTIMIZED'
+    | 'SESSION_AFFINITY_PINNED';
   candidates: RouteCandidate[];
 }
 
@@ -56,8 +59,33 @@ export function sanitizeHeader(val: string | undefined | null, fallback: string 
 /**
  * Deterministic Routing Engine for RouteNex.
  */
+export function normalizeDiscoveryModel(model: string): string {
+  if (!model || typeof model !== 'string') return model;
+  const trimmed = model.trim();
+  if (trimmed.startsWith('claude-combo-')) {
+    return `combo/${trimmed.slice('claude-combo-'.length)}`;
+  }
+  if (trimmed.startsWith('claude-worker-')) {
+    return `worker/${trimmed.slice('claude-worker-'.length)}`;
+  }
+  if (trimmed === 'claude-free-pollinations-openai') {
+    return 'pollinations/openai';
+  }
+  if (trimmed === 'claude-free-groq-llama-3-3-70b') {
+    return 'groq/llama-3.3-70b-versatile';
+  }
+  if (trimmed === 'claude-free-cerebras-llama-3-3-70b') {
+    return 'cerebras/llama-3.3-70b';
+  }
+  if (trimmed === 'claude-free-gemini-2-5-flash') {
+    return 'gemini/gemini-2.5-flash';
+  }
+  return trimmed;
+}
+
 export class RoutingEngine {
   private readonly lastKnownGoodProviders = new Map<string, string>();
+  private readonly sessionAffinity = new Map<string, { provider: string; modelId: string; timestamp: number }>();
 
   private setLastKnownGood(key: string, provider: string): void {
     if (this.lastKnownGoodProviders.size >= 1000) {
@@ -86,7 +114,7 @@ export class RoutingEngine {
     const allModels = this.registry.getAllModels();
 
     // 0. Extract OpenRouter tags (:free, :nitro, :floor, :zdr)
-    let rawModel = request.model || 'auto';
+    let rawModel = normalizeDiscoveryModel(request.model || 'auto');
     let isFreeTag = false;
     let isNitroTag = false;
     let isFloorTag = false;
@@ -180,6 +208,34 @@ export class RoutingEngine {
       const candidates: RouteCandidate[] = [];
 
       if (!explicit) {
+        // Automatic Free-Tier Fallback for Bare claude-* / anthropic/* model calls when unconfigured
+        const isClaudeOrAnthropic = targetModelName.startsWith('claude-') || targetModelName.startsWith('anthropic/');
+        if (isClaudeOrAnthropic && this.comboResolver) {
+          const fallbackComboSlug = (request as any).defaultCombo || 'combo/free-unlimited';
+          const combo = this.comboResolver(fallbackComboSlug) || this.comboResolver('combo/free-unlimited');
+          if (combo) {
+            const chain: ModelEntry[] = [];
+            const candidates: RouteCandidate[] = [];
+            for (const targetId of combo.targets) {
+              const m = this.registry.getModel(targetId);
+              if (m) {
+                const canRun = this.circuitBreaker.canExecute(m.provider, m.id);
+                candidates.push({ model: m, eligible: canRun });
+                if (canRun) chain.push(m);
+              }
+            }
+            if (chain.length > 0) {
+              return {
+                primary: chain[0],
+                fallbackChain: chain.slice(1),
+                reason: `Bare '${targetModelName}' fallback routed via free combo '${combo.name}' (${combo.slug}).`,
+                reasonCode: 'FALLBACK_CHAIN',
+                candidates,
+              };
+            }
+          }
+        }
+
         return {
           primary: null as any,
           fallbackChain: [],
@@ -384,6 +440,13 @@ export class RoutingEngine {
       const getCooldown = (m: ModelEntry) => this.circuitBreaker.getRemainingCooldown(m.provider);
       eligible.sort((a, b) => getCooldown(a.model) - getCooldown(b.model));
       reasonCode = 'RESET_WINDOW_OPTIMIZED';
+    } else if (strategy === 'context-relay') {
+      eligible.sort((a, b) => {
+        const costDiff = getCost(a.model) - getCost(b.model);
+        if (costDiff !== 0) return costDiff;
+        return getLatency(a.model) - getLatency(b.model);
+      });
+      reasonCode = 'CONTEXT_RELAY_OPTIMIZED';
     } else if (strategy === 'cache-optimized') {
       const prefix = (request.messages || []).map((m) => m.content || '').slice(0, 2).join(':::');
       let hash = 0;
@@ -498,17 +561,37 @@ export class RoutingEngine {
       }
 
       try {
-        const reqForTarget: ChatCompletionRequest = { ...request, model: targetModel.id };
+        let reqForTarget: ChatCompletionRequest = { ...request, model: targetModel.id };
         const blocked = this.adminStore?.getProviderBlockedParams?.(targetModel.provider) || [];
         for (const b of blocked) {
           delete (reqForTarget as any)[b];
         }
+
+        // Context-Relay fallback compression
+        if (i > 0 || (request.provider as any)?.sort === 'context-relay' || (request as any).strategy === 'context-relay') {
+          const comp = PromptCompressor.compressMessages(reqForTarget.messages, {
+            stage1Lite: true,
+            stage2Logs: true,
+            stage3Dedup: true,
+          });
+          reqForTarget = { ...reqForTarget, messages: comp.messages };
+        }
+
         const response = await adapter.chat(reqForTarget);
         this.circuitBreaker.recordSuccess(targetModel.provider);
         this.circuitBreaker.recordModelSuccess(targetModel.id);
         this.circuitBreaker.recordKeySuccess(targetModel.provider);
         this.setLastKnownGood(targetModel.id, targetModel.provider);
         this.setLastKnownGood(request.model || 'auto', targetModel.provider);
+
+        const sessId = (request as any).sessionId || (request as any).session_id;
+        if (sessId) {
+          this.sessionAffinity.set(sessId, {
+            provider: targetModel.provider,
+            modelId: targetModel.id,
+            timestamp: Date.now(),
+          });
+        }
 
         const latencyMs = Date.now() - startTime;
         const costEstimate = this.calculateCost(targetModel, response.usage);

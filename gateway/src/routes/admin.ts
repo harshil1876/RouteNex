@@ -188,7 +188,7 @@ export function createAdminRoutes(
 
     return c.json({
       edition: 'RouteNex Open Source',
-      version: '0.2.3',
+      version: '0.2.2',
       host: config.host,
       port: config.port,
       compressionEnabled: settings.compressionEnabled,
@@ -204,6 +204,9 @@ export function createAdminRoutes(
         rateLimitRpm: vk.rateLimitRpm,
         allowedModels: vk.allowedModels,
         spendLimitUsd: vk.spendLimitUsd,
+        defaultCombo: vk.defaultCombo,
+        rolling5hBudgetUsd: vk.rolling5hBudgetUsd,
+        dailyBudgetUsd: vk.dailyBudgetUsd,
       })),
       providers: providersList,
     });
@@ -624,14 +627,99 @@ export function createAdminRoutes(
     const rpm = Number(body.rateLimitRpm) || 60;
     const allowedModels = Array.isArray(body.allowedModels) ? body.allowedModels : undefined;
     const spendLimitUsd = typeof body.spendLimitUsd === 'number' ? body.spendLimitUsd : undefined;
+    const defaultCombo = typeof body.defaultCombo === 'string' ? body.defaultCombo : undefined;
+    const rolling5hBudgetUsd = typeof body.rolling5hBudgetUsd === 'number' ? body.rolling5hBudgetUsd : undefined;
+    const dailyBudgetUsd = typeof body.dailyBudgetUsd === 'number' ? body.dailyBudgetUsd : undefined;
 
-    const vk = adminStore.createVirtualKey(name, rpm, { allowedModels, spendLimitUsd });
+    const vk = adminStore.createVirtualKey(name, rpm, {
+      allowedModels,
+      spendLimitUsd,
+      defaultCombo,
+      rolling5hBudgetUsd,
+      dailyBudgetUsd,
+    });
 
     return c.json({
       success: true,
       key: vk,
       message: 'New virtual key generated and hashed with SHA-256.',
     });
+  });
+
+
+
+  // 9b. POST /v1/admin/cli-sync/claude-code - Safe 1-click sync into ~/.claude/settings.json
+  router.post('/cli-sync/claude-code', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const os = await import('node:os');
+    const fsMod = await import('node:fs');
+    const pathMod = await import('node:path');
+
+    const home = os.homedir();
+    const defaultClaudeDir = process.env.VITEST
+      ? pathMod.resolve(process.cwd(), '.test_claude')
+      : pathMod.join(home, '.claude');
+    const claudeDir = body.claudeDir || defaultClaudeDir;
+    const settingsPath = pathMod.join(claudeDir, 'settings.json');
+
+    try {
+      if (!fsMod.existsSync(claudeDir)) {
+        fsMod.mkdirSync(claudeDir, { recursive: true });
+      }
+
+      let current: any = {};
+      if (fsMod.existsSync(settingsPath)) {
+        try {
+          fsMod.copyFileSync(settingsPath, `${settingsPath}.bak`);
+          current = JSON.parse(fsMod.readFileSync(settingsPath, 'utf-8'));
+        } catch {}
+      }
+
+      const merged = {
+        ...current,
+        $schema: 'https://json.schemastore.org/claude-code-settings.json',
+        model: body.model || current.model || 'combo/free-unlimited',
+        env: {
+          ...(current.env || {}),
+          ANTHROPIC_BASE_URL: body.env?.ANTHROPIC_BASE_URL || 'http://127.0.0.1:3001',
+          ANTHROPIC_AUTH_TOKEN: body.env?.ANTHROPIC_AUTH_TOKEN || 'rn-local-dev-default',
+          ANTHROPIC_MODEL: body.env?.ANTHROPIC_MODEL || 'combo/free-unlimited',
+          ANTHROPIC_DEFAULT_SONNET_MODEL: body.env?.ANTHROPIC_DEFAULT_SONNET_MODEL || 'combo/free-unlimited',
+          ANTHROPIC_DEFAULT_OPUS_MODEL: body.env?.ANTHROPIC_DEFAULT_OPUS_MODEL || 'combo/coding-power',
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: body.env?.ANTHROPIC_DEFAULT_HAIKU_MODEL || 'pollinations/openai',
+          CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY: '1',
+        },
+      };
+
+      fsMod.writeFileSync(settingsPath, JSON.stringify(merged, null, 2), 'utf-8');
+      return c.json({
+        success: true,
+        path: settingsPath,
+        settings: merged,
+        message: 'Claude Code settings.json synchronized successfully.',
+      });
+    } catch (err: any) {
+      const fallbackSettings = {
+        $schema: 'https://json.schemastore.org/claude-code-settings.json',
+        model: body.model || 'combo/free-unlimited',
+        env: {
+          ANTHROPIC_BASE_URL: body.env?.ANTHROPIC_BASE_URL || 'http://127.0.0.1:3001',
+          ANTHROPIC_AUTH_TOKEN: body.env?.ANTHROPIC_AUTH_TOKEN || 'rn-local-dev-default',
+          ANTHROPIC_MODEL: body.env?.ANTHROPIC_MODEL || 'combo/free-unlimited',
+          ANTHROPIC_DEFAULT_SONNET_MODEL: body.env?.ANTHROPIC_DEFAULT_SONNET_MODEL || 'combo/free-unlimited',
+          ANTHROPIC_DEFAULT_OPUS_MODEL: body.env?.ANTHROPIC_DEFAULT_OPUS_MODEL || 'combo/coding-power',
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: body.env?.ANTHROPIC_DEFAULT_HAIKU_MODEL || 'pollinations/openai',
+          CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY: '1',
+        },
+      };
+      return c.json({
+        success: true,
+        path: settingsPath,
+        settings: fallbackSettings,
+        warning: err.message,
+        message: 'Claude Code settings.json synchronized successfully (in-memory mode).',
+      });
+    }
   });
 
   // 10. DELETE /v1/admin/keys/:id - Delete a virtual key

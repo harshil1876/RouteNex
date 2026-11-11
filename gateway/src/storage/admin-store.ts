@@ -38,6 +38,9 @@ export interface VirtualKey {
   rateLimitRpm: number;
   allowedModels?: string[];
   spendLimitUsd?: number;
+  defaultCombo?: string;
+  rolling5hBudgetUsd?: number;
+  dailyBudgetUsd?: number;
   key?: string; // Only returned once upon creation
 }
 
@@ -90,6 +93,7 @@ export class AdminStore {
   private isMemoryOnly: boolean;
   private writeQueue: Promise<void> = Promise.resolve();
   private activeSessions = new Set<string>();
+  private keySpendHistory = new Map<string, Array<{ timestamp: number; costUsd: number }>>();
   public initialSetupToken?: string;
 
   constructor(filePath = './routenex_admin.json', memoryOnly = false) {
@@ -350,6 +354,54 @@ export class AdminStore {
   /**
    * Validates if a client bearer token is authorized (matches master key or virtual key).
    */
+  public findVirtualKey(token: string): VirtualKey | undefined {
+    if (!token || typeof token !== 'string') return undefined;
+    const trimmed = token.trim();
+    const hash = hashToken(trimmed);
+    return this.settings.virtualKeys.find((vk) => vk.keyHash === hash || (vk as any).key === trimmed);
+  }
+
+  public recordKeySpend(keyId: string, costUsd: number): void {
+    if (!this.keySpendHistory) this.keySpendHistory = new Map();
+    if (!keyId || costUsd <= 0) return;
+    const history = this.keySpendHistory.get(keyId) || [];
+    history.push({ timestamp: Date.now(), costUsd });
+    const cutoff = Date.now() - 24 * 3600 * 1000;
+    const pruned = history.filter((h) => h.timestamp >= cutoff);
+    this.keySpendHistory.set(keyId, pruned);
+  }
+
+  public checkKeyBudget(vk: VirtualKey, estimatedCostUsd = 0): { allowed: boolean; reason?: string } {
+    if (!this.keySpendHistory) this.keySpendHistory = new Map();
+    const history = this.keySpendHistory.get(vk.id) || [];
+    const now = Date.now();
+    const cutoff5h = now - 5 * 3600 * 1000;
+    const cutoff24h = now - 24 * 3600 * 1000;
+
+    const spend5h = history.filter((h) => h.timestamp >= cutoff5h).reduce((sum, h) => sum + h.costUsd, 0);
+    const spend24h = history.filter((h) => h.timestamp >= cutoff24h).reduce((sum, h) => sum + h.costUsd, 0);
+
+    if (typeof vk.rolling5hBudgetUsd === 'number' && vk.rolling5hBudgetUsd > 0) {
+      if (spend5h + estimatedCostUsd > vk.rolling5hBudgetUsd) {
+        return {
+          allowed: false,
+          reason: `Virtual key '${vk.name}' exceeded 5-hour rolling budget (${spend5h.toFixed(4)} / ${vk.rolling5hBudgetUsd})`,
+        };
+      }
+    }
+
+    if (typeof vk.dailyBudgetUsd === 'number' && vk.dailyBudgetUsd > 0) {
+      if (spend24h + estimatedCostUsd > vk.dailyBudgetUsd) {
+        return {
+          allowed: false,
+          reason: `Virtual key '${vk.name}' exceeded daily budget (${spend24h.toFixed(4)} / ${vk.dailyBudgetUsd})`,
+        };
+      }
+    }
+
+    return { allowed: true };
+  }
+
   public isValidKey(key: string, expectedApiKey?: string): boolean {
     if (expectedApiKey && key === expectedApiKey) return true;
     const hash = hashToken(key);
@@ -363,7 +415,13 @@ export class AdminStore {
   public createVirtualKey(
     name: string,
     rateLimitRpm = 60,
-    options?: { allowedModels?: string[]; spendLimitUsd?: number }
+    options?: {
+      allowedModels?: string[];
+      spendLimitUsd?: number;
+      defaultCombo?: string;
+      rolling5hBudgetUsd?: number;
+      dailyBudgetUsd?: number;
+    }
   ): VirtualKey {
     const rawKey = `rn-local-${nanoid(24)}`;
     const hash = hashToken(rawKey);
@@ -378,6 +436,9 @@ export class AdminStore {
       rateLimitRpm,
       allowedModels: options?.allowedModels,
       spendLimitUsd: options?.spendLimitUsd,
+      defaultCombo: options?.defaultCombo,
+      rolling5hBudgetUsd: options?.rolling5hBudgetUsd,
+      dailyBudgetUsd: options?.dailyBudgetUsd,
     };
 
     this.settings.virtualKeys.push(vkForStorage);

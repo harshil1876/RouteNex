@@ -24,6 +24,7 @@ routenex.json
 routenex_admin.json
 test_routenex*
 test_*.json
+.test_claude/
 *.db
 *.db-shm
 *.db-wal

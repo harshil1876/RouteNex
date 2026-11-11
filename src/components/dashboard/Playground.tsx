@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface CompletionResult {
   content: string;
@@ -25,6 +25,23 @@ export default function Playground() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<CompletionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [combosList, setCombosList] = useState<string[]>([
+    'combo/free-unlimited',
+    'combo/coding-power',
+    'combo/reasoning-tier',
+  ]);
+
+  useEffect(() => {
+    fetch('http://127.0.0.1:3001/v1/admin/combos')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.combos)) {
+          const slugs = data.combos.map((c: any) => c.slug);
+          setCombosList((prev) => Array.from(new Set([...slugs, ...prev])));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,6 +140,11 @@ export default function Playground() {
               >
                 <option value="auto">auto (Deterministic Smart Routing)</option>
                 <option value="pollinations/openai">pollinations/openai (Free • Zero-Key)</option>
+                <optgroup label="Autonomous Combos & Fallback Clusters">
+                  {combosList.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </optgroup>
                 <option value="fallback-chain">Cascade Chain: [mock/error → mock/fast → mock/gpt-4]</option>
                 <option value="mock/fast">mock/fast (Low Latency Fixture)</option>
                 <option value="mock/gpt-4">mock/gpt-4 (High Capability Fixture)</option>

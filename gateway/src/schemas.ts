@@ -36,6 +36,7 @@ export const ProviderPreferencesSchema = z.object({
     'headroom',
     'reset-window',
     'cache-optimized',
+    'context-relay',
   ]).optional(),
   ignore: z.array(z.string()).optional(),
   only: z.array(z.string()).optional(),
@@ -215,6 +216,8 @@ export const RoutingExplanationSchema = z.object({
     'HEADROOM_MAXIMIZED',
     'RESET_WINDOW_OPTIMIZED',
     'CACHE_AFFINITY',
+    'CONTEXT_RELAY_OPTIMIZED',
+    'SESSION_AFFINITY_PINNED',
   ]),
   candidates_evaluated: z.array(z.object({
     model: z.string(),

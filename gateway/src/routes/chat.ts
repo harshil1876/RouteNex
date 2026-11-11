@@ -3,7 +3,7 @@ import { streamSSE } from 'hono/streaming';
 import { nanoid } from 'nanoid';
 import type { AppConfig } from '../config.js';
 import type { CircuitBreaker } from '../router/circuit-breaker.js';
-import { RoutingEngine, formatCostHeader, sanitizeHeader } from '../router/engine.js';
+import { RoutingEngine, formatCostHeader, sanitizeHeader, normalizeDiscoveryModel } from '../router/engine.js';
 import type { RequestStore } from '../storage/sqlite.js';
 import {
   type ApiError,
@@ -59,6 +59,20 @@ export function createChatRoute(
     const request = parseResult.data;
     const requestId = `req_${nanoid()}`;
     const startTime = Date.now();
+
+    // Session affinity & virtual key defaultCombo
+    const sessionId = c.req.header('x-session-id') || (body as any)?.sessionId || (body as any)?.session_id;
+    if (sessionId) {
+      (request as any).sessionId = sessionId;
+    }
+    const virtualKey = (c.get as any)?.('virtualKey');
+    if (virtualKey?.defaultCombo) {
+      (request as any).defaultCombo = virtualKey.defaultCombo;
+      if (request.model === 'auto') {
+        request.model = virtualKey.defaultCombo;
+      }
+    }
+    request.model = normalizeDiscoveryModel(request.model);
 
     // Virtual Model Ingress: model: "worker/<slug>"
     if (request.model.startsWith('worker/')) {

@@ -87,6 +87,41 @@ if (args.includes('--mcp')) {
   const token = args[2];
   const { connectRemote } = await import(launcherModuleUrl);
   await connectRemote(remoteUrl, token);
+} else if (args[0] === 'setup-claude') {
+  // Sync RouteNex into ~/.claude/settings.json
+  const os = await import('node:os');
+  const claudeDir = path.join(os.homedir(), '.claude');
+  const settingsPath = path.join(claudeDir, 'settings.json');
+  if (!fs.existsSync(claudeDir)) {
+    fs.mkdirSync(claudeDir, { recursive: true });
+  }
+  let currentSettings = {};
+  if (fs.existsSync(settingsPath)) {
+    try {
+      fs.copyFileSync(settingsPath, `${settingsPath}.bak`);
+      currentSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    } catch {}
+  }
+  const merged = {
+    ...currentSettings,
+    $schema: 'https://json.schemastore.org/claude-code-settings.json',
+    model: currentSettings.model || 'combo/free-unlimited',
+    env: {
+      ...(currentSettings.env || {}),
+      ANTHROPIC_BASE_URL: 'http://127.0.0.1:3001',
+      ANTHROPIC_AUTH_TOKEN: 'rn-local-dev-default',
+      ANTHROPIC_MODEL: 'combo/free-unlimited',
+      ANTHROPIC_DEFAULT_SONNET_MODEL: 'combo/free-unlimited',
+      ANTHROPIC_DEFAULT_OPUS_MODEL: 'combo/coding-power',
+      ANTHROPIC_DEFAULT_HAIKU_MODEL: 'pollinations/openai',
+      CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY: '1',
+    },
+  };
+  fs.writeFileSync(settingsPath, JSON.stringify(merged, null, 2), 'utf-8');
+  console.log(`\x1b[32m✓ Claude Code configuration synced successfully to ${settingsPath}\x1b[0m`);
+  console.log(`  ANTHROPIC_BASE_URL = http://127.0.0.1:3001`);
+  console.log(`  CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = 1`);
+  process.exit(0);
 } else if (args[0] === 'login') {
   // 5. Open Source Local Login / Browser Launcher
   const { loginLocal } = await import(launcherModuleUrl);
