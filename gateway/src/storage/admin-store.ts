@@ -71,6 +71,17 @@ export interface ProviderPoolEntry {
   activeKeyIndex?: number;
 }
 
+export interface MemoryItem {
+  id: string;
+  topic: string;
+  content: string;
+  tokens: number;
+  tags: string[];
+  createdAt: string;
+  lastAccessed?: string;
+  category?: string;
+}
+
 export interface AdminSettings {
   adminTokenHash?: string;
   virtualKeys: VirtualKey[];
@@ -85,6 +96,8 @@ export interface AdminSettings {
   workerRuns?: WorkerRun[];
   workerBriefs?: WorkerBrief[];
   skills?: NexSkill[];
+  memories?: MemoryItem[];
+  lexiPacks?: Array<{ code: string; name: string; rulesCount: number; enabled: boolean }>;
 }
 
 export class AdminStore {
@@ -223,6 +236,47 @@ export class AdminStore {
           createdAt: new Date().toISOString(),
         },
       ],
+      memories: [
+        {
+          id: 'mem_arch',
+          topic: 'Project Architecture',
+          content: 'RouteNex uses Hono.js on port 3001 with Astro v7 React dashboard and Cloudflare Workers D1 edge accounting.',
+          tokens: 32,
+          tags: ['architecture', 'tech-stack'],
+          createdAt: new Date().toISOString(),
+          lastAccessed: 'Just now',
+        },
+        {
+          id: 'mem_agents',
+          topic: 'Coding Agents Configuration',
+          content: 'Claude Code CLI uses ANTHROPIC_BASE_URL="http://127.0.0.1:3001" and ANTHROPIC_API_KEY="rn-local-dev-default".',
+          tokens: 28,
+          tags: ['agents', 'claude-code'],
+          createdAt: new Date().toISOString(),
+          lastAccessed: 'Just now',
+        },
+        {
+          id: 'mem_free_tier',
+          topic: 'Free Tier Pool Limits',
+          content: 'Mistral pool grants 1B tokens/month, Cerebras grants 1M/day, Pollinations is zero-auth unrestricted.',
+          tokens: 24,
+          tags: ['providers', 'free-tier'],
+          createdAt: new Date().toISOString(),
+          lastAccessed: 'Just now',
+        },
+      ],
+      lexiPacks: [
+        { code: 'en', name: 'English (General, Code & CLI)', rulesCount: 49, enabled: true },
+        { code: 'pt-BR', name: 'Português (Brasil)', rulesCount: 49, enabled: true },
+        { code: 'es', name: 'Español', rulesCount: 48, enabled: true },
+        { code: 'it', name: 'Italiano', rulesCount: 47, enabled: true },
+        { code: 'id', name: 'Bahasa Indonesia', rulesCount: 53, enabled: true },
+        { code: 'de', name: 'Deutsch', rulesCount: 31, enabled: true },
+        { code: 'fr', name: 'Français', rulesCount: 31, enabled: true },
+        { code: 'ru', name: 'Русский', rulesCount: 32, enabled: true },
+        { code: 'ja', name: '日本語 (Japanese)', rulesCount: 29, enabled: true },
+        { code: 'zh', name: '中文 (Chinese)', rulesCount: 16, enabled: true },
+      ],
     };
 
     if (this.isMemoryOnly) return defaultSettings;
@@ -243,6 +297,8 @@ export class AdminStore {
           workerRuns: parsed.workerRuns || [],
           workerBriefs: parsed.workerBriefs || [],
           skills: parsed.skills && parsed.skills.length > 0 ? parsed.skills : defaultSettings.skills,
+          memories: parsed.memories && parsed.memories.length > 0 ? parsed.memories : defaultSettings.memories,
+          lexiPacks: parsed.lexiPacks && parsed.lexiPacks.length > 0 ? parsed.lexiPacks : defaultSettings.lexiPacks,
         };
 
         // Migration: Encrypt any legacy plaintext provider keys
@@ -883,5 +939,59 @@ export class AdminStore {
     const changed = this.settings.skills.length !== initialLen;
     if (changed) this.save();
     return changed;
+  }
+
+  public getFilePath(): string {
+    return this.filePath;
+  }
+
+  public getMemories(): MemoryItem[] {
+    return [...(this.settings.memories || [])];
+  }
+
+  public createMemory(memory: Partial<MemoryItem> & { topic: string; content: string }): MemoryItem {
+    if (!this.settings.memories) this.settings.memories = [];
+    const item: MemoryItem = {
+      id: memory.id || `mem_${nanoid(10)}`,
+      topic: memory.topic,
+      content: memory.content,
+      tokens: memory.tokens || Math.max(1, Math.ceil(memory.content.length / 4)),
+      tags: Array.isArray(memory.tags) && memory.tags.length > 0 ? memory.tags : ['manual'],
+      createdAt: memory.createdAt || new Date().toISOString(),
+      lastAccessed: memory.lastAccessed || 'Just now',
+      category: memory.category || 'general',
+    };
+    this.settings.memories.unshift(item);
+    this.save();
+    return item;
+  }
+
+  public deleteMemory(id: string): boolean {
+    if (!this.settings.memories) return false;
+    const initialLen = this.settings.memories.length;
+    this.settings.memories = this.settings.memories.filter((m) => m.id !== id);
+    const changed = this.settings.memories.length !== initialLen;
+    if (changed) this.save();
+    return changed;
+  }
+
+  public getLexiPacks(): Array<{ code: string; name: string; rulesCount: number; enabled: boolean }> {
+    return this.settings.lexiPacks || [
+      { code: 'en', name: 'English (General, Code & CLI)', rulesCount: 49, enabled: true },
+      { code: 'pt-BR', name: 'Português (Brasil)', rulesCount: 49, enabled: true },
+      { code: 'es', name: 'Español', rulesCount: 48, enabled: true },
+      { code: 'it', name: 'Italiano', rulesCount: 47, enabled: true },
+      { code: 'id', name: 'Bahasa Indonesia', rulesCount: 53, enabled: true },
+      { code: 'de', name: 'Deutsch', rulesCount: 31, enabled: true },
+      { code: 'fr', name: 'Français', rulesCount: 31, enabled: true },
+      { code: 'ru', name: 'Русский', rulesCount: 32, enabled: true },
+      { code: 'ja', name: '日本語 (Japanese)', rulesCount: 29, enabled: true },
+      { code: 'zh', name: '中文 (Chinese)', rulesCount: 16, enabled: true },
+    ];
+  }
+
+  public setLexiPacks(packs: Array<{ code: string; name: string; rulesCount: number; enabled: boolean }>): void {
+    this.settings.lexiPacks = packs;
+    this.save();
   }
 }

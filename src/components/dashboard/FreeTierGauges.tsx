@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface FreePool {
   id: string;
@@ -12,6 +12,9 @@ interface FreePool {
   status: 'active' | 'probed_ok' | 'probed_error';
   requiresKey: boolean;
   models: string[];
+  requestsUsed: number;
+  tokensUsed: number;
+  isConfigured?: boolean;
 }
 
 const INITIAL_POOLS: FreePool[] = [
@@ -27,6 +30,9 @@ const INITIAL_POOLS: FreePool[] = [
     status: 'active',
     requiresKey: false,
     models: ['pollinations/openai', 'pollinations/qwen', 'pollinations/mistral'],
+    requestsUsed: 0,
+    tokensUsed: 0,
+    isConfigured: true,
   },
   {
     id: 'mistral-free',
@@ -40,6 +46,8 @@ const INITIAL_POOLS: FreePool[] = [
     status: 'active',
     requiresKey: true,
     models: ['mistral/mistral-large-latest', 'mistral/codestral-latest', 'mistral/mistral-small'],
+    requestsUsed: 0,
+    tokensUsed: 0,
   },
   {
     id: 'cerebras',
@@ -53,6 +61,8 @@ const INITIAL_POOLS: FreePool[] = [
     status: 'active',
     requiresKey: true,
     models: ['cerebras/llama-3.3-70b', 'cerebras/llama-3.1-8b'],
+    requestsUsed: 0,
+    tokensUsed: 0,
   },
   {
     id: 'groq',
@@ -66,6 +76,8 @@ const INITIAL_POOLS: FreePool[] = [
     status: 'active',
     requiresKey: true,
     models: ['groq/llama-3.3-70b-versatile', 'groq/llama-3.1-8b-instant', 'groq/gemma2-9b-it'],
+    requestsUsed: 0,
+    tokensUsed: 0,
   },
   {
     id: 'gemini-free',
@@ -79,6 +91,8 @@ const INITIAL_POOLS: FreePool[] = [
     status: 'active',
     requiresKey: true,
     models: ['gemini/gemini-2.5-flash', 'gemini/gemini-2.5-pro'],
+    requestsUsed: 0,
+    tokensUsed: 0,
   },
   {
     id: 'deepseek-trial',
@@ -92,6 +106,8 @@ const INITIAL_POOLS: FreePool[] = [
     status: 'active',
     requiresKey: true,
     models: ['deepseek/deepseek-chat', 'deepseek/deepseek-reasoner'],
+    requestsUsed: 0,
+    tokensUsed: 0,
   },
   {
     id: 'duckduckgo',
@@ -105,6 +121,9 @@ const INITIAL_POOLS: FreePool[] = [
     status: 'active',
     requiresKey: false,
     models: ['duckduckgo/gpt-4o-mini', 'duckduckgo/claude-3-haiku', 'duckduckgo/meta-llama-3.1-70b'],
+    requestsUsed: 0,
+    tokensUsed: 0,
+    isConfigured: true,
   },
   {
     id: 'siliconflow',
@@ -118,6 +137,8 @@ const INITIAL_POOLS: FreePool[] = [
     status: 'active',
     requiresKey: true,
     models: ['siliconflow/deepseek-ai/DeepSeek-V3', 'siliconflow/Qwen/Qwen2.5-Coder-32B-Instruct'],
+    requestsUsed: 0,
+    tokensUsed: 0,
   },
 ];
 
@@ -126,7 +147,61 @@ export default function FreeTierGauges() {
   const [probing, setProbing] = useState(false);
   const [probeLog, setProbeLog] = useState<string | null>(null);
 
+  const fetchLiveTelemetry = useCallback(async () => {
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('routenex_admin_token') || 'routenex-admin') : 'routenex-admin';
+      const headers = { 'Authorization': `Bearer ${token}`, 'x-admin-token': token };
+
+      const [provRes, usageRes] = await Promise.all([
+        fetch('http://127.0.0.1:3001/v1/admin/providers', { headers }).catch(() => null),
+        fetch('http://127.0.0.1:3001/v1/usage?recent=100').catch(() => null),
+      ]);
+
+      let liveProviders: any[] = [];
+      if (provRes && provRes.ok) {
+        const pData = await provRes.json();
+        liveProviders = pData.providers || [];
+      }
+
+      let recentLogs: any[] = [];
+      if (usageRes && usageRes.ok) {
+        const uData = await usageRes.json();
+        recentLogs = uData.recent_requests || [];
+      }
+
+      setPools((prev) =>
+        prev.map((p) => {
+          const matched = liveProviders.find((lp: any) => lp.id === p.provider);
+          const isConfigured = matched
+            ? Boolean(matched.configured || matched.isConfigured)
+            : !p.requiresKey;
+
+          const providerLogs = recentLogs.filter((r: any) => r.provider === p.provider);
+          const requestsCount = providerLogs.length;
+          const tokensCount = providerLogs.reduce(
+            (sum: number, r: any) => sum + (r.token_usage?.total_tokens || 0),
+            0
+          );
+
+          return {
+            ...p,
+            isConfigured,
+            requestsUsed: requestsCount,
+            tokensUsed: tokensCount,
+            status: isConfigured ? 'probed_ok' : p.status,
+          };
+        })
+      );
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchLiveTelemetry();
+  }, [fetchLiveTelemetry]);
+
   const totalMonthlyTokens = pools.reduce((acc, p) => acc + p.monthlyTokens, 0);
+  const totalLiveTokensUsed = pools.reduce((acc, p) => acc + p.tokensUsed, 0);
+  const totalLiveRequestsUsed = pools.reduce((acc, p) => acc + p.requestsUsed, 0);
 
   const handleProbeAll = async () => {
     setProbing(true);
@@ -164,6 +239,7 @@ export default function FreeTierGauges() {
             const isConfigured = !p.requiresKey || configuredProviders.has(p.provider) || hasModel;
             return {
               ...p,
+              isConfigured,
               status: isConfigured ? 'probed_ok' : 'active',
             };
           })
@@ -197,6 +273,12 @@ export default function FreeTierGauges() {
             <p className="mt-1.5 text-xs text-mute max-w-2xl leading-relaxed">
               RouteNex calculates an honest aggregate across third-party developer free tiers. Each shared pool is counted exactly once (never multiplying per-model lists). Zero-key anonymous pools (Pollinations) work right out of the box with zero credentials.
             </p>
+            <div className="mt-2 text-xs font-mono text-ink flex items-center gap-3">
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                Live Gateway Usage: {totalLiveTokensUsed.toLocaleString()} tokens
+              </span>
+              <span className="text-mute">({totalLiveRequestsUsed} requests routed)</span>
+            </div>
           </div>
 
           <button
@@ -270,6 +352,11 @@ export default function FreeTierGauges() {
                       Zero-Key
                     </span>
                   )}
+                  {pool.isConfigured && (
+                    <span className="rounded bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-800 text-[10px] font-mono px-1.5 py-0.5">
+                      Ready
+                    </span>
+                  )}
                 </div>
                 <span className={`rounded-full border px-2 py-0.5 text-[10px] font-mono ${pool.badgeColor}`}>
                   {pool.badge}
@@ -277,6 +364,14 @@ export default function FreeTierGauges() {
               </div>
 
               <p className="mt-1.5 text-xs text-mute font-mono">{pool.allowance}</p>
+
+              {/* Live Telemetry Pill */}
+              <div className="mt-2.5 flex items-center gap-2 text-[11px] font-mono text-mute">
+                <span className="text-ink font-semibold">Consumed:</span>
+                <span>{pool.tokensUsed.toLocaleString()} tokens</span>
+                <span>•</span>
+                <span>{pool.requestsUsed} requests</span>
+              </div>
 
               {/* Models List */}
               <div className="mt-3 space-y-1.5">

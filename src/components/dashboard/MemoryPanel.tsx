@@ -1,4 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+
+function getAdminHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('routenex_admin_token') || 'routenex-admin') : 'routenex-admin';
+  return {
+    'Authorization': `Bearer ${token}`,
+    'x-admin-token': token,
+    ...extra,
+  };
+}
 
 interface MemoryItem {
   id: string;
@@ -16,51 +25,86 @@ export default function MemoryPanel() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTopic, setNewTopic] = useState('');
   const [newContent, setNewContent] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const [memories, setMemories] = useState<MemoryItem[]>([
-    {
-      id: 'mem-1',
-      topic: 'Project Architecture',
-      content: 'RouteNex uses Hono.js on port 3001 with Astro v7 React dashboard and Cloudflare Workers D1 edge accounting.',
-      tokens: 32,
-      tags: ['architecture', 'tech-stack'],
-      lastAccessed: '2 mins ago',
-    },
-    {
-      id: 'mem-2',
-      topic: 'Coding Agents Configuration',
-      content: 'Claude Code CLI uses ANTHROPIC_BASE_URL="http://127.0.0.1:3001" and ANTHROPIC_API_KEY="rn-local-dev-default".',
-      tokens: 28,
-      tags: ['agents', 'claude-code'],
-      lastAccessed: '1 hour ago',
-    },
-    {
-      id: 'mem-3',
-      topic: 'Free Tier Pool Limits',
-      content: 'Mistral pool grants 1B tokens/month, Cerebras grants 1M/day, Pollinations is zero-auth unrestricted.',
-      tokens: 24,
-      tags: ['providers', 'free-tier'],
-      lastAccessed: 'Yesterday',
-    },
-  ]);
+  const [memories, setMemories] = useState<MemoryItem[]>([]);
 
-  const handleAddMemory = (e: React.FormEvent) => {
+  const fetchMemories = useCallback(async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:3001/v1/admin/memories', {
+        headers: getAdminHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.memories)) {
+          setMemories(data.memories);
+        }
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchMemories();
+  }, [fetchMemories]);
+
+  const handleAddMemory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTopic.trim() || !newContent.trim()) return;
 
-    const item: MemoryItem = {
-      id: `mem-${Date.now()}`,
-      topic: newTopic.trim(),
-      content: newContent.trim(),
-      tokens: Math.ceil(newContent.length / 4),
-      tags: ['manual'],
-      lastAccessed: 'Just now',
-    };
+    setLoading(true);
+    try {
+      const res = await fetch('http://127.0.0.1:3001/v1/admin/memories', {
+        method: 'POST',
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          topic: newTopic.trim(),
+          content: newContent.trim(),
+          tags: ['manual', 'session'],
+        }),
+      });
 
-    setMemories([item, ...memories]);
-    setNewTopic('');
-    setNewContent('');
-    setShowAddModal(false);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.memory) {
+          setMemories((prev) => [data.memory, ...prev]);
+        }
+      } else {
+        const item: MemoryItem = {
+          id: `mem-${Date.now()}`,
+          topic: newTopic.trim(),
+          content: newContent.trim(),
+          tokens: Math.ceil(newContent.length / 4),
+          tags: ['manual'],
+          lastAccessed: 'Just now',
+        };
+        setMemories((prev) => [item, ...prev]);
+      }
+    } catch {
+      const item: MemoryItem = {
+        id: `mem-${Date.now()}`,
+        topic: newTopic.trim(),
+        content: newContent.trim(),
+        tokens: Math.ceil(newContent.length / 4),
+        tags: ['manual'],
+        lastAccessed: 'Just now',
+      };
+      setMemories((prev) => [item, ...prev]);
+    } finally {
+      setLoading(false);
+      setNewTopic('');
+      setNewContent('');
+      setShowAddModal(false);
+    }
+  };
+
+  const handleDeleteMemory = async (id: string) => {
+    try {
+      await fetch(`http://127.0.0.1:3001/v1/admin/memories/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: getAdminHeaders(),
+      });
+    } catch {}
+    setMemories((prev) => prev.filter((m) => m.id !== id));
   };
 
   const filtered = memories.filter(
@@ -117,7 +161,7 @@ export default function MemoryPanel() {
         <div className="p-4 rounded-xl bg-[#121622] border border-[#222738]">
           <span className="text-[11px] text-[#7d8597] font-mono block mb-1">TOKENS INDEXED</span>
           <span className="text-2xl font-bold text-purple-400 font-mono">
-            {memories.reduce((acc, m) => acc + m.tokens, 0)}
+            {memories.reduce((acc, m) => acc + (m.tokens || 0), 0)}
           </span>
         </div>
         <div className="p-4 rounded-xl bg-[#121622] border border-[#222738]">
@@ -159,39 +203,55 @@ export default function MemoryPanel() {
         />
         <button
           type="button"
-          onClick={() => alert('Compacted 0 expired memories.')}
+          onClick={() => {
+            fetchMemories();
+          }}
           className="px-3 py-2 rounded-lg bg-[#181d2c] hover:bg-[#20273c] border border-[#262f44] text-xs font-mono text-[#8f96a3] hover:text-white"
         >
-          Compact Old
+          ↻ Refresh
         </button>
       </div>
 
       {/* Memories List */}
       <div className="space-y-3">
-        {filtered.map((m) => (
-          <div key={m.id} className="p-4 rounded-xl bg-[#121622] border border-[#222738] space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-white font-mono">{m.topic}</span>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-[#7d8597] font-mono">{m.lastAccessed}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 font-mono">
-                  {m.tokens} tokens
-                </span>
+        {filtered.length === 0 ? (
+          <div className="p-8 text-center text-xs font-mono text-[#7d8597] border border-dashed border-[#222738] rounded-xl">
+            No memories found. Click &ldquo;+ Add Memory&rdquo; to persist contextual recall.
+          </div>
+        ) : (
+          filtered.map((m) => (
+            <div key={m.id} className="p-4 rounded-xl bg-[#121622] border border-[#222738] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-white font-mono">{m.topic}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-[#7d8597] font-mono">{m.lastAccessed || 'Saved'}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 font-mono">
+                    {m.tokens} tokens
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteMemory(m.id)}
+                    className="text-[#7d8597] hover:text-rose-400 text-xs px-1.5 py-0.5 rounded hover:bg-[#1a2030] transition-colors"
+                    title="Delete Memory"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-[#a0a8be] leading-relaxed">{m.content}</p>
+              <div className="flex gap-1.5 pt-1">
+                {(m.tags || ['general']).map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-[#181d2c] border border-[#262f44] text-[#8e97ae] font-mono"
+                  >
+                    #{tag}
+                  </span>
+                ))}
               </div>
             </div>
-            <p className="text-xs text-[#a0a8be] leading-relaxed">{m.content}</p>
-            <div className="flex gap-1.5 pt-1">
-              {m.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-[#181d2c] border border-[#262f44] text-[#8e97ae] font-mono"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Add Modal */}
@@ -246,9 +306,10 @@ export default function MemoryPanel() {
               </button>
               <button
                 type="submit"
-                className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-mono font-medium shadow-md shadow-purple-600/20"
+                disabled={loading}
+                className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-mono font-medium shadow-md shadow-purple-600/20 disabled:opacity-50"
               >
-                Save Memory
+                {loading ? 'Saving...' : 'Save Memory'}
               </button>
             </div>
           </form>

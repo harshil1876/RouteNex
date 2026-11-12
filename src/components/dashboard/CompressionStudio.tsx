@@ -41,9 +41,14 @@ export default function CompressionStudio() {
     async function runCompression() {
       setLoading(true);
       try {
+        const token = typeof window !== 'undefined' ? (localStorage.getItem('routenex_admin_token') || 'routenex-admin') : 'routenex-admin';
         const res = await fetch('http://127.0.0.1:3001/v1/admin/compress/preview', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'x-admin-token': token,
+          },
           body: JSON.stringify({
             text: inputText,
             options: {

@@ -463,4 +463,75 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
       expect(msgRes.status).toBe(200);
     });
   });
+
+  describe('Tab 9: Memory Panel & Storage Maintenance', () => {
+    it('GET /v1/admin/memories returns initial memories list', async () => {
+      const res = await app.request('/v1/admin/memories', { headers: adminHeaders });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(Array.isArray(data.memories)).toBe(true);
+      expect(data.memories.length).toBeGreaterThan(0);
+    });
+
+    it('POST /v1/admin/memories creates, retrieves and deletes memory item', async () => {
+      const res = await app.request('/v1/admin/memories', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          topic: 'Test Architecture Memory',
+          content: 'RouteNex Gateway uses Hono on port 3001 with zero-key fallback.',
+          tags: ['test', 'routenex'],
+        }),
+      });
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.memory.topic).toBe('Test Architecture Memory');
+      expect(data.memory.id).toBeDefined();
+
+      // Verify retrieval
+      const getRes = await app.request('/v1/admin/memories', { headers: adminHeaders });
+      const getData = await getRes.json();
+      const found = getData.memories.find((m: any) => m.id === data.memory.id);
+      expect(found).toBeDefined();
+
+      // DELETE memory
+      const delRes = await app.request(`/v1/admin/memories/${data.memory.id}`, {
+        method: 'DELETE',
+        headers: adminHeaders,
+      });
+      expect(delRes.status).toBe(200);
+      const delData = await delRes.json();
+      expect(delData.success).toBe(true);
+      expect(delData.deletedId).toBe(data.memory.id);
+    });
+
+    it('GET /v1/admin/storage/stats returns real disk and record telemetry', async () => {
+      const res = await app.request('/v1/admin/storage/stats', { headers: adminHeaders });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.dbPath).toBeDefined();
+      expect(typeof data.sizeMb).toBe('number');
+      expect(typeof data.pageCount).toBe('number');
+      expect(data.integrityCheck).toBe('OK');
+      expect(data.records).toBeDefined();
+      expect(typeof data.records.virtualKeys).toBe('number');
+      expect(typeof data.records.combos).toBe('number');
+      expect(typeof data.records.memories).toBe('number');
+    });
+
+    it('POST /v1/admin/storage/vacuum updates lastVacuum timestamp', async () => {
+      const vacRes = await app.request('/v1/admin/storage/vacuum', {
+        method: 'POST',
+        headers: adminHeaders,
+      });
+      expect(vacRes.status).toBe(200);
+      const vacData = await vacRes.json();
+      expect(vacData.ok).toBe(true);
+
+      const statsRes = await app.request('/v1/admin/storage/stats', { headers: adminHeaders });
+      const statsData = await statsRes.json();
+      expect(statsData.lastVacuum).not.toBe('Not yet run');
+    });
+  });
 });

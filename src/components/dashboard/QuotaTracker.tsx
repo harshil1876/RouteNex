@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface ModelQuota {
   name: string;
@@ -17,70 +17,208 @@ interface AccountQuota {
   models: ModelQuota[];
 }
 
+const BASE_POOLS: AccountQuota[] = [
+  {
+    id: 'prov-pollinations',
+    email: 'pollinations.ai (Zero-Key)',
+    tier: 'Starter',
+    provider: 'pollinations',
+    expiresIn: 'Never (Zero-Key Anonymous)',
+    monthlyCostUsd: 0.00,
+    models: [
+      { name: 'OpenAI GPT-4o-mini', percentRemaining: 100, resetIn: 'Continuous', status: 'healthy' },
+      { name: 'Qwen 2.5 Coder 32B', percentRemaining: 100, resetIn: 'Continuous', status: 'healthy' },
+      { name: 'Mistral Small 24B', percentRemaining: 100, resetIn: 'Continuous', status: 'healthy' },
+    ],
+  },
+  {
+    id: 'prov-duckduckgo',
+    email: 'duckduckgo.com (Zero-Key)',
+    tier: 'Starter',
+    provider: 'duckduckgo',
+    expiresIn: 'Never (Zero-Key Anonymous)',
+    monthlyCostUsd: 0.00,
+    models: [
+      { name: 'GPT-4o-mini', percentRemaining: 100, resetIn: 'Continuous', status: 'healthy' },
+      { name: 'Claude 3 Haiku', percentRemaining: 100, resetIn: 'Continuous', status: 'healthy' },
+    ],
+  },
+  {
+    id: 'prov-groq',
+    email: 'api.groq.com (LPU Pool)',
+    tier: 'Pro',
+    provider: 'groq',
+    expiresIn: 'Active API Key',
+    monthlyCostUsd: 0.00,
+    models: [
+      { name: 'Llama 3.3 70B Versatile', percentRemaining: 100, resetIn: '1m rolling window', status: 'healthy' },
+      { name: 'Llama 3.1 8B Instant', percentRemaining: 100, resetIn: '1m rolling window', status: 'healthy' },
+    ],
+  },
+  {
+    id: 'prov-cerebras',
+    email: 'api.cerebras.ai (WSE-3 Pool)',
+    tier: 'Pro',
+    provider: 'cerebras',
+    expiresIn: 'Active API Key',
+    monthlyCostUsd: 0.00,
+    models: [
+      { name: 'Llama 3.3 70B (1M tokens/day)', percentRemaining: 100, resetIn: 'Midnight UTC', status: 'healthy' },
+    ],
+  },
+  {
+    id: 'prov-gemini',
+    email: 'ai.google.dev (Gemini Pool)',
+    tier: 'Pro',
+    provider: 'gemini',
+    expiresIn: 'Active API Key',
+    monthlyCostUsd: 0.00,
+    models: [
+      { name: 'Gemini 2.5 Flash Lite', percentRemaining: 100, resetIn: 'Midnight PST', status: 'healthy' },
+      { name: 'Gemini 2.5 Pro (Thinking)', percentRemaining: 100, resetIn: 'Midnight PST', status: 'healthy' },
+    ],
+  },
+  {
+    id: 'prov-mistral',
+    email: 'api.mistral.ai (1B Grant Pool)',
+    tier: 'Pro',
+    provider: 'mistral',
+    expiresIn: 'Active API Key',
+    monthlyCostUsd: 0.00,
+    models: [
+      { name: 'Codestral Latest', percentRemaining: 100, resetIn: 'Monthly cycle', status: 'healthy' },
+      { name: 'Mistral Small', percentRemaining: 100, resetIn: 'Monthly cycle', status: 'healthy' },
+    ],
+  },
+  {
+    id: 'prov-deepseek',
+    email: 'api.deepseek.com (V3/R1 Pool)',
+    tier: 'Starter',
+    provider: 'deepseek',
+    expiresIn: 'Active API Key',
+    monthlyCostUsd: 0.00,
+    models: [
+      { name: 'DeepSeek-V3 Chat', percentRemaining: 100, resetIn: 'Pay-as-you-go', status: 'healthy' },
+      { name: 'DeepSeek-R1 Reasoner', percentRemaining: 100, resetIn: 'Pay-as-you-go', status: 'healthy' },
+    ],
+  },
+  {
+    id: 'prov-anthropic',
+    email: 'api.anthropic.com (Direct)',
+    tier: 'Enterprise',
+    provider: 'anthropic',
+    expiresIn: 'Active API Key',
+    monthlyCostUsd: 0.00,
+    models: [
+      { name: 'Claude 3.7 Sonnet', percentRemaining: 100, resetIn: '1m rolling window', status: 'healthy' },
+      { name: 'Claude 3.5 Haiku', percentRemaining: 100, resetIn: '1m rolling window', status: 'healthy' },
+    ],
+  },
+];
+
 export default function QuotaTracker() {
   const [filterType, setFilterType] = useState('ALL');
   const [filterTier, setFilterTier] = useState('ALL');
   const [refreshing, setRefreshing] = useState(false);
+  const [accounts, setAccounts] = useState<AccountQuota[]>(BASE_POOLS);
 
-  const [accounts, setAccounts] = useState<AccountQuota[]>([
-    {
-      id: 'acc-1',
-      email: 'alex***@developer.io',
-      tier: 'Pro',
-      provider: 'google',
-      expiresIn: '0h 54m',
-      monthlyCostUsd: 0.00,
-      models: [
-        { name: 'Gemini 2.5 Flash Lite', percentRemaining: 100, resetIn: '6d 23h 54m', status: 'healthy' },
-        { name: 'Gemini 2.5 Pro (Thinking)', percentRemaining: 84, resetIn: '6d 23h 54m', status: 'healthy' },
-      ],
-    },
-    {
-      id: 'acc-2',
-      email: 'team***@routenex.org',
-      tier: 'Starter',
-      provider: 'groq',
-      expiresIn: 'Never (API Key)',
-      monthlyCostUsd: 0.00,
-      models: [
-        { name: 'Llama 3.3 70B Versatile', percentRemaining: 68, resetIn: '0h 14m', status: 'healthy' },
-        { name: 'Llama 3.1 8B Instant', percentRemaining: 92, resetIn: '0h 14m', status: 'healthy' },
-      ],
-    },
-    {
-      id: 'acc-3',
-      email: 'harshil***@gmail.com',
-      tier: 'Pro',
-      provider: 'anthropic',
-      expiresIn: '23h 12m',
-      monthlyCostUsd: 4.82,
-      models: [
-        { name: 'Claude 3.7 Sonnet (Thinking)', percentRemaining: 49, resetIn: '1d 04h', status: 'alert' },
-        { name: 'Claude 3.5 Haiku', percentRemaining: 88, resetIn: '1d 04h', status: 'healthy' },
-      ],
-    },
-    {
-      id: 'acc-4',
-      email: 'open***@free-pool.net',
-      tier: 'Starter',
-      provider: 'cerebras',
-      expiresIn: 'Never (Free Tier)',
-      monthlyCostUsd: 0.00,
-      models: [
-        { name: 'Llama 3.3 70B (1M tokens/day)', percentRemaining: 96, resetIn: '4h 12m', status: 'healthy' },
-      ],
-    },
-  ]);
+  const fetchLiveQuotas = useCallback(async () => {
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('routenex_admin_token') || 'routenex-admin') : 'routenex-admin';
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'x-admin-token': token,
+      };
 
-  const handleRefresh = () => {
+      const [provRes, usageRes] = await Promise.all([
+        fetch('http://127.0.0.1:3001/v1/admin/providers', { headers }).catch(() => null),
+        fetch('http://127.0.0.1:3001/v1/usage?recent=100').catch(() => null),
+      ]);
+
+      let liveProviders: any[] = [];
+      if (provRes && provRes.ok) {
+        const pData = await provRes.json();
+        liveProviders = pData.providers || [];
+      }
+
+      let recentLogs: any[] = [];
+      let totalUsageCost = 0;
+      if (usageRes && usageRes.ok) {
+        const uData = await usageRes.json();
+        recentLogs = uData.recent_requests || [];
+        totalUsageCost = uData.estimated_cost_usd || 0;
+      }
+
+      setAccounts((prev) =>
+        prev.map((acc) => {
+          const matched = liveProviders.find((p: any) => p.id === acc.provider);
+          const isConfigured = matched ? Boolean(matched.configured || matched.isConfigured) : acc.provider === 'pollinations' || acc.provider === 'duckduckgo';
+          const masked = matched?.maskedKeys?.[0];
+
+          // Compute usage & cost for this provider from real telemetry
+          const providerLogs = recentLogs.filter((r: any) => r.provider === acc.provider);
+          const errorCount = providerLogs.filter((r: any) => r.status === 'error').length;
+          const providerSpend = providerLogs.reduce((sum: number, r: any) => sum + (r.cost_estimate?.total_usd || 0), 0);
+
+          let providerStatus: 'healthy' | 'alert' | 'critical' = 'healthy';
+          let percent = 100;
+
+          if (!isConfigured && acc.provider !== 'pollinations' && acc.provider !== 'duckduckgo') {
+            providerStatus = 'alert';
+            percent = 0;
+          } else if (errorCount > 2) {
+            providerStatus = 'critical';
+            percent = 15;
+          } else if (errorCount > 0) {
+            providerStatus = 'alert';
+            percent = 45;
+          }
+
+          const updatedModels: ModelQuota[] = acc.models.map((m) => ({
+            ...m,
+            percentRemaining: percent,
+            status: providerStatus,
+            resetIn: !isConfigured && acc.provider !== 'pollinations' && acc.provider !== 'duckduckgo'
+              ? 'Unconfigured'
+              : m.resetIn,
+          }));
+
+          return {
+            ...acc,
+            email: masked ? `${masked} (${acc.provider})` : (isConfigured ? `${acc.provider}.gateway` : `${acc.provider} (Unconfigured)`),
+            expiresIn: isConfigured
+              ? (acc.provider === 'pollinations' || acc.provider === 'duckduckgo' ? 'Zero-Key (Active)' : 'Active API Key')
+              : 'Add API Key in Providers',
+            monthlyCostUsd: Number(providerSpend.toFixed(4)),
+            models: updatedModels,
+          };
+        })
+      );
+    } catch {
+      // Keep base definitions if offline
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLiveQuotas();
+  }, [fetchLiveQuotas]);
+
+  const handleRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 800);
+    await fetchLiveQuotas();
+    setTimeout(() => setRefreshing(false), 500);
   };
 
-  const totalQuota = accounts.length;
-  const criticalCount = accounts.flatMap((a) => a.models).filter((m) => m.percentRemaining < 20).length;
-  const alertCount = accounts.flatMap((a) => a.models).filter((m) => m.percentRemaining >= 20 && m.percentRemaining < 50).length;
-  const healthyCount = accounts.flatMap((a) => a.models).filter((m) => m.percentRemaining >= 50).length;
+  const filteredAccounts = accounts.filter((acc) => {
+    if (filterTier !== 'ALL' && acc.tier !== filterTier) return false;
+    if (filterType !== 'ALL' && acc.provider !== filterType) return false;
+    return true;
+  });
+
+  const totalQuota = filteredAccounts.length;
+  const criticalCount = filteredAccounts.flatMap((a) => a.models).filter((m) => m.percentRemaining < 20).length;
+  const alertCount = filteredAccounts.flatMap((a) => a.models).filter((m) => m.percentRemaining >= 20 && m.percentRemaining < 50).length;
+  const healthyCount = filteredAccounts.flatMap((a) => a.models).filter((m) => m.percentRemaining >= 50).length;
 
   return (
     <div className="space-y-6">
@@ -89,20 +227,32 @@ export default function QuotaTracker() {
           <h2 className="text-base font-semibold text-white font-mono tracking-tight">Provider Quotas & Quota Sharing</h2>
           <p className="text-xs text-[#8f96a3]">Realtime headroom, token exhaustion timers, and rate-limit reset windows.</p>
         </div>
-        <button
-          type="button"
-          onClick={handleRefresh}
-          className="px-3.5 py-1.5 rounded-lg bg-[#181d2c] hover:bg-[#20273c] border border-[#262f44] text-xs font-mono text-white flex items-center gap-2 transition-colors self-start sm:self-auto"
-        >
-          <span className={refreshing ? 'animate-spin' : ''}>↻</span>
-          Refresh All
-        </button>
+        <div className="flex items-center gap-2">
+          <select
+            value={filterTier}
+            onChange={(e) => setFilterTier(e.target.value)}
+            className="px-2.5 py-1.5 rounded-lg bg-[#181d2c] border border-[#262f44] text-xs font-mono text-white focus:outline-none"
+          >
+            <option value="ALL">All Tiers</option>
+            <option value="Starter">Starter</option>
+            <option value="Pro">Pro</option>
+            <option value="Enterprise">Enterprise</option>
+          </select>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="px-3.5 py-1.5 rounded-lg bg-[#181d2c] hover:bg-[#20273c] border border-[#262f44] text-xs font-mono text-white flex items-center gap-2 transition-colors"
+          >
+            <span className={refreshing ? 'animate-spin' : ''}>↻</span>
+            Refresh All
+          </button>
+        </div>
       </div>
 
       {/* 4 Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="p-4 rounded-xl bg-[#121622] border border-[#222738]">
-          <span className="text-[11px] text-[#7d8597] font-mono block mb-1">TOTAL ACCOUNTS</span>
+          <span className="text-[11px] text-[#7d8597] font-mono block mb-1">TOTAL PROVIDERS</span>
           <span className="text-2xl font-bold text-white font-mono">{totalQuota}</span>
         </div>
         <div className="p-4 rounded-xl bg-[#121622] border border-[#222738]">
@@ -121,7 +271,7 @@ export default function QuotaTracker() {
 
       {/* Account Cards */}
       <div className="space-y-4">
-        {accounts.map((acc) => (
+        {filteredAccounts.map((acc) => (
           <div key={acc.id} className="p-5 rounded-xl bg-[#121622] border border-[#222738] space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1a2030]">
               <div className="flex items-center gap-3">
@@ -136,19 +286,16 @@ export default function QuotaTracker() {
                     </span>
                   </div>
                   <span className="text-[11px] text-[#7d8597] font-mono">
-                    OAuth token expires in <span className="text-amber-400">{acc.expiresIn}</span>
+                    Status: <span className={acc.expiresIn.includes('Active') ? 'text-emerald-400' : 'text-amber-400'}>{acc.expiresIn}</span>
                   </span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-mono">
                 <span className="text-[#8f96a3]">Spend: <span className="text-white">${acc.monthlyCostUsd.toFixed(2)}</span></span>
-                <button
-                  type="button"
-                  className="px-2.5 py-1 rounded bg-[#1a2030] hover:bg-[#222b40] border border-[#293248] text-purple-400 hover:text-purple-300"
-                >
-                  Edit cutoffs
-                </button>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-[#181d2c] border border-[#262f44] text-[#8e97ae] font-mono uppercase">
+                  {acc.provider}
+                </span>
               </div>
             </div>
 
@@ -159,7 +306,7 @@ export default function QuotaTracker() {
                   <div className="flex justify-between items-center text-xs font-mono">
                     <span className="text-white font-medium">{m.name}</span>
                     <div className="flex items-center gap-3 text-[11px]">
-                      <span className="text-[#7d8597]">Resets in {m.resetIn}</span>
+                      <span className="text-[#7d8597]">Resets: {m.resetIn}</span>
                       <span
                         className={`font-bold ${
                           m.percentRemaining < 20

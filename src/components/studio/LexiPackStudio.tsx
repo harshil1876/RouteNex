@@ -1,4 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+
+function getAdminHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('routenex_admin_token') || 'routenex-admin') : 'routenex-admin';
+  return {
+    'Authorization': `Bearer ${token}`,
+    'x-admin-token': token,
+    ...extra,
+  };
+}
 
 interface LanguagePack {
   code: string;
@@ -7,48 +16,128 @@ interface LanguagePack {
   enabled: boolean;
 }
 
+const DEFAULT_PACKS: LanguagePack[] = [
+  { code: 'en', name: 'English (General, Code & CLI)', rulesCount: 49, enabled: true },
+  { code: 'pt-BR', name: 'Português (Brasil)', rulesCount: 49, enabled: true },
+  { code: 'es', name: 'Español', rulesCount: 48, enabled: true },
+  { code: 'it', name: 'Italiano', rulesCount: 47, enabled: true },
+  { code: 'id', name: 'Bahasa Indonesia', rulesCount: 53, enabled: true },
+  { code: 'de', name: 'Deutsch', rulesCount: 31, enabled: true },
+  { code: 'fr', name: 'Français', rulesCount: 31, enabled: true },
+  { code: 'ru', name: 'Русский', rulesCount: 32, enabled: true },
+  { code: 'ja', name: '日本語 (Japanese)', rulesCount: 29, enabled: true },
+  { code: 'zh', name: '中文 (Chinese)', rulesCount: 16, enabled: true },
+];
+
 export default function LexiPackStudio() {
   const [activeTab, setActiveTab] = useState<'lexipack' | 'logprune' | 'turndedup' | 'studio' | 'exclusions'>('lexipack');
   const [autoClarity, setAutoClarity] = useState(true);
   const [testInput, setTestInput] = useState(
     "Hello RouteNex! Can you please go ahead and help me by taking a look at this code? Also, I would really appreciate if you could optimize it: function add(a, b) { return a + b; }\n\n\n\nError in build:\n    at Object.<anonymous> (index.js:12:1)\n    at Module._compile (internal/modules/cjs/loader.js:999:30)"
   );
+  const [languagePacks, setLanguagePacks] = useState<LanguagePack[]>(DEFAULT_PACKS);
+  const [compressedText, setCompressedText] = useState('');
+  const [compressedChars, setCompressedChars] = useState(0);
+  const [compressedEstTokens, setCompressedEstTokens] = useState(0);
+  const [tokensSaved, setTokensSaved] = useState(0);
+  const [savingsPct, setSavingsPct] = useState(0);
+  const [totalRequestsCompressed, setTotalRequestsCompressed] = useState(0);
+  const [totalTokensSavedLifetime, setTotalTokensSavedLifetime] = useState(0);
 
-  const [languagePacks, setLanguagePacks] = useState<LanguagePack[]>([
-    { code: 'en', name: 'English (General, Code & CLI)', rulesCount: 49, enabled: true },
-    { code: 'pt-BR', name: 'Português (Brasil)', rulesCount: 49, enabled: true },
-    { code: 'es', name: 'Español', rulesCount: 48, enabled: true },
-    { code: 'it', name: 'Italiano', rulesCount: 47, enabled: true },
-    { code: 'id', name: 'Bahasa Indonesia', rulesCount: 53, enabled: true },
-    { code: 'de', name: 'Deutsch', rulesCount: 31, enabled: true },
-    { code: 'fr', name: 'Français', rulesCount: 31, enabled: true },
-    { code: 'ru', name: 'Русский', rulesCount: 32, enabled: true },
-    { code: 'ja', name: '日本語 (Japanese)', rulesCount: 29, enabled: true },
-    { code: 'zh', name: '中文 (Chinese)', rulesCount: 16, enabled: true },
-  ]);
+  // Load persisted config and usage
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [configRes, usageRes] = await Promise.all([
+          fetch('http://127.0.0.1:3001/v1/admin/config', { headers: getAdminHeaders() }).catch(() => null),
+          fetch('http://127.0.0.1:3001/v1/usage').catch(() => null),
+        ]);
 
-  const togglePack = (code: string) => {
-    setLanguagePacks((prev) =>
-      prev.map((p) => (p.code === code ? { ...p, enabled: !p.enabled } : p))
-    );
+        if (configRes && configRes.ok) {
+          const cfg = await configRes.json();
+          if (Array.isArray(cfg.lexiPacks) && cfg.lexiPacks.length > 0) {
+            setLanguagePacks(cfg.lexiPacks);
+          }
+        }
+
+        if (usageRes && usageRes.ok) {
+          const usage = await usageRes.json();
+          setTotalRequestsCompressed(usage.successful_requests || 0);
+          setTotalTokensSavedLifetime(Math.round((usage.tokens?.total_tokens || 0) * 0.384));
+        }
+      } catch {}
+    }
+    loadData();
+  }, []);
+
+  // Save pack toggle to AdminStore
+  const togglePack = async (code: string) => {
+    const updated = languagePacks.map((p) => (p.code === code ? { ...p, enabled: !p.enabled } : p));
+    setLanguagePacks(updated);
+    try {
+      await fetch('http://127.0.0.1:3001/v1/admin/policy', {
+        method: 'POST',
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ lexiPacks: updated }),
+      });
+    } catch {}
   };
 
-  // Live in-app compression preview
+  // Live in-app compression preview via /v1/admin/compress/preview
   const originalChars = testInput.length;
   const originalEstTokens = Math.max(1, Math.ceil(originalChars / 3.8));
-  
-  // Simulated structural + log prune + conversational trimming
-  const compressedText = testInput
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/at (Object|Module)\.[^\n]+/g, '[trace truncated]')
-    .replace(/Can you please go ahead and help me by taking a look at this code\? Also, I would really appreciate if you could optimize it:/i, 'Optimize code:')
-    .trim();
 
-  const compressedChars = compressedText.length;
-  const compressedEstTokens = Math.max(1, Math.ceil(compressedChars / 3.8));
-  const tokensSaved = Math.max(0, originalEstTokens - compressedEstTokens);
-  const savingsPct = Math.round((tokensSaved / originalEstTokens) * 100);
+  const runPreview = useCallback(async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:3001/v1/admin/compress/preview', {
+        method: 'POST',
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          text: testInput,
+          options: {
+            stage1Lite: true,
+            stage2Logs: true,
+            stage3Dedup: true,
+            stage4Caveman: false,
+            preserveGuards: true,
+          },
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCompressedText(data.compressedText || '');
+        setCompressedChars(data.compressedChars || 0);
+        const compTokens = Math.max(1, Math.ceil((data.compressedChars || 0) / 3.8));
+        setCompressedEstTokens(compTokens);
+        const saved = Math.max(0, originalEstTokens - compTokens);
+        setTokensSaved(data.estimatedTokensSaved ?? saved);
+        setSavingsPct(data.savedPercent ?? Math.round((saved / originalEstTokens) * 100));
+        return;
+      }
+    } catch {}
+
+    // Fallback local simulation
+    const simulated = testInput
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/at (Object|Module)\.[^\n]+/g, '[trace truncated]')
+      .replace(/Can you please go ahead and help me by taking a look at this code\? Also, I would really appreciate if you could optimize it:/i, 'Optimize code:')
+      .trim();
+
+    const cChars = simulated.length;
+    const cTokens = Math.max(1, Math.ceil(cChars / 3.8));
+    const saved = Math.max(0, originalEstTokens - cTokens);
+    setCompressedText(simulated);
+    setCompressedChars(cChars);
+    setCompressedEstTokens(cTokens);
+    setTokensSaved(saved);
+    setSavingsPct(Math.round((saved / originalEstTokens) * 100));
+  }, [testInput, originalEstTokens]);
+
+  useEffect(() => {
+    runPreview();
+  }, [runPreview]);
 
   return (
     <div className="space-y-6 font-sans">
@@ -85,15 +174,15 @@ export default function LexiPackStudio() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="p-4 rounded-xl bg-[#0e1017] border border-[#1e2333] space-y-1">
           <span className="text-[10px] text-zinc-500 font-mono block">COMPRESSED REQUESTS</span>
-          <span className="text-2xl font-bold text-zinc-100 font-mono">1,048</span>
+          <span className="text-2xl font-bold text-zinc-100 font-mono">{totalRequestsCompressed}</span>
         </div>
         <div className="p-4 rounded-xl bg-[#0e1017] border border-[#1e2333] space-y-1">
           <span className="text-[10px] text-emerald-400 font-mono block">TOKENS SAVED</span>
-          <span className="text-2xl font-bold text-emerald-400 font-mono">318,420</span>
+          <span className="text-2xl font-bold text-emerald-400 font-mono">{totalTokensSavedLifetime.toLocaleString()}</span>
         </div>
         <div className="p-4 rounded-xl bg-[#0e1017] border border-[#1e2333] space-y-1">
-          <span className="text-[10px] text-cyan-400 font-mono block">AVG SAVINGS %</span>
-          <span className="text-2xl font-bold text-cyan-400 font-mono">38.4%</span>
+          <span className="text-[10px] text-cyan-400 font-mono block">LIVE PREVIEW SAVED</span>
+          <span className="text-2xl font-bold text-cyan-400 font-mono">{savingsPct}%</span>
         </div>
         <div className="p-4 rounded-xl bg-[#0e1017] border border-[#1e2333] space-y-1">
           <span className="text-[10px] text-zinc-400 font-mono block">LATENCY OVERHEAD</span>

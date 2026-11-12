@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
+function getAdminHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('routenex_admin_token') || 'routenex-admin') : 'routenex-admin';
+  return {
+    'Authorization': `Bearer ${token}`,
+    'x-admin-token': token,
+    ...extra,
+  };
+}
+
 export default function ModelAliases() {
   const [aliases, setAliases] = useState<Record<string, string>>({
     fast: 'groq/llama-3.1-8b-instant',
@@ -16,7 +25,9 @@ export default function ModelAliases() {
   useEffect(() => {
     async function loadPolicy() {
       try {
-        const res = await fetch('http://127.0.0.1:3001/v1/admin/config');
+        const res = await fetch('http://127.0.0.1:3001/v1/admin/config', {
+          headers: getAdminHeaders(),
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.aliases) setAliases(data.aliases);
@@ -36,7 +47,7 @@ export default function ModelAliases() {
     try {
       await fetch('http://127.0.0.1:3001/v1/admin/aliases', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ alias: trimmed, targetModel: newTarget }),
       });
     } catch {}
@@ -47,7 +58,10 @@ export default function ModelAliases() {
 
   const handleDeleteAlias = async (key: string) => {
     try {
-      await fetch(`http://127.0.0.1:3001/v1/admin/aliases/${key}`, { method: 'DELETE' });
+      await fetch(`http://127.0.0.1:3001/v1/admin/aliases/${encodeURIComponent(key)}`, {
+        method: 'DELETE',
+        headers: getAdminHeaders(),
+      });
     } catch {}
     setAliases((prev) => {
       const copy = { ...prev };
@@ -60,7 +74,7 @@ export default function ModelAliases() {
     try {
       const res = await fetch('http://127.0.0.1:3001/v1/admin/policy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ strategy, compressionEnabled: compression }),
       });
       if (res.ok) {

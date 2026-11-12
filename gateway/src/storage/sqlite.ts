@@ -306,4 +306,12 @@ export class RequestStore {
       }
     }
   }
+
+  public getFilePath(): string {
+    return this.filePath;
+  }
+
+  public getRecordCount(): number {
+    return this.records.length;
+  }
 }
