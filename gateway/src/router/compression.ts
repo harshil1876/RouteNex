@@ -62,58 +62,65 @@ export class PromptCompressor {
     const seenParagraphHashes = new Set<string>();
 
     const processedMessages: Message[] = messages.map((msg) => {
-      if (!msg.content || typeof msg.content !== 'string') return msg;
+      if (!msg.content) return msg;
 
-      const origLen = msg.content.length;
-      totalOriginalChars += origLen;
+      if (typeof msg.content === 'string') {
+        const origLen = msg.content.length;
+        totalOriginalChars += origLen;
 
-      let current = msg.content;
+        const current = this.compressSingleString(
+          msg.content,
+          opts,
+          seenParagraphHashes,
+          (s1, s2, s3, s4) => {
+            stage1Saved += s1;
+            stage2Saved += s2;
+            stage3Saved += s3;
+            stage4Saved += s4;
+          }
+        );
 
-      // GUARD: Extract code blocks, tables, URLs, inline code
-      const guards: string[] = [];
-      if (opts.preserveGuards) {
-        current = this.extractGuards(current, guards);
+        totalCompressedChars += current.length;
+        return {
+          ...msg,
+          content: current,
+        };
       }
 
-      // STAGE 1: Lite (Comments, whitespace, linefeeds)
-      if (opts.stage1Lite) {
-        const before = current.length;
-        current = this.applyStage1Lite(current);
-        stage1Saved += Math.max(0, before - current.length);
+      if (Array.isArray(msg.content)) {
+        const updatedBlocks = msg.content.map((block: any) => {
+          if (block && block.type === 'text' && typeof block.text === 'string') {
+            const origLen = block.text.length;
+            totalOriginalChars += origLen;
+
+            const current = this.compressSingleString(
+              block.text,
+              opts,
+              seenParagraphHashes,
+              (s1, s2, s3, s4) => {
+                stage1Saved += s1;
+                stage2Saved += s2;
+                stage3Saved += s3;
+                stage4Saved += s4;
+              }
+            );
+
+            totalCompressedChars += current.length;
+            return {
+              ...block,
+              text: current,
+            };
+          }
+          return block;
+        });
+
+        return {
+          ...msg,
+          content: updatedBlocks,
+        };
       }
 
-      // STAGE 2: RTK (Log/Stack trace compaction)
-      if (opts.stage2Logs) {
-        const before = current.length;
-        current = this.applyStage2Logs(current);
-        stage2Saved += Math.max(0, before - current.length);
-      }
-
-      // STAGE 3: Session Deduplication
-      if (opts.stage3Dedup) {
-        const before = current.length;
-        current = this.applyStage3Dedup(current, seenParagraphHashes);
-        stage3Saved += Math.max(0, before - current.length);
-      }
-
-      // STAGE 4: Caveman Fluff Stripper (opt-in)
-      if (opts.stage4Caveman) {
-        const before = current.length;
-        current = this.applyStage4Caveman(current);
-        stage4Saved += Math.max(0, before - current.length);
-      }
-
-      // UNGUARD: Restore protected blocks
-      if (opts.preserveGuards) {
-        current = this.restoreGuards(current, guards);
-      }
-
-      totalCompressedChars += current.length;
-
-      return {
-        ...msg,
-        content: current,
-      };
+      return msg;
     });
 
     const totalSavedChars = Math.max(0, totalOriginalChars - totalCompressedChars);
@@ -140,11 +147,70 @@ export class PromptCompressor {
   }
 
   /**
+   * Compresses a single string through the pipeline, updating stage savings.
+   */
+  private static compressSingleString(
+    text: string,
+    opts: Required<CompressionOptions>,
+    seenParagraphHashes: Set<string>,
+    accumulateSavings: (s1: number, s2: number, s3: number, s4: number) => void
+  ): string {
+    let current = text;
+    let s1 = 0;
+    let s2 = 0;
+    let s3 = 0;
+    let s4 = 0;
+
+    // GUARD: Extract code blocks, tables, URLs, inline code
+    const guards: string[] = [];
+    if (opts.preserveGuards) {
+      current = this.extractGuards(current, guards);
+    }
+
+    // STAGE 1: Lite (Comments, whitespace, linefeeds)
+    if (opts.stage1Lite) {
+      const before = current.length;
+      current = this.applyStage1Lite(current);
+      s1 = Math.max(0, before - current.length);
+    }
+
+    // STAGE 2: RTK (Log/Stack trace compaction)
+    if (opts.stage2Logs) {
+      const before = current.length;
+      current = this.applyStage2Logs(current);
+      s2 = Math.max(0, before - current.length);
+    }
+
+    // STAGE 3: Session Deduplication
+    if (opts.stage3Dedup) {
+      const before = current.length;
+      current = this.applyStage3Dedup(current, seenParagraphHashes);
+      s3 = Math.max(0, before - current.length);
+    }
+
+    // STAGE 4: Caveman Fluff Stripper (opt-in)
+    if (opts.stage4Caveman) {
+      const before = current.length;
+      current = this.applyStage4Caveman(current);
+      s4 = Math.max(0, before - current.length);
+    }
+
+    // UNGUARD: Restore protected blocks
+    if (opts.preserveGuards) {
+      current = this.restoreGuards(current, guards);
+    }
+
+    accumulateSavings(s1, s2, s3, s4);
+    return current;
+  }
+
+  /**
    * Helper to compress a single text string.
    */
   static compressText(text: string, options: CompressionOptions = {}): string {
     const res = this.compressMessages([{ role: 'user', content: text }], options);
-    return res.messages[0]?.content || '';
+    const content = res.messages[0]?.content;
+    return typeof content === 'string' ? content : '';
   }
 
   // ==========================================
@@ -154,33 +220,41 @@ export class PromptCompressor {
   private static extractGuards(text: string, guards: string[]): string {
     let guarded = text;
 
-    // 1. Fenced Code Blocks (``` or ~~~)
-    guarded = guarded.replace(/(```[\s\S]*?```|~~~[\s\S]*?~~~)/g, (match) => {
-      const idx = guards.length;
-      guards.push(match);
-      return `__RN_GUARD_${idx}__`;
-    });
+    // 1. Fenced Code Blocks (``` or ~~~) - runs first to protect embedded code
+    if (guarded.includes('```') || guarded.includes('~~~')) {
+      guarded = guarded.replace(/(```[\s\S]*?```|~~~[\s\S]*?~~~)/g, (match) => {
+        const idx = guards.length;
+        guards.push(match);
+        return `__RN_GUARD_${idx}__`;
+      });
+    }
 
     // 2. Markdown Tables (| header | ... |)
-    guarded = guarded.replace(/((?:\|[^\n]+\|\r?\n){2,})/g, (match) => {
-      const idx = guards.length;
-      guards.push(match);
-      return `__RN_GUARD_${idx}__`;
-    });
+    if (guarded.includes('|')) {
+      guarded = guarded.replace(/((?:\|[^\n]+\|\r?\n){2,})/g, (match) => {
+        const idx = guards.length;
+        guards.push(match);
+        return `__RN_GUARD_${idx}__`;
+      });
+    }
 
     // 3. URLs
-    guarded = guarded.replace(/(https?:\/\/[^\s\)\],>]+)/g, (match) => {
-      const idx = guards.length;
-      guards.push(match);
-      return `__RN_GUARD_${idx}__`;
-    });
+    if (guarded.includes('http://') || guarded.includes('https://')) {
+      guarded = guarded.replace(/(https?:\/\/[^\s\)\],>]+)/g, (match) => {
+        const idx = guards.length;
+        guards.push(match);
+        return `__RN_GUARD_${idx}__`;
+      });
+    }
 
     // 4. Inline code spans (`...`)
-    guarded = guarded.replace(/(`[^`\n]+`)/g, (match) => {
-      const idx = guards.length;
-      guards.push(match);
-      return `__RN_GUARD_${idx}__`;
-    });
+    if (guarded.includes('`')) {
+      guarded = guarded.replace(/(`[^`\n]+`)/g, (match) => {
+        const idx = guards.length;
+        guards.push(match);
+        return `__RN_GUARD_${idx}__`;
+      });
+    }
 
     return guarded;
   }
@@ -201,20 +275,30 @@ export class PromptCompressor {
   private static applyStage1Lite(text: string): string {
     if (!text) return text;
 
+    let cleaned = text;
+
     // 1. Strip HTML/Markdown comments
-    let cleaned = text.replace(/<!--[\s\S]*?-->/g, '');
+    if (cleaned.includes('<!--')) {
+      cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
+    }
 
     // 2. Collapse 3 or more consecutive newlines into 2
-    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+    if (cleaned.includes('\n\n\n')) {
+      cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+    }
 
     // 3. Trim line ends and collapse horizontal whitespaces
     const lines = cleaned.split('\n');
     const processedLines = lines.map((line) => {
-      // Collapse multiple horizontal spaces/tabs into a single space
-      return line.replace(/[ \t]{2,}/g, ' ').trimEnd();
+      let l = line.trimEnd();
+      if (l.includes('  ') || l.includes('\t')) {
+        l = l.replace(/[ \t]{2,}/g, ' ');
+      }
+      return l;
     });
+    cleaned = processedLines.join('\n').trim();
 
-    return processedLines.join('\n').trim();
+    return cleaned;
   }
 
   // ==========================================
@@ -226,50 +310,64 @@ export class PromptCompressor {
 
     let result = text;
 
-    // 1. Compact long Node.js / JavaScript / Python stack traces
-    // E.g. consecutive "at ... node_modules/..." lines
-    const lines = result.split('\n');
-    const compactedLines: string[] = [];
-    let stackBuffer: string[] = [];
+    // 1. Fast-path check for stack trace markers before line splitting
+    const hasStackMarkers =
+      text.includes('node_modules') ||
+      text.includes('.pnpm') ||
+      text.includes('.yarn') ||
+      text.includes('(native)') ||
+      text.includes('site-packages');
 
-    const flushStackBuffer = () => {
-      if (stackBuffer.length <= 4) {
-        compactedLines.push(...stackBuffer);
-      } else {
-        // Keep top 2 and bottom 1 frame, omit the middle
-        compactedLines.push(stackBuffer[0]);
-        compactedLines.push(stackBuffer[1]);
-        compactedLines.push(
-          `    ... [${stackBuffer.length - 3} internal frames omitted for token efficiency] ...`
-        );
-        compactedLines.push(stackBuffer[stackBuffer.length - 1]);
-      }
-      stackBuffer = [];
-    };
+    if (hasStackMarkers) {
+      const lines = result.split('\n');
+      const compactedLines: string[] = [];
+      let stackBuffer: string[] = [];
 
-    for (const line of lines) {
-      const isStackLine =
-        /^\s*at\s+.*(?:\/node_modules\/|\.pnpm\/|\.yarn\/|\(native\))/i.test(line) ||
-        /^\s*File\s+".*\/site-packages\/.*",\s+line\s+\d+/i.test(line);
-
-      if (isStackLine) {
-        stackBuffer.push(line);
-      } else {
-        if (stackBuffer.length > 0) {
-          flushStackBuffer();
+      const flushStackBuffer = () => {
+        if (stackBuffer.length <= 4) {
+          compactedLines.push(...stackBuffer);
+        } else {
+          // Keep top 2 and bottom 1 frame, omit the middle
+          compactedLines.push(stackBuffer[0]);
+          compactedLines.push(stackBuffer[1]);
+          compactedLines.push(
+            `    ... [${stackBuffer.length - 3} internal frames omitted for token efficiency] ...`
+          );
+          compactedLines.push(stackBuffer[stackBuffer.length - 1]);
         }
-        compactedLines.push(line);
-      }
-    }
-    if (stackBuffer.length > 0) {
-      flushStackBuffer();
-    }
+        stackBuffer = [];
+      };
 
-    result = compactedLines.join('\n');
+      for (const line of lines) {
+        const isStackLine =
+          (line.includes('node_modules') ||
+            line.includes('.pnpm') ||
+            line.includes('.yarn') ||
+            line.includes('(native)') ||
+            line.includes('site-packages')) &&
+          (/^\s*at\s+/i.test(line) || /^\s*File\s+/i.test(line));
+
+        if (isStackLine) {
+          stackBuffer.push(line);
+        } else {
+          if (stackBuffer.length > 0) {
+            flushStackBuffer();
+          }
+          compactedLines.push(line);
+        }
+      }
+      if (stackBuffer.length > 0) {
+        flushStackBuffer();
+      }
+
+      result = compactedLines.join('\n');
+    }
 
     // 2. Compact repetitive test suite / build progress dots (e.g. ................ 100/100)
-    result = result.replace(/(\. ){15,}/g, '... [dots truncated] ');
-    result = result.replace(/\.{20,}/g, '... [progress truncated] ...');
+    if (result.includes('..')) {
+      result = result.replace(/(\. ){15,}/g, '... [dots truncated] ');
+      result = result.replace(/\.{20,}/g, '... [progress truncated] ...');
+    }
 
     return result;
   }

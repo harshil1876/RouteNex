@@ -99,15 +99,20 @@ export class AnthropicProviderAdapter implements IProviderAdapter {
    */
   private translatePayload(request: ChatCompletionRequest, stream: boolean) {
     let systemPrompt: string | undefined = undefined;
-    const anthropicMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+    const anthropicMessages: Array<{ role: 'user' | 'assistant'; content: string | any[] }> = [];
 
     for (const msg of request.messages) {
+      const contentStr = typeof msg.content === 'string'
+        ? msg.content
+        : Array.isArray(msg.content)
+          ? msg.content.map((b: any) => b.text || '').join(' ')
+          : '';
       if (msg.role === 'system') {
-        systemPrompt = systemPrompt ? `${systemPrompt}\n\n${msg.content || ''}` : (msg.content || '');
+        systemPrompt = systemPrompt ? `${systemPrompt}\n\n${contentStr}` : contentStr;
       } else if (msg.role === 'user' || msg.role === 'assistant') {
         anthropicMessages.push({
           role: msg.role,
-          content: msg.content || '',
+          content: Array.isArray(msg.content) ? msg.content : (msg.content || ''),
         });
       }
     }

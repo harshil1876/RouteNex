@@ -6,17 +6,14 @@ import { z } from 'zod';
 
 // ── Message Schema ───────────────────────────────────────────────────
 export const MessageSchema = z.object({
-  role: z.enum(['system', 'user', 'assistant', 'tool']),
-  content: z.union([z.string(), z.null()]).optional(),
+  role: z.enum(['system', 'developer', 'user', 'assistant', 'tool', 'function']),
+  content: z.union([
+    z.string(),
+    z.null(),
+    z.array(z.record(z.string(), z.any())),
+  ]).optional(),
   name: z.string().optional(),
-  tool_calls: z.array(z.object({
-    id: z.string(),
-    type: z.literal('function'),
-    function: z.object({
-      name: z.string(),
-      arguments: z.string(),
-    }),
-  })).optional(),
+  tool_calls: z.array(z.any()).optional(),
   tool_call_id: z.string().optional(),
 });
 
@@ -70,23 +67,8 @@ export const ChatCompletionRequestSchema = z.object({
   user: z.string().optional(),
   compress: z.boolean().optional(),
   // Tool calling
-  tools: z.array(z.object({
-    type: z.literal('function'),
-    function: z.object({
-      name: z.string(),
-      description: z.string().optional(),
-      parameters: z.record(z.unknown()).optional(),
-    }),
-  })).optional(),
-  tool_choice: z.union([
-    z.literal('none'),
-    z.literal('auto'),
-    z.literal('required'),
-    z.object({
-      type: z.literal('function'),
-      function: z.object({ name: z.string() }),
-    }),
-  ]).optional(),
+  tools: z.array(z.any()).optional(),
+  tool_choice: z.any().optional(),
   response_format: z.any().optional(),
 });
 
@@ -101,7 +83,7 @@ export const ChatCompletionResponseSchema = z.object({
   choices: z.array(z.object({
     index: z.number(),
     message: MessageSchema,
-    finish_reason: z.enum(['stop', 'length', 'tool_calls', 'content_filter']).nullable(),
+    finish_reason: z.string().nullable(),
   })),
   usage: z.object({
     prompt_tokens: z.number(),
@@ -142,19 +124,11 @@ export const StreamChunkSchema = z.object({
   choices: z.array(z.object({
     index: z.number(),
     delta: z.object({
-      role: z.enum(['system', 'user', 'assistant', 'tool']).optional(),
+      role: z.enum(['system', 'developer', 'user', 'assistant', 'tool', 'function']).optional(),
       content: z.string().nullable().optional(),
-      tool_calls: z.array(z.object({
-        index: z.number(),
-        id: z.string().optional(),
-        type: z.literal('function').optional(),
-        function: z.object({
-          name: z.string().optional(),
-          arguments: z.string().optional(),
-        }).optional(),
-      })).optional(),
+      tool_calls: z.array(z.any()).optional(),
     }),
-    finish_reason: z.enum(['stop', 'length', 'tool_calls', 'content_filter']).nullable(),
+    finish_reason: z.string().nullable(),
   })),
   usage: z.object({
     prompt_tokens: z.number(),

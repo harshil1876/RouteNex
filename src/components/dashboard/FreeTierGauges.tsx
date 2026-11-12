@@ -197,6 +197,17 @@ export default function FreeTierGauges() {
 
   useEffect(() => {
     fetchLiveTelemetry();
+    const handleStateChange = () => {
+      fetchLiveTelemetry();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('routenex:state-changed', handleStateChange);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('routenex:state-changed', handleStateChange);
+      }
+    };
   }, [fetchLiveTelemetry]);
 
   const totalMonthlyTokens = pools.reduce((acc, p) => acc + p.monthlyTokens, 0);

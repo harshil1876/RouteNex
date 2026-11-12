@@ -251,6 +251,9 @@ export default function Combos() {
     setName('');
     setSlug('');
     setDescription('');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+    }
   };
 
   const handleDeleteCombo = async (id: string) => {
@@ -258,6 +261,9 @@ export default function Combos() {
       await fetch(`http://127.0.0.1:3001/v1/admin/combos/${id}`, { method: 'DELETE' });
     } catch {}
     setCombos((prev) => prev.filter((c) => c.id !== id));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+    }
   };
 
   return (

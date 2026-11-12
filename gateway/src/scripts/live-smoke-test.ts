@@ -34,7 +34,7 @@ export async function runLiveSmokeTest(): Promise<void> {
         n: 1,
       });
       const latency = Date.now() - start;
-      const content = res.choices[0]?.message?.content || '';
+      const content = String(res.choices[0]?.message?.content || '');
       console.log(`  ✅ Groq responded in ${latency}ms: "${content.trim()}"`);
     },
   });
@@ -54,7 +54,7 @@ export async function runLiveSmokeTest(): Promise<void> {
         n: 1,
       });
       const latency = Date.now() - start;
-      const content = res.choices[0]?.message?.content || '';
+      const content = String(res.choices[0]?.message?.content || '');
       console.log(`  ✅ OpenAI responded in ${latency}ms: "${content.trim()}"`);
     },
   });
@@ -74,7 +74,7 @@ export async function runLiveSmokeTest(): Promise<void> {
         n: 1,
       });
       const latency = Date.now() - start;
-      const content = res.choices[0]?.message?.content || '';
+      const content = String(res.choices[0]?.message?.content || '');
       console.log(`  ✅ Anthropic responded in ${latency}ms: "${content.trim()}"`);
     },
   });
@@ -94,7 +94,7 @@ export async function runLiveSmokeTest(): Promise<void> {
         n: 1,
       });
       const latency = Date.now() - start;
-      const content = res.choices[0]?.message?.content || '';
+      const content = String(res.choices[0]?.message?.content || '');
       console.log(`  ✅ Gemini responded in ${latency}ms: "${content.trim()}"`);
     },
   });
@@ -120,7 +120,7 @@ export async function runLiveSmokeTest(): Promise<void> {
           n: 1,
         });
         const latency = Date.now() - start;
-        const content = res.choices[0]?.message?.content || '';
+        const content = String(res.choices[0]?.message?.content || '');
         console.log(`  ✅ Ollama responded in ${latency}ms: "${content.trim()}"`);
       } catch {
         console.log(`  ⚠️ Ollama local daemon not running at ${config.ollamaBaseUrl} (offline)`);

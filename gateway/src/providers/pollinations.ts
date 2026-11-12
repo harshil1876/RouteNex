@@ -242,7 +242,8 @@ export class PollinationsProviderAdapter implements IProviderAdapter {
 
     // Fall back to chat() response and stream words with typing effect
     const resp = await this.chat(request);
-    const content = resp.choices[0]?.message?.content || '';
+    const rawContent = resp.choices[0]?.message?.content;
+    const content = typeof rawContent === 'string' ? rawContent : (Array.isArray(rawContent) ? JSON.stringify(rawContent) : '');
     const words = content.split(' ');
     for (let i = 0; i < words.length; i++) {
       const text = (i === 0 ? '' : ' ') + words[i];

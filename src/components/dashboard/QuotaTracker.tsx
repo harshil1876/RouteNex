@@ -201,6 +201,17 @@ export default function QuotaTracker() {
 
   useEffect(() => {
     fetchLiveQuotas();
+    const handleStateChange = () => {
+      fetchLiveQuotas();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('routenex:state-changed', handleStateChange);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('routenex:state-changed', handleStateChange);
+      }
+    };
   }, [fetchLiveQuotas]);
 
   const handleRefresh = async () => {

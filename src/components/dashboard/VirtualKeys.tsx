@@ -121,6 +121,9 @@ export default function VirtualKeys() {
       setNewKeyName('');
       setNewRolling5hBudget('');
       setNewDailyBudget('');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -131,6 +134,9 @@ export default function VirtualKeys() {
       await fetch(`http://127.0.0.1:3001/v1/admin/keys/${id}`, { method: 'DELETE' });
     } catch {}
     setKeys((prev) => prev.filter((k) => k.id !== id));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+    }
   };
 
   const copyToClipboard = (text: string) => {

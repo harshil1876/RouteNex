@@ -93,7 +93,8 @@ export class MistralProviderAdapter implements IProviderAdapter {
 
   async *chatStream(request: ChatCompletionRequest): AsyncGenerator<StreamChunk> {
     const resp = await this.chat(request);
-    const content = resp.choices[0]?.message?.content || '';
+    const rawContent = resp.choices[0]?.message?.content;
+    const content = typeof rawContent === 'string' ? rawContent : (Array.isArray(rawContent) ? JSON.stringify(rawContent) : '');
 
     yield {
       id: resp.id,

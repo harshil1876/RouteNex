@@ -104,8 +104,26 @@ export class RoutingEngine {
     private readonly adminStore?: {
       getProviderBlockedParams?: (p: string) => string[];
       addProviderBlockedParam?: (p: string, param: string) => void;
+      hasProviderKey?: (p: string) => boolean;
+      [key: string]: any;
     }
   ) {}
+
+  public isProviderUsable(provider: string): boolean {
+    if (provider === 'pollinations' || provider === 'duckduckgo' || provider === 'ollama' || provider === 'mock') {
+      return true;
+    }
+    if (this.adminStore && typeof this.adminStore.hasProviderKey === 'function') {
+      if (this.adminStore.hasProviderKey(provider)) {
+        return true;
+      }
+    }
+    const p = this.registry.getProvider(provider);
+    if (p && typeof p.isConfigured === 'function') {
+      return p.isConfigured();
+    }
+    return false;
+  }
 
   /**
    * Evaluates candidates and determines primary model and fallback chain.
@@ -152,11 +170,14 @@ export class RoutingEngine {
         const chain: ModelEntry[] = [];
         const candidates: RouteCandidate[] = [];
         for (const targetId of combo.targets) {
-          const m = this.registry.getModel(targetId);
+          const m = this.registry.getModel(targetId) || this.registry.getAllModels().find((x) => x.id === targetId);
           if (m) {
-            const canRun = this.circuitBreaker.canExecute(m.provider, m.id);
+            const providerUsable = this.isProviderUsable(m.provider);
+            const canRun = providerUsable && this.circuitBreaker.canExecute(m.provider, m.id);
             let rejectionReason: string | undefined;
-            if (!canRun) {
+            if (!providerUsable) {
+              rejectionReason = `Skipped '${m.id}': no API key connected for provider '${m.provider}'`;
+            } else if (!canRun) {
               if (this.circuitBreaker.getState(m.provider) === 'OPEN') {
                 rejectionReason = `Circuit breaker OPEN for provider '${m.provider}'`;
               } else if (this.circuitBreaker.isModelLocked(m.id)) {
@@ -217,10 +238,15 @@ export class RoutingEngine {
             const chain: ModelEntry[] = [];
             const candidates: RouteCandidate[] = [];
             for (const targetId of combo.targets) {
-              const m = this.registry.getModel(targetId);
+              const m = this.registry.getModel(targetId) || this.registry.getAllModels().find((x) => x.id === targetId);
               if (m) {
-                const canRun = this.circuitBreaker.canExecute(m.provider, m.id);
-                candidates.push({ model: m, eligible: canRun });
+                const providerUsable = this.isProviderUsable(m.provider);
+                const canRun = providerUsable && this.circuitBreaker.canExecute(m.provider, m.id);
+                candidates.push({
+                  model: m,
+                  eligible: canRun,
+                  rejectionReason: !providerUsable ? `Skipped '${m.id}': no API key connected for provider '${m.provider}'` : undefined,
+                });
                 if (canRun) chain.push(m);
               }
             }
@@ -318,6 +344,14 @@ export class RoutingEngine {
     );
 
     for (const model of allModels) {
+      if (!this.isProviderUsable(model.provider)) {
+        candidates.push({
+          model,
+          eligible: false,
+          rejectionReason: `Skipped '${model.id}': no API key connected for provider '${model.provider}'`,
+        });
+        continue;
+      }
       if (needsTools && !model.capabilities.tool_calls) {
         candidates.push({ model, eligible: false, rejectionReason: 'Lacks tool_calls capability' });
         continue;
@@ -448,7 +482,16 @@ export class RoutingEngine {
       });
       reasonCode = 'CONTEXT_RELAY_OPTIMIZED';
     } else if (strategy === 'cache-optimized') {
-      const prefix = (request.messages || []).map((m) => m.content || '').slice(0, 2).join(':::');
+      const prefix = (request.messages || [])
+        .map((m) => {
+          if (typeof m.content === 'string') return m.content;
+          if (Array.isArray(m.content)) {
+            return m.content.map((b: any) => b.text || '').join(' ');
+          }
+          return '';
+        })
+        .slice(0, 2)
+        .join(':::');
       let hash = 0;
       for (let i = 0; i < prefix.length; i++) {
         hash = (hash << 5) - hash + prefix.charCodeAt(i);

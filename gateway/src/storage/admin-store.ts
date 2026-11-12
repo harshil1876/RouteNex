@@ -214,25 +214,69 @@ export class AdminStore {
       workerBriefs: [],
       skills: [
         {
-          id: 'skill_code_review',
-          name: 'PR Code Review & Security Audit',
-          slug: 'code-review-audit',
-          description: 'Comprehensive static review for secrets, auth bypasses, and SQL injection.',
-          instructions: 'Examine diffs line-by-line. Flag secrets, unvalidated user input, and high-complexity algorithms.',
-          tools: ['github.read_diff', 'github.post_review'],
+          id: 'skill_pr_security',
+          name: 'PR Security & Code Auditor',
+          slug: 'pr-security-audit',
+          description: 'Comprehensive static review for secrets, auth bypasses, and SQL injection in pull requests.',
+          instructions: 'Examine diffs line-by-line. Flag secrets, unvalidated user input, OWASP vulnerabilities, and SQL injection flaws.',
+          tools: ['github.read_diff', 'github.post_review', 'security.scan_secrets'],
           source: 'builtin',
-          tags: ['security', 'github'],
+          tags: ['security', 'github', 'audit'],
           createdAt: new Date().toISOString(),
         },
         {
-          id: 'skill_telemetry_optimizer',
-          name: 'Gateway Telemetry Optimizer',
-          slug: 'telemetry-optimizer',
-          description: 'Audit 429 backoff rates and optimize Smart Combo priorities.',
-          instructions: 'Analyze request logs, identify highest-latency targets, and propose failover tuning.',
-          tools: ['routenex.read_telemetry', 'routenex.update_combo'],
+          id: 'skill_log_analyzer',
+          name: 'Log Root-Cause & Stack-Trace Analyzer',
+          slug: 'log-root-cause-analyzer',
+          description: 'Pinpoints fatal exceptions, memory leaks, and cascading HTTP 500 errors across distributed logs.',
+          instructions: 'Parse multi-service log dumps, correlate request IDs, identify failing microservice dependencies, and summarize root causes with remediation steps.',
+          tools: ['logs.query_traces', 'metrics.read_latency'],
           source: 'builtin',
-          tags: ['performance', 'routing'],
+          tags: ['debugging', 'observability', 'devops'],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'skill_rate_limit_architect',
+          name: 'API Headroom & Rate-Limit Architect',
+          slug: 'api-rate-limit-architect',
+          description: 'Audits upstream 429 backoff rates and optimizes multi-key provider rotation pools.',
+          instructions: 'Monitor provider response codes, calculate reset window headroom, detect quota exhaustion, and adjust Combo failover priorities.',
+          tools: ['routenex.read_telemetry', 'routenex.update_combo', 'routenex.rotate_key'],
+          source: 'builtin',
+          tags: ['performance', 'routing', 'quotas'],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'skill_sql_optimizer',
+          name: 'SQL Query & Schema Optimizer',
+          slug: 'sql-query-optimizer',
+          description: 'Analyzes EXPLAIN QUERY PLAN outputs, missing indexes, and unindexed full-table scans in SQLite/PostgreSQL.',
+          instructions: 'Inspect query execution plans, recommend composite indexes, refactor N+1 subqueries, and calculate estimated I/O speedups.',
+          tools: ['db.explain_query', 'db.list_indexes'],
+          source: 'builtin',
+          tags: ['database', 'sql', 'performance'],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'skill_test_generator',
+          name: 'Test Suite & Edge-Case Generator',
+          slug: 'test-suite-generator',
+          description: 'Generates high-coverage Vitest, Jest, and Playwright unit and integration tests with extreme boundary cases.',
+          instructions: 'Analyze TypeScript source interfaces, generate table-driven unit tests, mock network faults, and test boundary conditions.',
+          tools: ['fs.read_file', 'fs.write_test'],
+          source: 'builtin',
+          tags: ['testing', 'vitest', 'qa'],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'skill_changelog_writer',
+          name: 'Release Changelog & Migration Architect',
+          slug: 'release-changelog-writer',
+          description: 'Synthesizes git commit histories, PR titles, and breaking changes into Keep-a-Changelog semver release notes.',
+          instructions: 'Group commits by feat/fix/perf/breaking, extract pull request references, author migration guides for deprecated APIs, and draft clean markdown release notes.',
+          tools: ['git.read_commits', 'git.read_tags'],
+          source: 'builtin',
+          tags: ['release', 'documentation', 'git'],
           createdAt: new Date().toISOString(),
         },
       ],
@@ -296,7 +340,9 @@ export class AdminStore {
           workers: parsed.workers && parsed.workers.length > 0 ? parsed.workers : [...DEFAULT_SPECIALIST_WORKERS],
           workerRuns: parsed.workerRuns || [],
           workerBriefs: parsed.workerBriefs || [],
-          skills: parsed.skills && parsed.skills.length > 0 ? parsed.skills : defaultSettings.skills,
+          skills: parsed.skills && parsed.skills.length >= 6
+            ? parsed.skills
+            : [...(defaultSettings.skills || []), ...(parsed.skills || []).filter((s: any) => !(defaultSettings.skills || []).some((ds) => ds.slug === s.slug))],
           memories: parsed.memories && parsed.memories.length > 0 ? parsed.memories : defaultSettings.memories,
           lexiPacks: parsed.lexiPacks && parsed.lexiPacks.length > 0 ? parsed.lexiPacks : defaultSettings.lexiPacks,
         };
@@ -631,6 +677,13 @@ export class AdminStore {
     return keys.map((k) => maskSecret(k));
   }
 
+  public hasProviderKey(provider: string): boolean {
+    const pool = this.settings.providerPools?.[provider];
+    if (pool && pool.keys.length > 0) return true;
+    const enc = this.settings.providerKeys[provider];
+    return Boolean(enc && enc.length > 0);
+  }
+
   public setCompression(enabled: boolean): void {
     this.settings.compressionEnabled = enabled;
     this.save();
@@ -646,9 +699,24 @@ export class AdminStore {
   }
 
   public findCombo(slugOrId: string): ComboDefinition | undefined {
+    const normalized = slugOrId.toLowerCase().trim();
+    const bare = normalized.startsWith('combo/') ? normalized.slice(6) : normalized;
     return this.settings.combos?.find(
-      (c) => c.slug.toLowerCase() === slugOrId.toLowerCase() || c.id === slugOrId
+      (c) =>
+        c.slug.toLowerCase() === normalized ||
+        c.slug.toLowerCase() === bare ||
+        c.slug.toLowerCase() === `combo/${bare}` ||
+        c.id === slugOrId ||
+        c.id === bare
     );
+  }
+
+  public upsertProviderKey(provider: string, key: string): void {
+    this.setProviderKey(provider, key);
+  }
+
+  public deleteProviderKey(provider: string): void {
+    this.setProviderKey(provider, undefined);
   }
 
   public createCombo(

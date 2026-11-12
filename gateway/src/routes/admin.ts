@@ -1130,6 +1130,13 @@ export function createAdminRoutes(
     }
   });
 
+  // 25. GET /v1/admin/skills - List seeded NexSkills catalog
+  router.get('/skills', (c) => {
+    return c.json({
+      skills: adminStore.getSkills(),
+    });
+  });
+
   return router;
 }
 

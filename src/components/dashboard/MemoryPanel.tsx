@@ -94,6 +94,9 @@ export default function MemoryPanel() {
       setNewTopic('');
       setNewContent('');
       setShowAddModal(false);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+      }
     }
   };
 
@@ -105,6 +108,9 @@ export default function MemoryPanel() {
       });
     } catch {}
     setMemories((prev) => prev.filter((m) => m.id !== id));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+    }
   };
 
   const filtered = memories.filter(

@@ -497,12 +497,27 @@ export default function ProviderDetailView({
     setNewKeyInput('');
     setNewLabelInput('');
     setIsAddAccountModalOpen(false);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+    }
   };
 
-  const handleDeleteAccount = (accId: string) => {
+  const handleDeleteAccount = async (accId: string) => {
     const updated = accounts.filter((a) => a.id !== accId);
     setAccounts(updated);
     localStorage.setItem(`rn_accounts_${providerId}`, JSON.stringify(updated));
+    if (updated.length === 0) {
+      try {
+        const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
+        await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => null);
+      } catch {}
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+    }
   };
 
   const handleAddCustomModel = (e: React.FormEvent) => {

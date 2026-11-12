@@ -124,8 +124,16 @@ export class MockProviderAdapter implements IProviderAdapter {
   }
 
   private getLastUserText(request: ChatCompletionRequest): string {
-    const userMsg = [...request.messages].reverse().find((m) => m.role === 'user');
-    return userMsg?.content || 'Hello';
+    const userMsg = [...request.messages].reverse().find((m) => m.role === 'user' || m.role === 'developer');
+    if (!userMsg?.content) return 'Hello';
+    if (typeof userMsg.content === 'string') return userMsg.content;
+    if (Array.isArray(userMsg.content)) {
+      return (userMsg.content as any[])
+        .map((p) => (typeof p === 'string' ? p : p?.text || p?.content || ''))
+        .filter(Boolean)
+        .join(' ') || 'Hello';
+    }
+    return String(userMsg.content);
   }
 
   private generateContent(request: ChatCompletionRequest): string {
@@ -170,8 +178,45 @@ export class MockProviderAdapter implements IProviderAdapter {
     const delay = request.model === 'mock/fast' ? 20 : this.latencyMs;
     await sleep(delay);
 
+    const hasToolResult = request.messages.some((m) => m.role === 'tool');
+    const wantsTools = Boolean(request.tools && request.tools.length > 0 && !hasToolResult);
+
+    if (wantsTools) {
+      const firstTool = request.tools![0];
+      const toolName = firstTool.function?.name || 'execute';
+      return {
+        id: `chatcmpl-${nanoid()}`,
+        object: 'chat.completion',
+        created: Math.floor(Date.now() / 1000),
+        model: request.model,
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: null,
+              tool_calls: [
+                {
+                  id: `call_${nanoid(8)}`,
+                  type: 'function',
+                  function: {
+                    name: toolName,
+                    arguments: JSON.stringify({ query: 'status' }),
+                  },
+                },
+              ],
+            },
+            finish_reason: 'tool_calls',
+          },
+        ],
+        usage: { prompt_tokens: 12, completion_tokens: 12, total_tokens: 24 },
+      };
+    }
+
     const reply = this.generateContent(request);
-    const allPromptText = request.messages.map((m) => m.content || '').join(' ');
+    const allPromptText = request.messages
+      .map((m) => (typeof m.content === 'string' ? m.content : Array.isArray(m.content) ? JSON.stringify(m.content) : ''))
+      .join(' ');
     const usage = this.calculateTokens(allPromptText, reply);
 
     return {
