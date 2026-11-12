@@ -159,12 +159,22 @@ export default function ProviderCredentials({
     const handleStateChange = () => {
       loadGatewayConfig();
     };
+    const handleMessage = (event: MessageEvent) => {
+      if (
+        event.data &&
+        (event.data.type === 'routenex:oauth-success' || event.data.type === 'ROUTENEX_OAUTH_SUCCESS')
+      ) {
+        loadGatewayConfig();
+      }
+    };
     if (typeof window !== 'undefined') {
       window.addEventListener('routenex:state-changed', handleStateChange);
+      window.addEventListener('message', handleMessage);
     }
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('routenex:state-changed', handleStateChange);
+        window.removeEventListener('message', handleMessage);
       }
     };
   }, []);

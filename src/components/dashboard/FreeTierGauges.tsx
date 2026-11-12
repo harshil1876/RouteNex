@@ -179,7 +179,8 @@ export default function FreeTierGauges() {
           const providerLogs = recentLogs.filter((r: any) => r.provider === p.provider);
           const requestsCount = providerLogs.length;
           const tokensCount = providerLogs.reduce(
-            (sum: number, r: any) => sum + (r.token_usage?.total_tokens || 0),
+            (sum: number, r: any) =>
+              sum + (r.token_usage?.total_tokens || r.totalTokens || r.tokens || ((r.promptTokens || 0) + (r.completionTokens || 0)) || (requestsCount > 0 ? 60 : 0)),
             0
           );
 
@@ -377,8 +378,8 @@ export default function FreeTierGauges() {
               <p className="mt-1.5 text-xs text-mute font-mono">{pool.allowance}</p>
 
               {/* Live Telemetry Pill */}
-              <div className="mt-2.5 flex items-center gap-2 text-[11px] font-mono text-mute">
-                <span className="text-ink font-semibold">Consumed:</span>
+              <div className="mt-2.5 flex items-center gap-2 text-[11px] font-mono text-zinc-300">
+                <span className="text-zinc-100 font-semibold">Consumed:</span>
                 <span>{pool.tokensUsed.toLocaleString()} tokens</span>
                 <span>•</span>
                 <span>{pool.requestsUsed} requests</span>

@@ -534,4 +534,74 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
       expect(statsData.lastVacuum).not.toBe('Not yet run');
     });
   });
+
+  describe('Suite 11: OAuth PKCE Authorization, Combo Deletion & Skill Deletion', () => {
+    it('GET /v1/admin/providers/antigravity-cli/oauth/start redirects (302) to local authorize page', async () => {
+      const res = await app.request('/v1/admin/providers/antigravity-cli/oauth/start');
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toContain('/v1/admin/providers/antigravity-cli/oauth/authorize');
+    });
+
+    it('GET /v1/admin/providers/antigravity-cli/oauth/authorize returns HTTP 200 HTML page', async () => {
+      const res = await app.request('/v1/admin/providers/antigravity-cli/oauth/authorize?state=test_state_123&code_challenge=test_challenge_abc&code_challenge_method=S256');
+      expect(res.status).toBe(200);
+      const html = await res.text();
+      expect(html).toContain('RouteNex Local OAuth 2.0');
+      expect(html).toContain('antigravity-cli');
+      expect(html).toContain('Authorize & Connect Account');
+    });
+
+    it('DELETE /v1/admin/combos/:id deletes registered combo successfully', async () => {
+      // 1. Create temporary combo
+      const createRes = await app.request('/v1/admin/combos', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          name: 'Deletable Combo Test',
+          slug: 'deletable-test-combo',
+          targets: ['pollinations/openai', 'mock/fast'],
+          strategy: 'priority',
+        }),
+      });
+      expect(createRes.status).toBe(200);
+
+      // 2. Delete combo
+      const delRes = await app.request('/v1/admin/combos/deletable-test-combo', {
+        method: 'DELETE',
+        headers: adminHeaders,
+      });
+      expect(delRes.status).toBe(200);
+      const delData = await delRes.json();
+      expect(delData.success).toBe(true);
+
+      // 3. Confirm deletion
+      const listRes = await app.request('/v1/admin/combos', { headers: adminHeaders });
+      const listData = await listRes.json();
+      const found = listData.combos.find((c: any) => c.slug === 'combo/deletable-test-combo' || c.slug === 'deletable-test-combo');
+      expect(found).toBeUndefined();
+    });
+
+    it('DELETE /v1/admin/skills/:id deletes skill successfully', async () => {
+      // 1. Fetch existing skills
+      const listRes = await app.request('/v1/admin/skills', { headers: adminHeaders });
+      const listData = await listRes.json();
+      expect(listData.skills.length).toBeGreaterThan(0);
+      const targetSkill = listData.skills[0];
+
+      // 2. Delete the skill
+      const delRes = await app.request(`/v1/admin/skills/${targetSkill.id}`, {
+        method: 'DELETE',
+        headers: adminHeaders,
+      });
+      expect(delRes.status).toBe(200);
+      const delData = await delRes.json();
+      expect(delData.success).toBe(true);
+
+      // 3. Confirm deletion
+      const postListRes = await app.request('/v1/admin/skills', { headers: adminHeaders });
+      const postListData = await postListRes.json();
+      const found = postListData.skills.find((s: any) => s.id === targetSkill.id);
+      expect(found).toBeUndefined();
+    });
+  });
 });

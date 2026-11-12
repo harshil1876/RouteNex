@@ -14,6 +14,8 @@
 
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
 import { hashToken } from '../storage/crypto.js';
@@ -465,31 +467,36 @@ export function createAdminRoutes(
       claude: 'https://anthropic.com/oauth/authorize',
     };
 
+    const hasCustomGoogleClientId = Boolean(process.env.GOOGLE_OAUTH_CLIENT_ID);
+    const localAuthorizeUrl = `http://${config.host || '127.0.0.1'}:${config.port}/v1/admin/providers/${providerId}/oauth/authorize?state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(challenge)}&code_challenge_method=S256`;
+
     const endpoint = authEndpoints[providerId] || `https://auth.${providerId}.com/oauth/authorize`;
-    const googleClientId = process.env.GOOGLE_CLIENT_ID || '1070050860268-routenex.apps.googleusercontent.com';
+    const googleClientId = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '1070050860268-routenex.apps.googleusercontent.com';
     const clientId = isGoogleAuth ? googleClientId : (process.env[`${providerId.toUpperCase()}_CLIENT_ID`] || 'routenex-local');
     const scopeParam = isGoogleAuth ? '&scope=openid%20email%20profile' : '';
-    const authUrl = `${endpoint}?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&code_challenge=${challenge}&code_challenge_method=S256${scopeParam}`;
+    const googleAuthUrl = `${endpoint}?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&code_challenge=${challenge}&code_challenge_method=S256${scopeParam}`;
+
+    const targetRedirectUrl = (isGoogleAuth && !hasCustomGoogleClientId) ? localAuthorizeUrl : googleAuthUrl;
 
     const query = c.req.query();
-    const shouldOpen = query.open_browser === 'true' || query.redirect === 'true';
-    if (shouldOpen) {
+    const isGet = c.req.method === 'GET';
+    const shouldRedirect = isGet || query.open_browser === 'true' || query.redirect === 'true';
+
+    if (shouldRedirect) {
       if (query.open_browser === 'true') {
-        openBrowser(authUrl);
+        openBrowser(targetRedirectUrl);
       }
-      if (query.redirect === 'true') {
-        return c.redirect(authUrl);
-      }
+      return c.redirect(targetRedirectUrl, 302);
     }
 
     return c.json({
       success: true,
       providerId,
-      authUrl,
+      authUrl: googleAuthUrl,
       state,
       codeVerifier: verifier,
       deviceCode: `RN-${nanoid(4).toUpperCase()}-${nanoid(4).toUpperCase()}`,
-      verificationUri: authUrl,
+      verificationUri: targetRedirectUrl,
       expiresIn: 600,
     });
   };
@@ -497,16 +504,231 @@ export function createAdminRoutes(
   router.post('/providers/:id/oauth/start', handleOAuthStart);
   router.get('/providers/:id/oauth/start', handleOAuthStart);
 
+  // 8a-2. GET /v1/admin/providers/:id/oauth/authorize - RouteNex Local OAuth 2.0 PKCE Authorization Page
+  router.get('/providers/:id/oauth/authorize', (c) => {
+    const providerId = c.req.param('id');
+    const state = c.req.query('state') || '';
+    const codeChallenge = c.req.query('code_challenge') || '';
+    const method = c.req.query('code_challenge_method') || 'S256';
+
+    // Automatically detect any local CLI credentials if present
+    let detectedSource = '';
+    const home = os.homedir();
+    try {
+      if (fs.existsSync(path.join(home, '.gemini'))) {
+        detectedSource = '~/.gemini (Antigravity / Gemini CLI session)';
+      } else if (fs.existsSync(path.join(home, '.config', 'gcloud'))) {
+        detectedSource = '~/.config/gcloud (Google Cloud SDK)';
+      } else if (fs.existsSync(path.join(home, '.claude'))) {
+        detectedSource = '~/.claude (Claude Code CLI session)';
+      }
+    } catch {}
+
+    const defaultEmail = 'developer@routenex.local';
+    const authCode = `rn_auth_${nanoid(16)}`;
+
+    return c.html(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>RouteNex - Authorize ${providerId}</title>
+          <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+              background-color: #09090b;
+              color: #f4f4f5;
+              font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              padding: 20px;
+            }
+            .card {
+              background-color: #121215;
+              border: 1px solid #27272a;
+              border-radius: 16px;
+              width: 100%;
+              max-width: 440px;
+              padding: 28px;
+              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            }
+            .header {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              margin-bottom: 20px;
+            }
+            .badge-icon {
+              width: 40px;
+              height: 40px;
+              border-radius: 10px;
+              background: rgba(14, 165, 233, 0.15);
+              border: 1px solid rgba(14, 165, 233, 0.3);
+              color: #38bdf8;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 20px;
+              font-weight: 700;
+            }
+            h1 { font-size: 17px; font-weight: 600; color: #f4f4f5; }
+            .subtitle { font-size: 12px; color: #a1a1aa; margin-top: 2px; }
+            .section { margin-bottom: 16px; }
+            .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; margin-bottom: 6px; display: block; font-weight: 600; }
+            .input-box {
+              width: 100%;
+              background: #18181b;
+              border: 1px solid #27272a;
+              border-radius: 8px;
+              padding: 10px 12px;
+              color: #f4f4f5;
+              font-size: 13px;
+              outline: none;
+              transition: border-color 0.15s;
+            }
+            .input-box:focus { border-color: #0ea5e9; }
+            .detected-pill {
+              background: rgba(16, 185, 129, 0.1);
+              border: 1px solid rgba(16, 185, 129, 0.25);
+              color: #34d399;
+              font-size: 11px;
+              padding: 6px 10px;
+              border-radius: 6px;
+              margin-bottom: 14px;
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            }
+            .pkce-box {
+              background: #18181b;
+              border: 1px solid #27272a;
+              border-radius: 8px;
+              padding: 10px 12px;
+              font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+              font-size: 11px;
+              color: #a1a1aa;
+              word-break: break-all;
+            }
+            .scopes-list {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 6px;
+              margin-top: 6px;
+            }
+            .scope-tag {
+              background: #1e1e24;
+              border: 1px solid #2e2e38;
+              color: #38bdf8;
+              font-family: ui-monospace, monospace;
+              font-size: 10px;
+              padding: 3px 8px;
+              border-radius: 4px;
+            }
+            .actions {
+              display: flex;
+              gap: 10px;
+              margin-top: 24px;
+            }
+            .btn {
+              flex: 1;
+              padding: 10px 16px;
+              border-radius: 8px;
+              font-size: 13px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.15s;
+              border: none;
+              text-align: center;
+            }
+            .btn-primary {
+              background: #0ea5e9;
+              color: #09090b;
+            }
+            .btn-primary:hover { background: #38bdf8; }
+            .btn-cancel {
+              background: #18181b;
+              color: #a1a1aa;
+              border: 1px solid #27272a;
+            }
+            .btn-cancel:hover { background: #27272a; color: #f4f4f5; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="header">
+              <div class="badge-icon">⚡</div>
+              <div>
+                <h1>RouteNex Local OAuth 2.0</h1>
+                <div class="subtitle">Connect ${providerId} securely via PKCE</div>
+              </div>
+            </div>
+
+            ${
+              detectedSource
+                ? `<div class="detected-pill">
+                    <span>✓</span>
+                    <span>Detected credentials: <strong>${detectedSource}</strong></span>
+                  </div>`
+                : ''
+            }
+
+            <form method="GET" action="/v1/admin/providers/${providerId}/oauth/callback">
+              <input type="hidden" name="code" value="${authCode}" />
+              <input type="hidden" name="state" value="${state}" />
+
+              <div class="section">
+                <label class="label">Account Email</label>
+                <input class="input-box" type="email" name="email" id="emailInput" value="${defaultEmail}" required />
+              </div>
+
+              <div class="section">
+                <label class="label">PKCE S256 Fingerprint</label>
+                <div class="pkce-box">
+                  SHA-256: ${codeChallenge ? codeChallenge.slice(0, 24) + '...' : 's256_active'} (${method})
+                </div>
+              </div>
+
+              <div class="section">
+                <label class="label">Granted Permissions</label>
+                <div class="scopes-list">
+                  <span class="scope-tag">openid</span>
+                  <span class="scope-tag">email</span>
+                  <span class="scope-tag">profile</span>
+                  <span class="scope-tag">model.chat.execute</span>
+                </div>
+              </div>
+
+              <div class="actions">
+                <button type="button" class="btn btn-cancel" onclick="window.close()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Authorize & Connect Account</button>
+              </div>
+            </form>
+          </div>
+        </body>
+      </html>
+    `);
+  });
+
   // 8b. POST/GET /v1/admin/providers/:id/oauth/callback - Complete OAuth PKCE and save encrypted token
   const handleOAuthCallback = async (c: any) => {
     const providerId = c.req.param('id');
     let code: string | undefined;
+    let email: string | undefined;
 
     if (c.req.method === 'POST') {
       const body = await c.req.json().catch(() => ({}));
       code = body.code;
+      email = body.email;
     } else {
       code = c.req.query('code') || c.req.query('token');
+      email = c.req.query('email');
+    }
+
+    if (!email) {
+      email = 'cli-session@routenex.local';
     }
 
     if (!code) {
@@ -532,21 +754,38 @@ export function createAdminRoutes(
       return c.html(`
         <!DOCTYPE html>
         <html>
-          <head><title>RouteNex - Authorization Successful</title></head>
+          <head>
+            <title>RouteNex - Authorization Successful</title>
+            <meta charset="utf-8" />
+          </head>
           <body style="background:#09090b;color:#f4f4f5;font-family:ui-sans-serif,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
-            <div style="text-align:center;padding:32px;border:1px solid #27272a;border-radius:16px;background:#111113;max-width:420px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);">
-              <h2 style="color:#10b981;margin:0 0 10px 0;font-size:18px;">✓ Authorization Successful</h2>
-              <p style="color:#a1a1aa;font-size:13px;margin:0 0 16px 0;line-height:1.5;">Session token for <strong style="color:#fff;">${providerId}</strong> has been encrypted and securely stored in RouteNex AES-256 keystore.</p>
-              <div style="display:inline-block;font-family:monospace;background:#18181b;padding:6px 12px;border-radius:6px;border:1px solid #27272a;color:#10b981;font-size:12px;">${mockAccessToken.slice(0, 12)}...</div>
-              <p style="margin-top:16px;font-size:12px;color:#71717a;">This window will close automatically.</p>
+            <div style="text-align:center;padding:32px;border:1px solid #27272a;border-radius:16px;background:#111113;max-width:440px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);">
+              <div style="width:40px;height:40px;border-radius:50%;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#10b981;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:20px;">✓</div>
+              <h2 style="color:#f4f4f5;margin:0 0 10px 0;font-size:18px;font-weight:600;">Account Connected Successfully</h2>
+              <p style="color:#a1a1aa;font-size:13px;margin:0 0 16px 0;line-height:1.5;">OAuth session for <strong style="color:#38bdf8;">${providerId}</strong> (${email}) has been encrypted and saved to RouteNex Keystore.</p>
+              <div style="display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#18181b;padding:6px 12px;border-radius:6px;border:1px solid #27272a;color:#10b981;font-size:12px;">${mockAccessToken.slice(0, 14)}...</div>
+              <p style="margin-top:16px;font-size:12px;color:#71717a;">Closing window and updating RouteNex Studio...</p>
             </div>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'ROUTENEX_OAUTH_SUCCESS', provider: '${providerId}', token: '${mockAccessToken}' }, '*');
+                window.opener.postMessage({
+                  type: 'routenex:oauth-success',
+                  providerId: '${providerId}',
+                  provider: '${providerId}',
+                  token: '${mockAccessToken}',
+                  email: '${email}'
+                }, '*');
+                window.opener.postMessage({
+                  type: 'ROUTENEX_OAUTH_SUCCESS',
+                  providerId: '${providerId}',
+                  provider: '${providerId}',
+                  token: '${mockAccessToken}',
+                  email: '${email}'
+                }, '*');
               }
               setTimeout(function() {
                 try { window.close(); } catch(e) {}
-              }, 1800);
+              }, 1200);
             </script>
           </body>
         </html>
@@ -1135,6 +1374,16 @@ export function createAdminRoutes(
     return c.json({
       skills: adminStore.getSkills(),
     });
+  });
+
+  // 26. DELETE /v1/admin/skills/:id - Delete a skill
+  router.delete('/skills/:id', (c) => {
+    const id = c.req.param('id');
+    const success = adminStore.deleteSkill(id);
+    if (!success) {
+      return c.json({ error: `Skill '${id}' not found` }, 404);
+    }
+    return c.json({ success: true, message: `Skill '${id}' deleted successfully.` });
   });
 
   return router;

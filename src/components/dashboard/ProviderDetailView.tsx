@@ -216,17 +216,21 @@ export default function ProviderDetailView({
     const messageListener = (event: MessageEvent) => {
       if (
         event.data &&
-        event.data.type === 'ROUTENEX_OAUTH_SUCCESS' &&
+        (event.data.type === 'ROUTENEX_OAUTH_SUCCESS' || event.data.type === 'routenex:oauth-success') &&
         (event.data.provider === providerId ||
+          event.data.providerId === providerId ||
           event.data.provider === 'antigravity-cli' ||
-          event.data.provider === 'antigravity')
+          event.data.provider === 'antigravity' ||
+          providerId === 'antigravity' ||
+          providerId === 'antigravity-cli')
       ) {
         window.removeEventListener('message', messageListener);
         const token = event.data.token || 'session_token_authorized';
         const masked = token.length > 8 ? `${token.slice(0, 4)}...${token.slice(-4)}` : 'session_active';
+        const label = event.data.email ? `${providerName} (${event.data.email})` : `Google OAuth (${providerName})`;
         const newAcc: AccountRow = {
           id: `acc_oauth_${Date.now()}`,
-          label: `Google OAuth (${providerName})`,
+          label,
           maskedKey: masked,
           status: 'active',
           quotaRemaining: '100% (Free)',
@@ -238,6 +242,9 @@ export default function ProviderDetailView({
         localStorage.setItem(`rn_accounts_${providerId}`, JSON.stringify(nextAccounts));
         setOauthLoading(false);
         setIsAddAccountModalOpen(false);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+        }
         try { popup?.close(); } catch {}
       }
     };
@@ -247,7 +254,33 @@ export default function ProviderDetailView({
     let polls = 0;
     const pollInterval = setInterval(async () => {
       polls++;
-      if (polls > 60 || (popup && popup.closed)) {
+      const isPopupClosed = Boolean(popup && popup.closed);
+      if (polls > 60 || isPopupClosed) {
+        // Final verification check on popup close before clearing
+        try {
+          const finalRes = await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/oauth/status`);
+          if (finalRes.ok) {
+            const finalData = await finalRes.json();
+            if (finalData.authenticated && finalData.token) {
+              const newAcc: AccountRow = {
+                id: `acc_oauth_${Date.now()}`,
+                label: `Google OAuth (${providerName})`,
+                maskedKey: finalData.maskedKey || `${finalData.token.slice(0, 4)}...${finalData.token.slice(-4)}`,
+                status: 'active',
+                quotaRemaining: '100% (Free)',
+                priority: accounts.length + 1,
+                tokenShort: false,
+              };
+              const nextAccounts = [...accounts, newAcc];
+              setAccounts(nextAccounts);
+              localStorage.setItem(`rn_accounts_${providerId}`, JSON.stringify(nextAccounts));
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+              }
+            }
+          }
+        } catch {}
+
         clearInterval(pollInterval);
         window.removeEventListener('message', messageListener);
         setOauthLoading(false);
@@ -275,6 +308,9 @@ export default function ProviderDetailView({
             localStorage.setItem(`rn_accounts_${providerId}`, JSON.stringify(nextAccounts));
             setOauthLoading(false);
             setIsAddAccountModalOpen(false);
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+            }
             try { popup?.close(); } catch {}
           }
         }

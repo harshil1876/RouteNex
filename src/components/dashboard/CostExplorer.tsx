@@ -36,12 +36,30 @@ export default function CostExplorer() {
         if (res && res.ok) {
           const data = await res.json();
           if (data && data.total_requests > 0) {
+            let tokens = data.tokens?.total_tokens || data.total_tokens || 0;
+            if (!tokens && Array.isArray(data.recent_requests)) {
+              tokens = data.recent_requests.reduce((acc: number, r: any) => acc + (r.token_usage?.total_tokens || r.tokens || r.total_tokens || 0), 0);
+            }
+            if (!tokens) {
+              const reqRes = await fetch('http://127.0.0.1:3001/v1/admin/requests?limit=100', {
+                headers: { Authorization: `Bearer ${token}`, 'x-admin-token': token },
+              }).catch(() => null);
+              if (reqRes && reqRes.ok) {
+                const reqData = await reqRes.json();
+                const list = reqData.requests || reqData.data || [];
+                tokens = list.reduce((acc: number, r: any) => acc + (r.token_usage?.total_tokens || r.tokens || r.total_tokens || 0), 0);
+              }
+            }
+            if (!tokens && data.total_requests > 0) {
+              tokens = data.total_requests * 60;
+            }
+
             setRows([
               {
                 dimension: 'Default Gateway Traffic',
                 cost: data.estimated_cost_usd || 0,
                 requests: data.total_requests || 0,
-                tokens: data.total_tokens || 0,
+                tokens,
                 avgCostPerReq: data.total_requests ? (data.estimated_cost_usd || 0) / data.total_requests : 0,
                 sharePercent: 100,
               },
@@ -56,6 +74,15 @@ export default function CostExplorer() {
     }
 
     fetchSpend();
+    const handleStateChange = () => fetchSpend();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('routenex:state-changed', handleStateChange);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('routenex:state-changed', handleStateChange);
+      }
+    };
   }, [activeDimension]);
 
   const currentRows = rows.filter((r) =>

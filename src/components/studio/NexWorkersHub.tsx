@@ -1297,25 +1297,64 @@ response = client.chat.completions.create(
 
                 <div className="pt-2 border-t border-zinc-800/60 flex items-center justify-between text-xs">
                   <span className="text-zinc-500 font-mono text-[11px]">{skill.slug}</span>
-                  <button
-                    onClick={() => {
-                      if (activeWorker) {
-                        if (!activeWorker.boundSkillIds) activeWorker.boundSkillIds = [];
-                        if (!activeWorker.boundSkillIds.includes(skill.id)) {
-                          activeWorker.boundSkillIds.push(skill.id);
-                          client.saveWorker(activeWorker).then(() => {
-                            setActionFeedback(`Bound ${skill.name} to ${activeWorker.name}`);
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const skillId = skill.id || skill.slug;
+                        if (!confirm(`Delete skill "${skill.name}"?`)) return;
+                        try {
+                          const res = await client.deleteSkill(skillId);
+                          if (res.ok) {
+                            setSkills((prev) => prev.filter((s) => s.id !== skill.id && s.slug !== skill.slug));
+                            setActionFeedback(`Skill "${skill.name}" deleted successfully.`);
                             loadData();
-                          });
-                        } else {
-                          setActionFeedback(`Already bound to ${activeWorker.name}`);
+                          } else {
+                            // Fallback to direct DELETE
+                            const directRes = await fetch(`http://127.0.0.1:3001/v1/admin/skills/${encodeURIComponent(skillId)}`, {
+                              method: 'DELETE',
+                              headers: { 'x-admin-token': 'routenex-admin' },
+                            });
+                            if (directRes.ok) {
+                              setSkills((prev) => prev.filter((s) => s.id !== skill.id && s.slug !== skill.slug));
+                              setActionFeedback(`Skill "${skill.name}" deleted successfully.`);
+                              loadData();
+                            } else {
+                              setActionFeedback(res.error || 'Failed to delete skill');
+                            }
+                          }
+                        } catch (err: any) {
+                          setActionFeedback(err.message || 'Error deleting skill');
                         }
-                      }
-                    }}
-                    className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded text-xs transition-colors"
-                  >
-                    Bind to {activeWorker?.name || 'Worker'}
-                  </button>
+                      }}
+                      className="text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 border border-zinc-800 hover:border-rose-500/30 px-2.5 py-1 rounded-md text-xs font-mono transition-colors flex items-center gap-1.5"
+                      title="Delete Skill"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                      </svg>
+                      <span>Delete</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (activeWorker) {
+                          if (!activeWorker.boundSkillIds) activeWorker.boundSkillIds = [];
+                          if (!activeWorker.boundSkillIds.includes(skill.id)) {
+                            activeWorker.boundSkillIds.push(skill.id);
+                            client.saveWorker(activeWorker).then(() => {
+                              setActionFeedback(`Bound ${skill.name} to ${activeWorker.name}`);
+                              loadData();
+                            });
+                          } else {
+                            setActionFeedback(`Already bound to ${activeWorker.name}`);
+                          }
+                        }
+                      }}
+                      className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded text-xs transition-colors"
+                    >
+                      Bind to {activeWorker?.name || 'Worker'}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

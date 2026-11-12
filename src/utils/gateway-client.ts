@@ -124,6 +124,10 @@ export class RouteNexClient {
           const tokensSaved = data.routenex?.compression?.estimated_tokens_saved || Math.round(estPromptTokens * 0.35);
           const compressedTokens = Math.max(8, estPromptTokens - tokensSaved);
           
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+          }
+
           return {
             requestId: data.id || `rn-pulse-${Date.now()}`,
             ingressModel: requestedModel,
@@ -133,8 +137,8 @@ export class RouteNexClient {
             reductionPercent: Math.round((tokensSaved / estPromptTokens) * 100),
             stagesPassed: ['Guard: Code/URL Lock', 'Stage 1: Structural Trim', 'Stage 2: LogPrune', 'Stage 4: LexiPack Condenser'],
             selectedPolicy: requestedModel.includes(':') ? requestedModel.split(':')[1] : 'latency-nitro',
-            selectedProvider: data.routenex?.provider || 'groq',
-            selectedModel: data.routenex?.model_used || 'groq/llama-3.3-70b-versatile',
+            selectedProvider: data.routenex?.provider || 'pollinations',
+            selectedModel: data.routenex?.model_used || 'pollinations/openai',
             latencyMs: data.routenex?.latency_ms || Math.floor(Math.random() * 80 + 110),
             costUsd: data.routenex?.cost_estimate?.total_usd || 0.000012,
             status: 'success',
@@ -151,12 +155,12 @@ export class RouteNexClient {
     const isNitro = requestedModel.includes('nitro') || requestedModel.includes('fast');
     const isFree = requestedModel.includes('free');
 
-    const provider = isNitro ? 'groq' : isFree ? 'pollinations' : 'anthropic';
-    const resolvedModel = isNitro
-      ? 'groq/llama-3.3-70b-versatile'
-      : isFree
-      ? 'pollinations/openai'
-      : 'anthropic/claude-3-5-sonnet';
+    const provider = 'pollinations';
+    const resolvedModel = 'pollinations/openai';
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+    }
 
     return {
       requestId: `rn-sim-${Math.random().toString(36).substring(2, 9)}`,
@@ -554,6 +558,23 @@ export class RouteNexClient {
       });
       const parsed = await safeParseResponse(res);
       return { ok: parsed.ok, skill: parsed.data?.skill, error: parsed.error };
+    } catch (err: any) {
+      return { ok: false, error: err.message };
+    }
+  }
+
+  public async deleteSkill(skillId: string): Promise<{ ok: boolean; error?: string }> {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'routenex-admin' : 'routenex-admin';
+      const res = await fetch(`${this.baseUrl}/v1/admin/skills/${encodeURIComponent(skillId)}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'x-admin-token': token,
+        },
+      });
+      const parsed = await safeParseResponse(res);
+      return { ok: parsed.ok, error: parsed.error };
     } catch (err: any) {
       return { ok: false, error: err.message };
     }

@@ -775,8 +775,13 @@ export class AdminStore {
   public deleteCombo(idOrSlug: string): boolean {
     if (!this.settings.combos) return false;
     const initialLen = this.settings.combos.length;
+    const clean = idOrSlug.replace(/^combo\//, '').toLowerCase().trim();
     this.settings.combos = this.settings.combos.filter(
-      (c) => c.id !== idOrSlug && c.slug !== idOrSlug
+      (c) =>
+        c.id !== idOrSlug &&
+        c.slug !== idOrSlug &&
+        c.slug.toLowerCase().trim() !== clean &&
+        c.slug.toLowerCase().trim() !== `combo/${clean}`
     );
     const changed = this.settings.combos.length !== initialLen;
     if (changed) this.save();
@@ -1001,8 +1006,9 @@ export class AdminStore {
   public deleteSkill(idOrSlug: string): boolean {
     if (!this.settings.skills) return false;
     const initialLen = this.settings.skills.length;
+    const clean = idOrSlug.toLowerCase().trim();
     this.settings.skills = this.settings.skills.filter(
-      (s) => s.id !== idOrSlug && s.slug !== idOrSlug
+      (s) => s.id !== idOrSlug && s.slug.toLowerCase().trim() !== clean
     );
     const changed = this.settings.skills.length !== initialLen;
     if (changed) this.save();

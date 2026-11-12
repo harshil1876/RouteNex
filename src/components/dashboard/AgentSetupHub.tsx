@@ -311,10 +311,13 @@ export default function AgentSetupHub() {
               </div>
 
               {syncMessage && (
-                <div className={`p-2.5 rounded text-xs font-mono ${
-                  syncStatus === 'success' ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-800' : 'bg-red-950/40 text-red-300 border border-red-800'
+                <div className={`text-xs font-mono px-3.5 py-2.5 rounded-lg flex items-center justify-between ${
+                  syncStatus !== 'error' ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border border-red-500/30 bg-red-500/10 text-red-300'
                 }`}>
-                  {syncMessage}
+                  <span>{syncMessage}</span>
+                  {syncStatus !== 'error' && (
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-semibold">Active</span>
+                  )}
                 </div>
               )}
             </div>
@@ -359,9 +362,13 @@ export default function AgentSetupHub() {
               </div>
             </div>
 
-            <div className="p-3 rounded bg-neutral-50 dark:bg-neutral-900 border border-hairline text-xs text-mute space-y-1">
-              <div>💡 <strong>Note on ANTHROPIC_BASE_URL:</strong> Claude Code automatically appends <code className="font-mono text-ink">/v1/messages</code>. Leaving the base URL as strictly <code className="font-mono text-ink">http://127.0.0.1:3001</code> guarantees reliable routing without URL doubling.</div>
-              <div>⚡ <strong>CLI Shortcut:</strong> You can also run <code className="font-mono text-ink">routenex setup-claude</code> from your terminal to sync this configuration instantly.</div>
+            <div className="p-3.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 leading-relaxed space-y-2">
+              <div>
+                <span className="text-sky-400 font-semibold">Note on ANTHROPIC_BASE_URL:</span> Claude Code automatically appends <code className="bg-zinc-800 text-zinc-100 px-1.5 py-0.5 rounded font-mono">/v1/messages</code>. Leaving the base URL as strictly <code className="bg-zinc-800 text-zinc-100 px-1.5 py-0.5 rounded font-mono">http://127.0.0.1:3001</code> guarantees reliable routing without URL doubling.
+              </div>
+              <div>
+                <span className="text-sky-400 font-semibold">CLI Shortcut:</span> You can also run <code className="bg-zinc-800 text-zinc-100 px-1.5 py-0.5 rounded font-mono">routenex setup-claude</code> from your terminal to sync this configuration instantly.
+              </div>
             </div>
           </div>
         )}

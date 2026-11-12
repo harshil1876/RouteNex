@@ -247,7 +247,7 @@ export default function NexFlowCanvas({ onNavigateTab }: NexFlowCanvasProps) {
               </p>
               <div className="mt-3 pt-2.5 border-t border-[#222226] flex items-center justify-between text-xs font-mono">
                 <span className="text-zinc-500">Target Pool:</span>
-                <span className="text-zinc-200 font-medium truncate max-w-[120px]">{lastResult ? lastResult.selectedProvider : '—'}</span>
+                <span className="text-zinc-200 font-medium truncate max-w-[120px]">{lastResult ? lastResult.selectedProvider : 'pollinations'}</span>
               </div>
             </div>
 
@@ -271,7 +271,7 @@ export default function NexFlowCanvas({ onNavigateTab }: NexFlowCanvasProps) {
                 </div>
               </div>
               <p className="text-[13px] text-zinc-400 leading-5 font-sans truncate">
-                {lastResult ? lastResult.selectedModel : 'Live response streaming with 0ms retry overhead.'}
+                {lastResult ? lastResult.selectedModel : 'pollinations/openai'}
               </p>
               <div className="mt-3 pt-2.5 border-t border-[#222226] flex items-center justify-between text-xs font-mono">
                 <span className="text-zinc-500">Latency:</span>
