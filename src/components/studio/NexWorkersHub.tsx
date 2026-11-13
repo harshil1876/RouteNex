@@ -1306,17 +1306,21 @@ response = client.chat.completions.create(
                         try {
                           const res = await client.deleteSkill(skillId);
                           if (res.ok) {
-                            setSkills((prev) => prev.filter((s) => s.id !== skill.id && s.slug !== skill.slug));
+                            setSkills((prev) => prev.filter((s) => s.id !== skill.id && s.slug !== skill.slug && s.id !== skillId && s.slug !== skillId));
                             setActionFeedback(`Skill "${skill.name}" deleted successfully.`);
                             loadData();
                           } else {
                             // Fallback to direct DELETE
+                            const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'routenex-admin' : 'routenex-admin';
                             const directRes = await fetch(`http://127.0.0.1:3001/v1/admin/skills/${encodeURIComponent(skillId)}`, {
                               method: 'DELETE',
-                              headers: { 'x-admin-token': 'routenex-admin' },
+                              headers: {
+                                Authorization: `Bearer ${token}`,
+                                'x-admin-token': token,
+                              },
                             });
                             if (directRes.ok) {
-                              setSkills((prev) => prev.filter((s) => s.id !== skill.id && s.slug !== skill.slug));
+                              setSkills((prev) => prev.filter((s) => s.id !== skill.id && s.slug !== skill.slug && s.id !== skillId && s.slug !== skillId));
                               setActionFeedback(`Skill "${skill.name}" deleted successfully.`);
                               loadData();
                             } else {
@@ -1327,7 +1331,7 @@ response = client.chat.completions.create(
                           setActionFeedback(err.message || 'Error deleting skill');
                         }
                       }}
-                      className="text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 border border-zinc-800 hover:border-rose-500/30 px-2.5 py-1 rounded-md text-xs font-mono transition-colors flex items-center gap-1.5"
+                      className="text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 border border-zinc-800 hover:border-rose-500/30 px-2.5 py-1 rounded-md text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
                       title="Delete Skill"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

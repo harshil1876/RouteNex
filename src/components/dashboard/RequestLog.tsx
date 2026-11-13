@@ -25,7 +25,8 @@ export interface RequestItem {
 export default function RequestLog() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [isRecording, setIsRecording] = useState(true);
-  const [pipelineLogs, setPipelineLogs] = useState(false);
+  const [expandedMode, setExpandedMode] = useState<'standard' | 'expanded'>('standard');
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [searchFilter, setSearchFilter] = useState('');
   const [correlationFilter, setCorrelationFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -205,14 +206,14 @@ export default function RequestLog() {
 
           <button
             type="button"
-            onClick={() => setPipelineLogs(!pipelineLogs)}
-            className={`px-3 py-1.5 rounded-full border text-xs font-medium transition ${
-              pipelineLogs
-                ? 'bg-zinc-100 text-zinc-950 border-zinc-200'
+            onClick={() => setExpandedMode(expandedMode === 'standard' ? 'expanded' : 'standard')}
+            className={`px-3 py-1.5 rounded-full border text-xs font-medium transition cursor-pointer ${
+              expandedMode === 'expanded'
+                ? 'bg-zinc-100 text-zinc-950 border-zinc-200 shadow-xs'
                 : 'bg-[#111113] text-zinc-400 border-[#222226] hover:text-zinc-200'
             }`}
           >
-            Pipeline Logs: {pipelineLogs ? 'Expanded' : 'Standard'}
+            Pipeline Logs: {expandedMode === 'expanded' ? 'Expanded (All Traces)' : 'Standard'}
           </button>
         </div>
       </div>
@@ -319,49 +320,117 @@ export default function RequestLog() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#222226]">
-                {filtered.map((r) => (
-                  <tr
-                    key={r.id}
-                    onClick={() => setSelectedRequest(r)}
-                    className="hover:bg-zinc-800/40 transition-colors cursor-pointer"
-                  >
-                    {columns.status && (
-                      <td className="py-2.5 px-3">
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                            r.isSuccess
-                              ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
-                              : 'bg-red-500/10 border border-red-500/30 text-red-400'
-                          }`}
-                        >
-                          {r.statusCode}
-                        </span>
-                      </td>
-                    )}
-                    {columns.cacheSource && (
-                      <td className="py-2.5 px-3">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
-                          {r.cacheSource}
-                        </span>
-                      </td>
-                    )}
-                    {columns.model && <td className="py-2.5 px-3 text-zinc-100 font-medium">{r.model}</td>}
-                    {columns.requested && <td className="py-2.5 px-3 text-zinc-500">{r.requestedModel}</td>}
-                    {columns.provider && <td className="py-2.5 px-3 text-zinc-400">{r.provider}</td>}
-                    {columns.protocol && <td className="py-2.5 px-3 text-zinc-500">{r.protocol}</td>}
-                    {columns.account && <td className="py-2.5 px-3 text-zinc-500">{r.account}</td>}
-                    {columns.apiKey && <td className="py-2.5 px-3 text-zinc-500">{r.apiKeyMasked}</td>}
-                    {columns.combo && <td className="py-2.5 px-3 text-zinc-300">{r.combo}</td>}
-                    {columns.tokens && (
-                      <td className="py-2.5 px-3 text-right text-zinc-400">
-                        {r.tokens.total.toLocaleString()}
-                      </td>
-                    )}
-                    {columns.tps && <td className="py-2.5 px-3 text-right text-emerald-400">{r.tps}</td>}
-                    {columns.duration && <td className="py-2.5 px-3 text-right text-zinc-300">{r.latencyMs}ms</td>}
-                    {columns.time && <td className="py-2.5 px-3 text-right text-zinc-500">{r.time}</td>}
-                  </tr>
-                ))}
+                {filtered.map((r) => {
+                  const isRowExpanded = expandedMode === 'expanded' || expandedRowId === r.id;
+                  return (
+                    <React.Fragment key={r.id}>
+                      <tr
+                        onClick={() => setExpandedRowId(expandedRowId === r.id ? null : r.id)}
+                        className={`hover:bg-zinc-800/40 transition-colors cursor-pointer ${
+                          isRowExpanded ? 'bg-zinc-800/25' : ''
+                        }`}
+                      >
+                        {columns.status && (
+                          <td className="py-2.5 px-3">
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                r.isSuccess
+                                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                                  : 'bg-red-500/10 border border-red-500/30 text-red-400'
+                              }`}
+                            >
+                              {r.statusCode}
+                            </span>
+                          </td>
+                        )}
+                        {columns.cacheSource && (
+                          <td className="py-2.5 px-3">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
+                              {r.cacheSource}
+                            </span>
+                          </td>
+                        )}
+                        {columns.model && <td className="py-2.5 px-3 text-zinc-100 font-medium">{r.model}</td>}
+                        {columns.requested && <td className="py-2.5 px-3 text-zinc-500">{r.requestedModel}</td>}
+                        {columns.provider && <td className="py-2.5 px-3 text-zinc-400">{r.provider}</td>}
+                        {columns.protocol && <td className="py-2.5 px-3 text-zinc-500">{r.protocol}</td>}
+                        {columns.account && <td className="py-2.5 px-3 text-zinc-500">{r.account}</td>}
+                        {columns.apiKey && <td className="py-2.5 px-3 text-zinc-500">{r.apiKeyMasked}</td>}
+                        {columns.combo && <td className="py-2.5 px-3 text-zinc-300">{r.combo}</td>}
+                        {columns.tokens && (
+                          <td className="py-2.5 px-3 text-right text-zinc-400">
+                            {r.tokens.total.toLocaleString()}
+                          </td>
+                        )}
+                        {columns.tps && <td className="py-2.5 px-3 text-right text-emerald-400">{r.tps}</td>}
+                        {columns.duration && <td className="py-2.5 px-3 text-right text-zinc-300">{r.latencyMs}ms</td>}
+                        {columns.time && <td className="py-2.5 px-3 text-right text-zinc-500">{r.time}</td>}
+                      </tr>
+                      {isRowExpanded && (
+                        <tr className="bg-[#09090c] border-b border-[#222226]">
+                          <td colSpan={14} className="p-3.5">
+                            <div className="rounded-lg bg-[#121215] border border-[#27272a] p-4 text-xs font-mono space-y-3 shadow-inner">
+                              <div className="flex items-center justify-between border-b border-[#27272a] pb-2 text-[11px]">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                                  <span className="text-sky-400 font-semibold tracking-wider uppercase font-sans">Pipeline & Telemetry Breakdown</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-zinc-500 font-mono">{r.id}</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedRequest(r);
+                                    }}
+                                    className="text-[10px] px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition cursor-pointer"
+                                  >
+                                    Raw JSON
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                {/* Ingress & Protocol */}
+                                <div className="space-y-1.5 p-3 rounded-lg bg-[#09090b] border border-[#222226]">
+                                  <span className="text-zinc-500 block text-[10px] uppercase tracking-wider font-semibold">Ingress & Protocol</span>
+                                  <div><span className="text-zinc-500">Endpoint: </span><span className="text-zinc-200">{r.protocol?.includes('messages') ? '/v1/messages' : '/v1/chat/completions'}</span></div>
+                                  <div><span className="text-zinc-500">Timestamp: </span><span className="text-zinc-300">{r.time}</span></div>
+                                  <div><span className="text-zinc-500">Request ID: </span><span className="text-sky-300 truncate block font-mono text-[11px]">{r.id}</span></div>
+                                </div>
+
+                                {/* Token Optimizer */}
+                                <div className="space-y-1.5 p-3 rounded-lg bg-[#09090b] border border-[#222226]">
+                                  <span className="text-zinc-500 block text-[10px] uppercase tracking-wider font-semibold">Token Optimizer</span>
+                                  <div><span className="text-zinc-500">Prompt: </span><span className="text-zinc-200">{r.tokens.prompt.toLocaleString()} tokens</span></div>
+                                  <div><span className="text-zinc-500">Completion: </span><span className="text-zinc-200">{r.tokens.completion.toLocaleString()} tokens</span></div>
+                                  <div><span className="text-zinc-500">Total Tokens: </span><span className="text-zinc-100 font-semibold">{r.tokens.total.toLocaleString()}</span></div>
+                                  <div><span className="text-zinc-500">Compression: </span><span className="text-emerald-400">LexiPack Active</span></div>
+                                </div>
+
+                                {/* Route Resolution */}
+                                <div className="space-y-1.5 p-3 rounded-lg bg-[#09090b] border border-[#222226]">
+                                  <span className="text-zinc-500 block text-[10px] uppercase tracking-wider font-semibold">Route Resolution</span>
+                                  <div><span className="text-zinc-500">Provider: </span><span className="text-zinc-200">{r.provider}</span></div>
+                                  <div><span className="text-zinc-500">Model Used: </span><span className="text-zinc-100 font-semibold">{r.model}</span></div>
+                                  <div><span className="text-zinc-500">Strategy / Reason: </span><span className="text-sky-300 truncate block">{r.combo || 'priority-nitro'}</span></div>
+                                </div>
+
+                                {/* Performance & Cost */}
+                                <div className="space-y-1.5 p-3 rounded-lg bg-[#09090b] border border-[#222226]">
+                                  <span className="text-zinc-500 block text-[10px] uppercase tracking-wider font-semibold">Performance & Cost</span>
+                                  <div><span className="text-zinc-500">Latency: </span><span className="text-emerald-400 font-semibold">{r.latencyMs}ms</span></div>
+                                  <div><span className="text-zinc-500">Throughput: </span><span className="text-emerald-400">{r.tps} TPS</span></div>
+                                  <div><span className="text-zinc-500">HTTP Status: </span><span className={r.isSuccess ? 'text-emerald-400' : 'text-red-400'}>{r.statusCode} {r.isSuccess ? 'OK' : 'Error'}</span></div>
+                                  <div><span className="text-zinc-500">Cost: </span><span className="text-zinc-300">${(r.costUsd || 0).toFixed(6)}</span></div>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

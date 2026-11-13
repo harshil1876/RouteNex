@@ -241,8 +241,18 @@ export default function StorageSettings() {
         <div className="p-5 rounded-xl bg-[#121622] border border-[#222738] flex flex-wrap gap-2.5">
           <button
             type="button"
+            onClick={() => runMaintenance('Export Backup')}
+            className="px-3 py-2 rounded-lg bg-[#181d2c] hover:bg-[#20273c] border border-sky-500/40 text-xs font-mono text-sky-300 flex items-center gap-1.5 cursor-pointer transition shadow-xs"
+          >
+            <svg className="w-3.5 h-3.5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            <span>Export Backup</span>
+          </button>
+          <button
+            type="button"
             onClick={() => runMaintenance('Manual VACUUM')}
-            className="px-3 py-2 rounded-lg bg-[#181d2c] hover:bg-[#20273c] border border-[#262f44] text-xs font-mono text-white"
+            className="px-3 py-2 rounded-lg bg-[#181d2c] hover:bg-[#20273c] border border-[#262f44] text-xs font-mono text-white cursor-pointer transition"
           >
             Manual VACUUM
           </button>

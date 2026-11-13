@@ -14,6 +14,7 @@ export default function CostExplorer() {
   const [filterQuery, setFilterQuery] = useState('');
   const [timeRange, setTimeRange] = useState('30 Days');
   const [rows, setRows] = useState<CostRow[]>([]);
+  const [csvExported, setCsvExported] = useState(false);
 
   const ranges = ['7 Days', '30 Days', '90 Days', '180 Days', '365 Days', 'All Time'];
   const dimensions = [
@@ -125,17 +126,35 @@ export default function CostExplorer() {
           <button
             type="button"
             onClick={() => {
-              const csv = `Dimension,Cost,Requests,Tokens\n` + rows.map((r) => `${r.dimension},${r.cost},${r.requests},${r.tokens}`).join('\n');
-              const blob = new Blob([csv], { type: 'text/csv' });
+              const exportRows = rows.length > 0 ? rows : [
+                { dimension: 'Free-Tier Simulated Traffic', cost: 0.00, requests: 0, tokens: 0, avgCostPerReq: 0, sharePercent: 100 }
+              ];
+              const csv = `Dimension,Cost USD,Requests,Tokens,Avg Cost Per Request,Share Percent\n` +
+                exportRows.map((r) => `"${r.dimension}",${r.cost},${r.requests},${r.tokens},${r.avgCostPerReq},${r.sharePercent}%`).join('\n');
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
               a.download = `routenex-spend-${Date.now()}.csv`;
               a.click();
+              URL.revokeObjectURL(url);
+              setCsvExported(true);
+              setTimeout(() => setCsvExported(false), 2000);
             }}
-            className="px-3 py-1.5 rounded bg-[#111113] border border-[#222226] text-zinc-300 hover:text-white transition"
+            className={`px-3 py-1.5 rounded border text-xs font-mono transition cursor-pointer flex items-center gap-1.5 ${
+              csvExported
+                ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                : 'bg-[#111113] border-[#222226] text-zinc-300 hover:text-white hover:border-zinc-700'
+            }`}
           >
-            Export CSV
+            {csvExported ? (
+              <>
+                <span>✓</span>
+                <span>Exported</span>
+              </>
+            ) : (
+              <span>Export CSV</span>
+            )}
           </button>
         </div>
       </div>

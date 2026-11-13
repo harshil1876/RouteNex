@@ -214,6 +214,17 @@ export class AdminStore {
       workerBriefs: [],
       skills: [
         {
+          id: 'skill_code_review',
+          name: 'PR Code Review & Security Audit',
+          slug: 'code-review-audit',
+          description: 'Comprehensive static review for secrets, auth bypasses, and SQL injection.',
+          instructions: 'Examine diffs line-by-line. Flag secrets, unvalidated user input, OWASP vulnerabilities, and SQL injection flaws.',
+          tools: ['github.read_diff', 'github.post_review', 'security.scan_secrets'],
+          source: 'builtin',
+          tags: ['security', 'github', 'audit'],
+          createdAt: new Date().toISOString(),
+        },
+        {
           id: 'skill_pr_security',
           name: 'PR Security & Code Auditor',
           slug: 'pr-security-audit',
@@ -340,9 +351,9 @@ export class AdminStore {
           workers: parsed.workers && parsed.workers.length > 0 ? parsed.workers : [...DEFAULT_SPECIALIST_WORKERS],
           workerRuns: parsed.workerRuns || [],
           workerBriefs: parsed.workerBriefs || [],
-          skills: parsed.skills && parsed.skills.length >= 6
+          skills: parsed.skills && Array.isArray(parsed.skills)
             ? parsed.skills
-            : [...(defaultSettings.skills || []), ...(parsed.skills || []).filter((s: any) => !(defaultSettings.skills || []).some((ds) => ds.slug === s.slug))],
+            : defaultSettings.skills,
           memories: parsed.memories && parsed.memories.length > 0 ? parsed.memories : defaultSettings.memories,
           lexiPacks: parsed.lexiPacks && parsed.lexiPacks.length > 0 ? parsed.lexiPacks : defaultSettings.lexiPacks,
         };
@@ -986,6 +997,41 @@ export class AdminStore {
     return this.settings.skills || [];
   }
 
+  public getWorkersOverview(): {
+    workers: NexWorker[];
+    runs: WorkerRun[];
+    briefs: WorkerBrief[];
+    skills: NexSkill[];
+    summary: {
+      activeWorkers: number;
+      pendingApprovals: number;
+      totalTokensSaved: number;
+      totalSpendTodayUsd: number;
+    };
+  } {
+    const workers = this.getWorkers();
+    const runs = this.getWorkerRuns();
+    const briefs = this.getWorkerBriefs();
+    const skills = this.getSkills();
+    const activeWorkers = workers.filter((w) => w.status !== 'error').length;
+    const pendingApprovals = runs.filter((r) => r.status === 'awaiting_approval').length;
+    const totalTokensSaved = runs.reduce((acc, r) => acc + (r.totalTokensSaved || 0), 0);
+    const totalSpendTodayUsd = workers.reduce((acc, w) => acc + (w.budget.spentTodayUsd || 0), 0);
+
+    return {
+      workers,
+      runs,
+      briefs,
+      skills,
+      summary: {
+        activeWorkers,
+        pendingApprovals,
+        totalTokensSaved,
+        totalSpendTodayUsd: Math.round(totalSpendTodayUsd * 10000) / 10000,
+      },
+    };
+  }
+
   public findSkill(idOrSlug: string): NexSkill | undefined {
     return (this.settings.skills || []).find(
       (s) => s.id === idOrSlug || s.slug === idOrSlug
@@ -1004,12 +1050,24 @@ export class AdminStore {
   }
 
   public deleteSkill(idOrSlug: string): boolean {
-    if (!this.settings.skills) return false;
-    const initialLen = this.settings.skills.length;
+    if (!this.settings.skills || !Array.isArray(this.settings.skills)) {
+      this.settings.skills = [...(this.getSkills() || [])];
+    }
     const clean = idOrSlug.toLowerCase().trim();
-    this.settings.skills = this.settings.skills.filter(
-      (s) => s.id !== idOrSlug && s.slug.toLowerCase().trim() !== clean
-    );
+    const cleanNoPrefix = clean.replace(/^(skill[_-]|skill\/)/, '');
+    const initialLen = this.settings.skills.length;
+    this.settings.skills = this.settings.skills.filter((s) => {
+      const sId = (s.id || '').toLowerCase().trim();
+      const sSlug = (s.slug || '').toLowerCase().trim();
+      return (
+        s.id !== idOrSlug &&
+        s.slug !== idOrSlug &&
+        sId !== clean &&
+        sSlug !== clean &&
+        sSlug !== cleanNoPrefix &&
+        sId !== cleanNoPrefix
+      );
+    });
     const changed = this.settings.skills.length !== initialLen;
     if (changed) this.save();
     return changed;

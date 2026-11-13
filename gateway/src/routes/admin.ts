@@ -1243,28 +1243,7 @@ export function createAdminRoutes(
 
   // 17. GET /v1/admin/workers - List workers, runs, briefs, skills, summary telemetry
   router.get('/workers', (c) => {
-    const workers = adminStore.getWorkers();
-    const runs = adminStore.getWorkerRuns();
-    const briefs = adminStore.getWorkerBriefs();
-    const skills = adminStore.getSkills();
-
-    const activeWorkers = workers.filter((w) => w.status !== 'error').length;
-    const pendingApprovals = runs.filter((r) => r.status === 'awaiting_approval').length;
-    const totalTokensSaved = runs.reduce((acc, r) => acc + (r.totalTokensSaved || 0), 0);
-    const totalSpendTodayUsd = workers.reduce((acc, w) => acc + (w.budget.spentTodayUsd || 0), 0);
-
-    return c.json({
-      workers,
-      runs,
-      briefs,
-      skills,
-      summary: {
-        activeWorkers,
-        pendingApprovals,
-        totalTokensSaved,
-        totalSpendTodayUsd: Math.round(totalSpendTodayUsd * 10000) / 10000,
-      },
-    });
+    return c.json(adminStore.getWorkersOverview());
   });
 
   // 18. POST /v1/admin/workers - Create or update a worker

@@ -399,11 +399,45 @@ export default function FreeTierGauges() {
                   ))}
                 </div>
               </div>
+
+              {/* Live Consumption Progress Bar */}
+              <div className="mt-3.5 space-y-1">
+                <div className="flex justify-between text-[10px] font-mono text-zinc-400">
+                  <span>Usage Headroom</span>
+                  <span className="text-zinc-300">
+                    {pool.tokensUsed > 0
+                      ? `${((pool.tokensUsed / pool.monthlyTokens) * 100).toFixed(2)}% used`
+                      : '< 0.01% consumed'}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-sky-500 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.max(pool.tokensUsed > 0 ? 3 : 1, Math.min(100, (pool.tokensUsed / pool.monthlyTokens) * 100))}%` }}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center justify-between pt-3 border-t border-hairline text-xs font-mono">
-              <span className="text-mute">Monthly Impact:</span>
-              <span className="font-semibold text-ink">{pool.monthlyTokensFormatted}</span>
+              <span className="text-xs font-medium text-zinc-300">Estimated Monthly Impact & Capacity</span>
+              <span className="text-xs font-mono font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                {pool.id === 'mistral-free'
+                  ? '~1.0B tokens/mo ($150/mo value)'
+                  : pool.id === 'pollinations'
+                  ? '~500M tokens/mo ($75/mo value)'
+                  : pool.id === 'gemini-free'
+                  ? '~60M tokens/mo ($45/mo value)'
+                  : pool.id === 'siliconflow'
+                  ? '~50M tokens/mo ($35/mo value)'
+                  : pool.id === 'cerebras' || pool.id === 'groq'
+                  ? '~30M tokens/mo ($25/mo value)'
+                  : pool.id === 'duckduckgo'
+                  ? '~20M tokens/mo ($15/mo value)'
+                  : pool.id === 'deepseek-trial'
+                  ? '5M tokens signup ($8 value)'
+                  : `${pool.monthlyTokensFormatted} ($20/mo value)`}
+              </span>
             </div>
           </div>
         ))}

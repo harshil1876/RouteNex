@@ -150,12 +150,12 @@ export default function AgentSetupHub() {
             </span>
           </div>
           <p className="mt-1 text-xs text-mute max-w-2xl leading-relaxed">
-            RouteNex functions as a 100% drop-in proxy for all modern developer coding agents. Configure your agent’s Base URL to <code className="text-ink font-mono bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">http://127.0.0.1:3001</code> to unlock zero-cost free-tier token pools, multi-provider failover, and local telemetry.
+            RouteNex functions as a 100% drop-in proxy for all modern developer coding agents. Configure your agent’s Base URL to <code className="text-sky-300 bg-sky-500/10 border border-sky-500/30 font-mono px-1.5 py-0.5 rounded">http://127.0.0.1:3001</code> to unlock zero-cost free-tier token pools, multi-provider failover, and local telemetry.
           </p>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-mono">
-          <span className="px-2.5 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-mute">Port: 3001</span>
+          <span className="text-zinc-100 bg-zinc-800 border border-zinc-700 font-mono text-xs px-2.5 py-1 rounded-md">Port: 3001</span>
           <span className="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
             CORS Allowed
           </span>
@@ -387,7 +387,7 @@ export default function AgentSetupHub() {
               <div className="p-4 rounded-lg bg-canvas border border-hairline space-y-2">
                 <span className="font-semibold text-ink block">Step 1: Configure Custom OpenAI Key in Cursor</span>
                 <ol className="list-decimal list-inside space-y-1 text-body">
-                  <li>Open Cursor Settings <kbd className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 font-mono text-[10px]">Ctrl+,</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 font-mono text-[10px]">Cmd+,</kbd></li>
+                  <li>Open Cursor Settings <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-100 font-mono text-[10px]">Ctrl+,</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-100 font-mono text-[10px]">Cmd+,</kbd></li>
                   <li>Navigate to <strong>Cursor Settings ➔ Models</strong></li>
                   <li>Enable <strong>OpenAI API Key</strong></li>
                   <li>Click <strong>Override OpenAI Base URL</strong> and enter:</li>
@@ -397,7 +397,7 @@ export default function AgentSetupHub() {
                   <button
                     type="button"
                     onClick={() => copyToClipboard('http://127.0.0.1:3001/v1', 'cursor_base')}
-                    className="text-mute hover:text-white"
+                    className="text-mute hover:text-white cursor-pointer"
                   >
                     {copiedKey === 'cursor_base' ? '✓ Copied' : 'Copy'}
                   </button>
@@ -415,10 +415,11 @@ export default function AgentSetupHub() {
                       key={m}
                       type="button"
                       onClick={() => copyToClipboard(m, m)}
-                      className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-ink border border-hairline hover:bg-neutral-200 dark:hover:bg-neutral-700 transition"
+                      className="text-zinc-100 bg-zinc-900 border border-zinc-700 hover:border-sky-500/50 hover:text-sky-300 font-mono text-xs px-2.5 py-1 rounded-md cursor-pointer transition flex items-center gap-1.5"
                       title="Click to copy model name"
                     >
-                      {m} {copiedKey === m && '✓'}
+                      <span>{m}</span>
+                      <span className="text-[10px] text-sky-400 font-semibold">{copiedKey === m ? '✓ Copied!' : ''}</span>
                     </button>
                   ))}
                 </div>
@@ -444,19 +445,46 @@ export default function AgentSetupHub() {
                   <span className="font-semibold text-ink">OpenAI Compatible</span>
                 </div>
 
-                <div className="p-3 rounded-lg bg-canvas border border-hairline">
-                  <span className="text-mute block font-mono">Base URL:</span>
-                  <span className="font-semibold text-ink font-mono">http://127.0.0.1:3001/v1</span>
+                <div className="p-3 rounded-lg bg-canvas border border-hairline flex items-center justify-between">
+                  <div>
+                    <span className="text-mute block font-mono">Base URL:</span>
+                    <span className="font-semibold text-zinc-100 font-mono">http://127.0.0.1:3001/v1</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard('http://127.0.0.1:3001/v1', 'cline_base')}
+                    className="text-xs font-mono text-sky-400 hover:text-sky-300 transition cursor-pointer"
+                  >
+                    {copiedKey === 'cline_base' ? '✓ Copied' : 'Copy'}
+                  </button>
                 </div>
 
-                <div className="p-3 rounded-lg bg-canvas border border-hairline">
-                  <span className="text-mute block font-mono">API Key:</span>
-                  <span className="font-semibold text-ink font-mono">rn-local-dev-default</span>
+                <div className="p-3 rounded-lg bg-canvas border border-hairline flex items-center justify-between">
+                  <div>
+                    <span className="text-mute block font-mono">API Key:</span>
+                    <span className="font-semibold text-zinc-100 font-mono">rn-local-dev-default</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard('rn-local-dev-default', 'cline_key')}
+                    className="text-xs font-mono text-sky-400 hover:text-sky-300 transition cursor-pointer"
+                  >
+                    {copiedKey === 'cline_key' ? '✓ Copied' : 'Copy'}
+                  </button>
                 </div>
 
-                <div className="p-3 rounded-lg bg-canvas border border-hairline">
-                  <span className="text-mute block font-mono">Model ID:</span>
-                  <span className="font-semibold text-ink font-mono">combo/coding-power</span>
+                <div className="p-3 rounded-lg bg-canvas border border-hairline flex items-center justify-between">
+                  <div>
+                    <span className="text-mute block font-mono">Model ID:</span>
+                    <span className="font-semibold text-sky-300 font-mono">combo/coding-power</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard('combo/coding-power', 'cline_model')}
+                    className="text-xs font-mono text-sky-400 hover:text-sky-300 transition cursor-pointer"
+                  >
+                    {copiedKey === 'cline_model' ? '✓ Copied' : 'Copy'}
+                  </button>
                 </div>
               </div>
             </div>
@@ -499,14 +527,28 @@ export default function AgentSetupHub() {
         {/* 5. Python SDK */}
         {selectedAgent === 'python' && (
           <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-semibold text-ink">Python Integration (OpenAI SDK)</h4>
-              <p className="mt-1 text-xs text-mute">
-                Drop RouteNex into standard Python AI pipelines (LangChain, LlamaIndex, LiteLLM).
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-ink">Python Integration (OpenAI SDK)</h4>
+                <p className="mt-1 text-xs text-mute">
+                  Drop RouteNex into standard Python AI pipelines (LangChain, LlamaIndex, LiteLLM).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  copyToClipboard(
+                    `from openai import OpenAI\n\nclient = OpenAI(\n    base_url="http://127.0.0.1:3001/v1",\n    api_key="rn-local-dev-default"\n)\n\nresponse = client.chat.completions.create(\n    model="combo/free-unlimited",\n    messages=[{"role": "user", "content": "Hello from RouteNex Python SDK!"}]\n)\n\nprint(response.choices[0].message.content)`,
+                    'python_snippet'
+                  )
+                }
+                className="text-xs font-mono text-sky-400 hover:text-sky-300 transition cursor-pointer"
+              >
+                {copiedKey === 'python_snippet' ? '✓ Copied' : 'Copy Code'}
+              </button>
             </div>
 
-            <pre className="rounded-lg bg-neutral-900 p-4 font-mono text-xs text-neutral-200 overflow-x-auto leading-relaxed">
+            <pre className="rounded-lg bg-neutral-900 p-4 font-mono text-xs text-neutral-200 overflow-x-auto leading-relaxed border border-hairline">
               <code>{`from openai import OpenAI
 
 client = OpenAI(
@@ -527,14 +569,28 @@ print(response.choices[0].message.content)`}</code>
         {/* 6. Node.js / TS */}
         {selectedAgent === 'node' && (
           <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-semibold text-ink">Node.js / TypeScript Integration</h4>
-              <p className="mt-1 text-xs text-mute">
-                Use RouteNex with the official OpenAI Node SDK.
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-ink">Node.js / TypeScript Integration</h4>
+                <p className="mt-1 text-xs text-mute">
+                  Use RouteNex with the official OpenAI Node SDK.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  copyToClipboard(
+                    `import OpenAI from 'openai';\n\nconst openai = new OpenAI({\n  baseURL: 'http://127.0.0.1:3001/v1',\n  apiKey: 'rn-local-dev-default',\n});\n\nasync function main() {\n  const completion = await openai.chat.completions.create({\n    model: 'combo/coding-power',\n    messages: [{ role: 'user', content: 'Explain quantum computing in one sentence.' }],\n  });\n\n  console.log(completion.choices[0].message.content);\n}\n\nmain();`,
+                    'node_snippet'
+                  )
+                }
+                className="text-xs font-mono text-sky-400 hover:text-sky-300 transition cursor-pointer"
+              >
+                {copiedKey === 'node_snippet' ? '✓ Copied' : 'Copy Code'}
+              </button>
             </div>
 
-            <pre className="rounded-lg bg-neutral-900 p-4 font-mono text-xs text-neutral-200 overflow-x-auto leading-relaxed">
+            <pre className="rounded-lg bg-neutral-900 p-4 font-mono text-xs text-neutral-200 overflow-x-auto leading-relaxed border border-hairline">
               <code>{`import OpenAI from 'openai';
 
 const openai = new OpenAI({

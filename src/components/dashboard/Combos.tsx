@@ -278,14 +278,14 @@ export default function Combos() {
             </span>
           </div>
           <p className="mt-1 text-xs text-mute max-w-2xl leading-relaxed">
-            Combos group multiple upstream providers under a single virtual model ID (e.g. <code className="text-ink font-mono bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">combo/free-unlimited</code>). When your primary model hits a rate limit (429) or outage, RouteNex seamlessly redirects requests to the next provider in the chain without interrupting your agent or client.
+            Combos group multiple upstream providers under a single virtual model ID (e.g. <code className="text-sky-300 bg-sky-500/10 border border-sky-500/30 font-mono text-xs px-2 py-0.5 rounded-md">combo/free-unlimited</code>). When your primary model hits a rate limit (429) or outage, RouteNex seamlessly redirects requests to the next provider in the chain without interrupting your agent or client.
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => setShowModal(true)}
-          className="rounded-full bg-zinc-100 hover:bg-white !text-zinc-950 font-semibold px-4 py-2 text-xs border border-zinc-200 shadow-xs transition flex items-center gap-1.5 whitespace-nowrap"
+          className="rounded-full bg-zinc-100 hover:bg-white !text-zinc-950 font-semibold px-4 py-2 text-xs border border-zinc-200 shadow-xs transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
         >
           <span>＋</span> Create Combo
         </button>
@@ -305,11 +305,11 @@ export default function Combos() {
                   <button
                     type="button"
                     onClick={() => copySlug(combo.slug)}
-                    className="inline-flex items-center gap-1 font-mono text-xs px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-ink hover:bg-neutral-200 dark:hover:bg-neutral-700 transition"
+                    className="inline-flex items-center gap-1.5 font-mono text-xs px-2 py-0.5 rounded-md text-sky-300 bg-sky-500/10 border border-sky-500/30 hover:bg-sky-500/20 transition cursor-pointer"
                     title="Click to copy model ID"
                   >
                     <span>{combo.slug}</span>
-                    <span className="text-[10px] text-mute">{copiedSlug === combo.slug ? '✓ Copied' : '📋'}</span>
+                    <span className="text-[10px] text-sky-400 font-semibold">{copiedSlug === combo.slug ? '✓ Copied' : 'Copy'}</span>
                   </button>
                 </div>
                 <p className="mt-1 text-xs text-mute">{combo.description}</p>

@@ -581,27 +581,91 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
       expect(found).toBeUndefined();
     });
 
-    it('DELETE /v1/admin/skills/:id deletes skill successfully', async () => {
-      // 1. Fetch existing skills
-      const listRes = await app.request('/v1/admin/skills', { headers: adminHeaders });
-      const listData = await listRes.json();
-      expect(listData.skills.length).toBeGreaterThan(0);
-      const targetSkill = listData.skills[0];
+    it('DELETE /v1/admin/skills/:id permanently deletes pre-seeded and custom skills from /workers and /skills', async () => {
+      // 1. Verify pre-seeded skills exist in both endpoints
+      const initWorkersRes = await app.request('/v1/admin/workers', { headers: adminHeaders });
+      expect(initWorkersRes.status).toBe(200);
+      const initWorkersData = await initWorkersRes.json();
+      expect(Array.isArray(initWorkersData.skills)).toBe(true);
 
-      // 2. Delete the skill
-      const delRes = await app.request(`/v1/admin/skills/${targetSkill.id}`, {
+      const initSkillsRes = await app.request('/v1/admin/skills', { headers: adminHeaders });
+      expect(initSkillsRes.status).toBe(200);
+      const initSkillsData = await initSkillsRes.json();
+      expect(Array.isArray(initSkillsData.skills)).toBe(true);
+
+      // Verify presence of pre-seeded skills
+      const hasSecurityAudit = initSkillsData.skills.some((s: any) => s.slug === 'pr-security-audit' || s.id === 'skill_pr_security');
+      const hasCodeReview = initSkillsData.skills.some((s: any) => s.slug === 'code-review-audit' || s.id === 'skill_code_review');
+      expect(hasSecurityAudit).toBe(true);
+      expect(hasCodeReview).toBe(true);
+
+      // 2. Delete pre-seeded skill: pr-security-audit by slug
+      const delSecurityRes = await app.request('/v1/admin/skills/pr-security-audit', {
         method: 'DELETE',
         headers: adminHeaders,
       });
-      expect(delRes.status).toBe(200);
-      const delData = await delRes.json();
-      expect(delData.success).toBe(true);
+      expect(delSecurityRes.status).toBe(200);
+      const delSecData = await delSecurityRes.json();
+      expect(delSecData.success).toBe(true);
 
-      // 3. Confirm deletion
-      const postListRes = await app.request('/v1/admin/skills', { headers: adminHeaders });
-      const postListData = await postListRes.json();
-      const found = postListData.skills.find((s: any) => s.id === targetSkill.id);
-      expect(found).toBeUndefined();
+      // Verify deletion from both endpoints
+      const checkWorkers1 = await app.request('/v1/admin/workers', { headers: adminHeaders });
+      const checkWData1 = await checkWorkers1.json();
+      expect(checkWData1.skills.some((s: any) => s.slug === 'pr-security-audit' || s.id === 'skill_pr_security')).toBe(false);
+
+      const checkSkills1 = await app.request('/v1/admin/skills', { headers: adminHeaders });
+      const checkSData1 = await checkSkills1.json();
+      expect(checkSData1.skills.some((s: any) => s.slug === 'pr-security-audit' || s.id === 'skill_pr_security')).toBe(false);
+
+      // 3. Delete pre-seeded skill: code-review-audit by ID
+      const delCodeReviewRes = await app.request('/v1/admin/skills/skill_code_review', {
+        method: 'DELETE',
+        headers: adminHeaders,
+      });
+      expect(delCodeReviewRes.status).toBe(200);
+
+      const checkWorkers2 = await app.request('/v1/admin/workers', { headers: adminHeaders });
+      const checkWData2 = await checkWorkers2.json();
+      expect(checkWData2.skills.some((s: any) => s.slug === 'code-review-audit' || s.id === 'skill_code_review')).toBe(false);
+
+      // 4. Create a distilled custom skill and delete it
+      const runRes = await app.request('/v1/admin/workers/pr-guardian/run', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({ prompt: 'Generate distillable run test' }),
+      });
+      expect(runRes.status).toBe(200);
+      const runData = await runRes.json();
+
+      const distillRes = await app.request(`/v1/admin/workers/runs/${runData.run.id}/distill-skill`, {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({ customName: 'Custom Distilled Security Skill' }),
+      });
+      expect(distillRes.status).toBe(200);
+      const distillData = await distillRes.json();
+      expect(distillData.skill.id).toBeDefined();
+
+      // Verify distilled skill appears in both endpoints
+      const postDistillWorkers = await app.request('/v1/admin/workers', { headers: adminHeaders });
+      const postDistillWData = await postDistillWorkers.json();
+      expect(postDistillWData.skills.some((s: any) => s.id === distillData.skill.id)).toBe(true);
+
+      // Delete the distilled skill
+      const delDistillRes = await app.request(`/v1/admin/skills/${distillData.skill.id}`, {
+        method: 'DELETE',
+        headers: adminHeaders,
+      });
+      expect(delDistillRes.status).toBe(200);
+
+      // Verify distilled skill is permanently gone from both endpoints
+      const finalWorkersRes = await app.request('/v1/admin/workers', { headers: adminHeaders });
+      const finalWData = await finalWorkersRes.json();
+      expect(finalWData.skills.some((s: any) => s.id === distillData.skill.id)).toBe(false);
+
+      const finalSkillsRes = await app.request('/v1/admin/skills', { headers: adminHeaders });
+      const finalSData = await finalSkillsRes.json();
+      expect(finalSData.skills.some((s: any) => s.id === distillData.skill.id)).toBe(false);
     });
   });
 });
