@@ -754,9 +754,15 @@ export class AdminStore {
     strategy?: string;
     enabled?: boolean;
   }): ComboDefinition {
-    const slug = combo.slug || combo.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    const rawSlug = combo.slug || combo.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    const slug = rawSlug.startsWith('combo/') ? rawSlug : `combo/${rawSlug}`;
+    const cleanSlug = rawSlug.replace(/^combo\//, '');
     const existingIdx = (this.settings.combos || []).findIndex(
-      (c) => c.slug === slug || (combo.id && c.id === combo.id)
+      (c) =>
+        (combo.id && c.id === combo.id) ||
+        c.slug === slug ||
+        c.slug === rawSlug ||
+        c.slug.replace(/^combo\//, '') === cleanSlug
     );
     const targets = combo.targets || combo.models || [];
     const strategy = (combo.strategy || 'priority') as any;
@@ -765,6 +771,7 @@ export class AdminStore {
       const updated: ComboDefinition = {
         ...this.settings.combos[existingIdx],
         name: combo.name,
+        slug: slug || this.settings.combos[existingIdx].slug,
         description: combo.description || this.settings.combos[existingIdx].description,
         targets,
         strategy,
@@ -774,13 +781,19 @@ export class AdminStore {
       return updated;
     }
 
-    return this.createCombo({
+    const newCombo: ComboDefinition = {
+      id: combo.id || `combo_${nanoid(8)}`,
       name: combo.name,
       slug,
       description: combo.description || `Custom combo ${combo.name}`,
       targets,
       strategy,
-    });
+      createdAt: new Date().toISOString(),
+    };
+    if (!this.settings.combos) this.settings.combos = [];
+    this.settings.combos.push(newCombo);
+    this.save();
+    return newCombo;
   }
 
   public deleteCombo(idOrSlug: string): boolean {

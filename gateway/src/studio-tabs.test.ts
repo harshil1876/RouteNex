@@ -155,6 +155,75 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
       expect(data.combos).toBeDefined();
     });
 
+    it('creates and updates a 4-model combo via POST /v1/admin/combos with admin auth headers', async () => {
+      const initial4ModelTargets = [
+        'groq/llama-3.3-70b-versatile',
+        'cerebras/llama-3.3-70b',
+        'pollinations/openai',
+        'pollinations/qwen',
+      ];
+
+      // 1. Unauthenticated request must be rejected with 401
+      const unauthRes = await app.request('/v1/admin/combos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Unauth Combo',
+          slug: 'combo/unauth',
+          targets: initial4ModelTargets,
+        }),
+      });
+      expect(unauthRes.status).toBe(401);
+
+      // 2. Create 4-model combo with admin auth headers
+      const createRes = await app.request('/v1/admin/combos', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          name: 'Recommended 4-Model Free Stack',
+          slug: 'combo/free-stack-quad',
+          description: 'High-throughput 4-model zero-cost failover cluster',
+          targets: initial4ModelTargets,
+          strategy: 'priority',
+        }),
+      });
+      expect(createRes.status).toBe(200);
+      const createData = await createRes.json();
+      expect(createData.success).toBe(true);
+      expect(createData.combo).toBeDefined();
+      expect(createData.combo.targets).toHaveLength(4);
+      expect(createData.combo.targets).toEqual(initial4ModelTargets);
+
+      // 3. Update existing combo with a 5th custom model (e.g. nvidia/deepseek-r1)
+      const updated5ModelTargets = [...initial4ModelTargets, 'nvidia/deepseek-r1'];
+      const updateRes = await app.request('/v1/admin/combos', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          id: createData.combo.id,
+          name: 'Recommended 4-Model Free Stack',
+          slug: 'combo/free-stack-quad',
+          description: 'High-throughput failover cluster expanded with DeepSeek',
+          targets: updated5ModelTargets,
+          strategy: 'priority',
+        }),
+      });
+      expect(updateRes.status).toBe(200);
+      const updateData = await updateRes.json();
+      expect(updateData.success).toBe(true);
+      expect(updateData.combo.targets).toHaveLength(5);
+      expect(updateData.combo.targets).toContain('nvidia/deepseek-r1');
+
+      // 4. Verify persistence via GET /v1/admin/combos
+      const listRes = await app.request('/v1/admin/combos', { headers: adminHeaders });
+      expect(listRes.status).toBe(200);
+      const listData = await listRes.json();
+      const persisted = listData.combos.find((c: any) => c.slug === 'combo/free-stack-quad');
+      expect(persisted).toBeDefined();
+      expect(persisted.targets).toHaveLength(5);
+      expect(persisted.targets).toEqual(updated5ModelTargets);
+    });
+
     it('POST /v1/admin/policy returns HTTP 200 when updating routing policy', async () => {
       const res = await app.request('/v1/admin/policy', {
         method: 'POST',

@@ -1015,12 +1015,13 @@ export function createAdminRoutes(
 
   router.post('/combos', async (c) => {
     const body = await c.req.json().catch(() => ({}));
-    const { name, slug, description, targets, strategy } = body;
+    const { id, name, slug, description, targets, strategy } = body;
     if (!name || !slug || !targets || !Array.isArray(targets) || targets.length === 0) {
       return c.json({ error: 'Missing required combo fields: name, slug, targets (non-empty array)' }, 400);
     }
     const cleanSlug = slug.startsWith('combo/') ? slug : `combo/${slug}`;
-    const combo = adminStore.createCombo({
+    const combo = adminStore.upsertCombo({
+      id,
       name,
       slug: cleanSlug,
       description: description || `Custom fallback combo: ${name}`,
