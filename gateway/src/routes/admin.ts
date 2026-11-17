@@ -25,6 +25,50 @@ import { AdminStore } from '../storage/admin-store.js';
 import { resolveOAuthCred } from '../providers/oauth-creds.js';
 
 const pkceStore = new Map<string, { verifier: string; providerId: string; createdAt: number }>();
+
+function resolveOAuthRedirectUri(c: any, appConfig: AppConfig, providerId: string): string {
+  const reqHost = c.req.header('host');
+  let hostName = '127.0.0.1';
+  let port = appConfig.port;
+
+  if (reqHost) {
+    const parts = reqHost.split(':');
+    let h = parts[0];
+    if (h === '0.0.0.0' || h === '::' || !h) {
+      h = '127.0.0.1';
+    }
+    hostName = h;
+    if (parts[1]) {
+      port = Number(parts[1]) || appConfig.port;
+    }
+  } else if (appConfig.host && appConfig.host !== '0.0.0.0' && appConfig.host !== '::') {
+    hostName = appConfig.host;
+  }
+
+  return `http://${hostName}:${port}/v1/admin/providers/${providerId}/oauth/callback`;
+}
+
+function resolveOAuthAuthorizeUri(c: any, appConfig: AppConfig, providerId: string, state: string, challenge: string): string {
+  const reqHost = c.req.header('host');
+  let hostName = '127.0.0.1';
+  let port = appConfig.port;
+
+  if (reqHost) {
+    const parts = reqHost.split(':');
+    let h = parts[0];
+    if (h === '0.0.0.0' || h === '::' || !h) {
+      h = '127.0.0.1';
+    }
+    hostName = h;
+    if (parts[1]) {
+      port = Number(parts[1]) || appConfig.port;
+    }
+  } else if (appConfig.host && appConfig.host !== '0.0.0.0' && appConfig.host !== '::') {
+    hostName = appConfig.host;
+  }
+
+  return `http://${hostName}:${port}/v1/admin/providers/${providerId}/oauth/authorize?state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(challenge)}&code_challenge_method=S256`;
+}
 const MAX_PKCE_ENTRIES = 1000;
 const PKCE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -600,7 +644,7 @@ export function createAdminRoutes(
     const verifier = `rn_pkce_${nanoid(32)}`;
     const challenge = hashToken(verifier);
     const state = `state_${Date.now()}_${nanoid(8)}`;
-    const redirectUri = `http://${config.host || '127.0.0.1'}:${config.port}/v1/admin/providers/${providerId}/oauth/callback`;
+    const redirectUri = resolveOAuthRedirectUri(c, config, providerId);
 
     const isGoogleAuth =
       providerId === 'antigravity' ||
@@ -645,7 +689,7 @@ export function createAdminRoutes(
     const scopeParam = isGoogleAuth ? `&scope=${encodeURIComponent(googleScopes)}` : '';
     const googleAuthUrl = `${endpoint}?response_type=code&access_type=offline&prompt=consent&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(challenge)}&code_challenge_method=S256${scopeParam}`;
 
-    const localAuthorizeUrl = `http://${config.host || '127.0.0.1'}:${config.port}/v1/admin/providers/${providerId}/oauth/authorize?state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(challenge)}&code_challenge_method=S256`;
+    const localAuthorizeUrl = resolveOAuthAuthorizeUri(c, config, providerId, state, challenge);
 
     const isLocalMode = c.req.query('mode') === 'local';
     const targetRedirectUrl = isLocalMode
@@ -941,7 +985,7 @@ export function createAdminRoutes(
       const isAntigravity = providerId === 'antigravity' || providerId === 'antigravity-cli';
       const clientId = resolveOAuthCred(isAntigravity ? 'antigravity_id' : 'gemini_id', 'GOOGLE_OAUTH_CLIENT_ID');
       const clientSecret = resolveOAuthCred(isAntigravity ? 'antigravity_alt' : 'gemini_alt', 'GOOGLE_OAUTH_CLIENT_SECRET');
-      const redirectUri = `http://${config.host || '127.0.0.1'}:${config.port}/v1/admin/providers/${providerId}/oauth/callback`;
+      const redirectUri = resolveOAuthRedirectUri(c, config, providerId);
 
       try {
         const tokenRes = await fetch('https://oauth2.googleapis.com/token', {

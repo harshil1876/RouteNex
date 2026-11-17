@@ -230,6 +230,17 @@ export class ProviderRegistry {
   }
 
   /**
+   * Registers a custom provider adapter directly into the registry.
+   */
+  registerAdapter(adapter: IProviderAdapter): void {
+    const norm = normalizeProviderId(adapter.id);
+    this.adapters.set(adapter.id, adapter);
+    if (norm !== adapter.id) {
+      this.adapters.set(norm, adapter);
+    }
+  }
+
+  /**
    * Retrieves an adapter by its provider ID (e.g. 'mock', 'groq', 'openai', 'nvidia-nim').
    */
   getAdapter(providerId: string): IProviderAdapter | undefined {

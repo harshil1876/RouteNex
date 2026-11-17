@@ -3,6 +3,7 @@ import { createApp } from './server.js';
 import type { AppConfig } from './config.js';
 import { AdminStore } from './storage/admin-store.js';
 import { ProviderRegistry } from './providers/registry.js';
+import { ProviderError } from './providers/types.js';
 
 const testConfig: AppConfig = {
   port: 3001,
@@ -27,7 +28,7 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
     'x-admin-token': 'routenex-admin',
   };
 
-  const { app } = createApp(testConfig);
+  const { app, registry, engine, adminStore } = createApp(testConfig);
 
   // Tab 1: Overview
   describe('Tab 1: Overview', () => {
@@ -999,6 +1000,143 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
       expect(agyModels.some((m: any) => m.id.includes('flagship'))).toBe(false);
       expect(agyModels.some((m: any) => m.id.includes('claude-opus-4-6-thinking'))).toBe(true);
       expect(agyModels.some((m: any) => m.id.includes('gemini-3.7-flash-high'))).toBe(true);
+    });
+  });
+
+  describe('Suite 15: Claude Code CLI Endpoints, Streaming Failover & Zero-Key Fallbacks', () => {
+    it('1. POST /v1/messages/count_tokens returns HTTP 200 with estimated input_tokens', async () => {
+      const res = await app.request('/v1/messages/count_tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          system: 'You are an expert developer assistant.',
+          messages: [
+            { role: 'user', content: 'Count the tokens for this prompt.' },
+          ],
+          tools: [
+            {
+              name: 'calculate',
+              description: 'Performs math calculations',
+              input_schema: { type: 'object', properties: { expr: { type: 'string' } } },
+            },
+          ],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(typeof data.input_tokens).toBe('number');
+      expect(data.input_tokens).toBeGreaterThan(5);
+    });
+
+    it('2. POST /messages/count_tokens (root mount) returns HTTP 200 with input_tokens', async () => {
+      const res = await app.request('/messages/count_tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'Hello world' }],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(typeof data.input_tokens).toBe('number');
+      expect(data.input_tokens).toBeGreaterThanOrEqual(1);
+    });
+
+    it('3. Streaming combo executeStream immediately fails over when Candidate #1 fails', async () => {
+      // Register a failing adapter with isConfigured() === true that throws 429 inside chatStream generator
+      const failingAdapter = {
+        id: 'failing-test-prov',
+        name: 'Failing Test Provider',
+        models: [{
+          id: 'failing-test-prov/failing-model',
+          provider: 'failing-test-prov',
+          capabilities: { chat: true, streaming: true, tool_calls: false, vision: false, json_mode: false },
+          pricing: { prompt_per_million: 0, completion_per_million: 0, provenance: 'OFFICIAL' as const, updated_at: '2026-02-01' },
+          context_length: 4096,
+        }],
+        isConfigured: () => true,
+        healthCheck: async () => false,
+        chat: async () => { throw new ProviderError('Simulated 429 Rate Limit', { status: 429, retriable: true }); },
+        chatStream: async function* () {
+          throw new ProviderError('Simulated 429 Rate Limit', { status: 429, retriable: true });
+        },
+      };
+      registry.registerAdapter(failingAdapter);
+
+      // Create a combo where candidate #1 is failing-test-prov and candidate #2 is mock/fast
+      const createRes = await app.request('/v1/admin/combos', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          name: 'Streaming Failover Combo',
+          slug: 'streaming-failover-test',
+          targets: ['failing-test-prov/failing-model', 'mock/fast'],
+          strategy: 'priority',
+        }),
+      });
+      expect(createRes.status).toBe(200);
+
+      // Execute stream via engine
+      const streamRes = await engine.executeStream({
+        model: 'combo/streaming-failover-test',
+        messages: [{ role: 'user', content: 'Test streaming failover' }],
+        stream: true,
+      });
+
+      expect(streamRes).toBeDefined();
+      expect(streamRes.generator).toBeDefined();
+      expect(streamRes.provider).toBe('mock');
+      expect(streamRes.model).toBe('mock/fast');
+
+      const chunks: any[] = [];
+      for await (const chunk of streamRes.generator) {
+        chunks.push(chunk);
+      }
+      expect(chunks.length).toBeGreaterThan(0);
+    });
+
+    it('4. Antigravity adapter returns authentic AI completions without mock string', async () => {
+      const adapter = registry.getAdapter('antigravity');
+      expect(adapter).toBeDefined();
+
+      const res = await adapter!.chat({
+        model: 'antigravity/gemini-3.7-flash-high',
+        messages: [{ role: 'user', content: 'What is RouteNex?' }],
+      });
+
+      expect(res).toBeDefined();
+      expect(res.choices[0]?.message?.content).toBeDefined();
+      // Verify mock string is completely gone
+      expect(res.choices[0]?.message?.content).not.toContain('[RouteNex Antigravity Bridge]');
+    });
+
+    it('5. OpenCode zero-key provider executes successfully with real AI fallback', async () => {
+      const adapter = registry.getAdapter('opencode');
+      expect(adapter).toBeDefined();
+
+      const res = await adapter!.chat({
+        model: 'opencode/deepseek-r1',
+        messages: [{ role: 'user', content: 'Hello assistant' }],
+      });
+
+      expect(res).toBeDefined();
+      expect(res.choices[0]?.message?.content).toBeDefined();
+      expect(typeof res.choices[0]?.message?.content).toBe('string');
+      expect(res.choices[0]?.message?.content.length).toBeGreaterThan(0);
+    });
+
+    it('6. OAuth start normalizes 0.0.0.0 host to 127.0.0.1 redirect_uri', async () => {
+      const res = await app.request('/v1/admin/providers/antigravity-cli/oauth/start', {
+        method: 'POST',
+        headers: { host: '0.0.0.0:3001' },
+      });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.authUrl).toContain('redirect_uri=http%3A%2F%2F127.0.0.1%3A3001');
+      expect(data.authUrl).not.toContain('0.0.0.0');
     });
   });
 });

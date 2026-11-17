@@ -739,6 +739,12 @@ export class RoutingEngine {
       try {
         const reqForTarget: ChatCompletionRequest = { ...request, model: targetModel.id };
         const streamGen = adapter.chatStream(reqForTarget, signal);
+        const iterator = streamGen[Symbol.asyncIterator]();
+
+        // Await first chunk immediately inside candidate try-catch block.
+        // If candidate #1 fails (429 rate limit, 401 auth, 503 unavailable, connection error),
+        // the error throws here and immediately fails over to candidate #2 in the Combo chain!
+        const firstResult = await iterator.next();
 
         // Track circuit breaker on stream lifecycle
         const circuitBreaker = this.circuitBreaker;
@@ -750,14 +756,26 @@ export class RoutingEngine {
 
         async function* wrappedStream(): AsyncGenerator<StreamChunk> {
           try {
-            for await (const chunk of streamGen) {
-              if (signal?.aborted) {
-                try {
-                  await streamGen.return?.(undefined as any);
-                } catch {}
-                break;
+            if (!firstResult.done && firstResult.value !== undefined) {
+              yield firstResult.value;
+            }
+            if (!firstResult.done) {
+              while (true) {
+                if (signal?.aborted) {
+                  try {
+                    await streamGen.return?.(undefined as any);
+                  } catch {}
+                  break;
+                }
+                const next = await iterator.next();
+                if (next.done) {
+                  if (next.value !== undefined) {
+                    yield next.value;
+                  }
+                  break;
+                }
+                yield next.value;
               }
-              yield chunk;
             }
             if (!signal?.aborted) {
               circuitBreaker.recordSuccess(providerId);

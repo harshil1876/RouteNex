@@ -9,6 +9,7 @@ import {
   type ModelEntry,
   ProviderError,
 } from './types.js';
+import { PollinationsProviderAdapter } from './pollinations.js';
 
 export interface OpenAICompatibleOptions {
   id: string;
@@ -52,8 +53,8 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
     this.authHeaderPrefix = options.authHeaderPrefix ?? 'Bearer';
   }
 
-  isConfigured(): boolean {
-    const isZeroKey =
+  private isZeroKeyCandidate(): boolean {
+    const isZeroId =
       this.id === 'opencode' ||
       this.id === 'opencode-free' ||
       this.id === 'opencode-zen' ||
@@ -65,8 +66,14 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
       this.id === 'airforce' ||
       this.id === 'nexra' ||
       this.id === 'kobold-horde' ||
-      this.id === 'webllm';
-    return isZeroKey || Boolean(this.apiKey && this.apiKey.trim().length > 0);
+      this.id === 'webllm' ||
+      this.id === 'chutes';
+    const isFreeKey = !this.apiKey || this.apiKey.trim().length === 0 || this.apiKey.toLowerCase() === 'free';
+    return isZeroId || (this.id === 'openrouter' && isFreeKey);
+  }
+
+  isConfigured(): boolean {
+    return this.isZeroKeyCandidate() || Boolean(this.apiKey && this.apiKey.trim().length > 0);
   }
 
   setApiKey(key?: string): void {
@@ -138,6 +145,11 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
         signal: AbortSignal.timeout(60000),
       });
     } catch (err: unknown) {
+      if (this.isZeroKeyCandidate()) {
+        const pollinations = new PollinationsProviderAdapter();
+        const fallback = await pollinations.chat({ ...request, model: 'pollinations/openai' });
+        return { ...fallback, model: request.model };
+      }
       const message = err instanceof Error ? err.message : String(err);
       throw new ProviderError(`${this.name} connection failed: ${message}`, {
         status: 503,
@@ -147,6 +159,11 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
     }
 
     if (!res.ok) {
+      if (this.isZeroKeyCandidate()) {
+        const pollinations = new PollinationsProviderAdapter();
+        const fallback = await pollinations.chat({ ...request, model: 'pollinations/openai' });
+        return { ...fallback, model: request.model };
+      }
       let errBody = '';
       try { errBody = await res.text(); } catch {}
       const isRetriable = res.status === 429 || res.status >= 500 || (res.status === 401 && this.apiKey?.toLowerCase() === 'free');
@@ -221,6 +238,13 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
       if (clientSignal?.aborted) {
         return;
       }
+      if (this.isZeroKeyCandidate()) {
+        const pollinations = new PollinationsProviderAdapter();
+        for await (const chunk of pollinations.chatStream({ ...request, model: 'pollinations/openai' }, clientSignal)) {
+          yield { ...chunk, model: request.model };
+        }
+        return;
+      }
       const message = err instanceof Error ? err.message : String(err);
       throw new ProviderError(`${this.name} streaming connection failed: ${message}`, {
         status: 503,
@@ -230,6 +254,13 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
     }
 
     if (!res.ok) {
+      if (this.isZeroKeyCandidate()) {
+        const pollinations = new PollinationsProviderAdapter();
+        for await (const chunk of pollinations.chatStream({ ...request, model: 'pollinations/openai' }, clientSignal)) {
+          yield { ...chunk, model: request.model };
+        }
+        return;
+      }
       let errBody = '';
       try { errBody = await res.text(); } catch {}
       const isRetriable = res.status === 429 || res.status >= 500 || (res.status === 401 && this.apiKey?.toLowerCase() === 'free');

@@ -660,6 +660,72 @@ export function createMessagesRoute(
     });
   };
 
+  /**
+   * Native Anthropic Token Counter (/v1/messages/count_tokens)
+   * Essential for Claude Code CLI and Anthropic SDK context window monitoring.
+   */
+  const handleCountTokens = async (c: any) => {
+    const rawBody = await c.req.json().catch(() => ({}));
+    const { system, messages, tools } = rawBody;
+
+    let charCount = 0;
+    let messageCount = 0;
+
+    // 1. System prompt
+    if (system) {
+      if (typeof system === 'string') {
+        charCount += system.length;
+      } else if (Array.isArray(system)) {
+        for (const item of system) {
+          if (typeof item === 'string') charCount += item.length;
+          else if (item && typeof item.text === 'string') charCount += item.text.length;
+        }
+      }
+    }
+
+    // 2. Messages
+    if (Array.isArray(messages)) {
+      messageCount = messages.length;
+      for (const msg of messages) {
+        if (!msg) continue;
+        if (typeof msg.content === 'string') {
+          charCount += msg.content.length;
+        } else if (Array.isArray(msg.content)) {
+          for (const block of msg.content) {
+            if (!block) continue;
+            if (block.type === 'text' && typeof block.text === 'string') {
+              charCount += block.text.length;
+            } else if (block.type === 'tool_use') {
+              charCount += (block.name?.length || 0) + JSON.stringify(block.input || {}).length;
+            } else if (block.type === 'tool_result') {
+              const resContent = typeof block.content === 'string' ? block.content : JSON.stringify(block.content || {});
+              charCount += resContent.length;
+            } else if (typeof block === 'string') {
+              charCount += block.length;
+            } else {
+              charCount += JSON.stringify(block).length;
+            }
+          }
+        }
+      }
+    }
+
+    // 3. Tools definitions
+    if (Array.isArray(tools)) {
+      for (const tool of tools) {
+        if (!tool) continue;
+        charCount += (tool.name?.length || 0) + (tool.description?.length || 0) + JSON.stringify(tool.input_schema || {}).length;
+      }
+    }
+
+    // Anthropic token estimation: ~4 chars per token + ~4 tokens overhead per message, minimum 1 token
+    const estimatedTokens = Math.max(1, Math.round(charCount / 4) + (messageCount * 4));
+
+    return c.json({ input_tokens: estimatedTokens }, 200);
+  };
+
+  router.post('/messages/count_tokens', handleCountTokens);
+  router.post('/v1/messages/count_tokens', handleCountTokens);
   router.post('/messages', handleMessages);
   router.post('/v1/messages', handleMessages);
 
