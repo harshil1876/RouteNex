@@ -342,8 +342,9 @@ export default function FreeTierGauges() {
         </div>
 
         {probeLog && (
-          <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-hairline text-xs font-mono text-body">
-            {probeLog}
+          <div className="p-3 rounded-lg bg-[#09090b] border border-[#222226] text-xs font-mono text-zinc-200 flex items-center gap-2 shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block shrink-0" />
+            <span className="truncate">{probeLog}</span>
           </div>
         )}
       </div>

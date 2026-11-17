@@ -443,9 +443,19 @@ export default function Combos() {
                   type="button"
                   onClick={() => handleTestCombo(combo)}
                   disabled={testingId === combo.id}
-                  className="rounded border border-hairline px-3 py-1.5 text-xs font-mono text-body hover:text-ink hover:bg-neutral-50 dark:hover:bg-neutral-800 transition cursor-pointer"
+                  className="rounded border border-[#222226] bg-[#111113] hover:bg-zinc-800 hover:border-zinc-700 px-3 py-1.5 text-xs font-mono text-zinc-300 hover:text-white transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
                 >
-                  {testingId === combo.id ? 'Testing...' : '▶ Probe Failover'}
+                  {testingId === combo.id ? (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                      <span>Testing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-sky-400">▶</span>
+                      <span>Probe Failover</span>
+                    </>
+                  )}
                 </button>
 
                 <button
@@ -603,8 +613,41 @@ export default function Combos() {
               </div>
 
               {testResult[combo.id] && (
-                <div className="mt-3 p-2.5 rounded bg-neutral-50 dark:bg-neutral-900 border border-hairline text-xs font-mono text-body">
-                  {testResult[combo.id]}
+                <div
+                  className={`mt-3 p-2.5 rounded-lg border text-xs font-mono flex items-center justify-between gap-2 shadow-xs ${
+                    testResult[combo.id].startsWith('✓')
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                      : testResult[combo.id].startsWith('⚠')
+                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                      : 'bg-sky-500/10 border-sky-500/30 text-sky-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="shrink-0">
+                      {testResult[combo.id].startsWith('✓') ? (
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+                      ) : testResult[combo.id].startsWith('⚠') ? (
+                        <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+                      ) : (
+                        <span className="w-2 h-2 rounded-full bg-sky-400 inline-block animate-pulse" />
+                      )}
+                    </span>
+                    <span className="font-medium truncate">{testResult[combo.id]}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTestResult((prev) => {
+                        const next = { ...prev };
+                        delete next[combo.id];
+                        return next;
+                      })
+                    }
+                    className="text-zinc-400 hover:text-zinc-100 text-xs px-1 cursor-pointer shrink-0"
+                    title="Dismiss"
+                  >
+                    ✕
+                  </button>
                 </div>
               )}
             </div>

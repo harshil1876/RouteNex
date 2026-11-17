@@ -300,7 +300,7 @@ export default function Playground() {
 
                   <div className="rounded border border-hairline bg-canvas p-3">
                     <div className="text-[10px] text-mute mb-1">Routing Reason</div>
-                    <div className="text-body text-[11px]">{result.routingReason}</div>
+                    <div className="text-zinc-200 text-[11px] font-sans">{result.routingReason}</div>
                   </div>
 
                   {/* Completion output preview */}

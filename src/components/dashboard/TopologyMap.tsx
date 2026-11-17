@@ -193,7 +193,7 @@ export default function TopologyMap() {
                 {explanation.reason_code}
               </span>
             </div>
-            <p className="text-body text-[11px] font-sans">{explanation.reason}</p>
+            <p className="text-zinc-300 text-[11px] font-sans">{explanation.reason}</p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
