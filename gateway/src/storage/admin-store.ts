@@ -28,6 +28,15 @@ import type {
   WorkerStatus,
 } from '../workers/types.js';
 import { DEFAULT_SPECIALIST_WORKERS } from '../workers/types.js';
+import { normalizeProviderId } from '../providers/registry.js';
+
+export interface ModelHealthState {
+  enabled?: boolean;
+  status?: 'working' | 'offline' | 'untested';
+  latency?: number;
+  testedAt?: string;
+  error?: string;
+}
 
 export interface VirtualKey {
   id: string;
@@ -98,6 +107,7 @@ export interface AdminSettings {
   skills?: NexSkill[];
   memories?: MemoryItem[];
   lexiPacks?: Array<{ code: string; name: string; rulesCount: number; enabled: boolean }>;
+  providerModelsState?: Record<string, Record<string, ModelHealthState>>;
 }
 
 export class AdminStore {
@@ -356,6 +366,7 @@ export class AdminStore {
             : defaultSettings.skills,
           memories: parsed.memories && parsed.memories.length > 0 ? parsed.memories : defaultSettings.memories,
           lexiPacks: parsed.lexiPacks && parsed.lexiPacks.length > 0 ? parsed.lexiPacks : defaultSettings.lexiPacks,
+          providerModelsState: parsed.providerModelsState || {},
         };
 
         // Migration: Encrypt any legacy plaintext provider keys
@@ -595,10 +606,17 @@ export class AdminStore {
    * Preserves existing key if candidate is a masked string (e.g. sk-...xxxx or ••••••••).
    */
   public setProviderKey(provider: string, key?: string): void {
+    const norm = normalizeProviderId(provider);
+    const targetKey = norm || provider;
+
     if (!key || key.trim().length === 0) {
       delete this.settings.providerKeys[provider];
+      if (norm) delete this.settings.providerKeys[norm];
       if (this.settings.providerPools?.[provider]) {
         delete this.settings.providerPools[provider];
+      }
+      if (norm && this.settings.providerPools?.[norm]) {
+        delete this.settings.providerPools[norm];
       }
       this.save();
       return;
@@ -607,20 +625,26 @@ export class AdminStore {
     const trimmed = key.trim();
     if (AdminStore.isMaskedKey(trimmed)) {
       // Do not overwrite real secret with masked display string
-      if (this.settings.providerKeys[provider] || this.settings.providerPools?.[provider]?.keys?.length) {
+      if (this.settings.providerKeys[targetKey] || this.settings.providerPools?.[targetKey]?.keys?.length) {
         return;
       }
     }
 
     const encrypted = encryptValue(trimmed);
-    this.settings.providerKeys[provider] = encrypted;
+    this.settings.providerKeys[targetKey] = encrypted;
+    if (provider !== targetKey) {
+      this.settings.providerKeys[provider] = encrypted;
+    }
 
     // Ensure pool structure
     if (!this.settings.providerPools) this.settings.providerPools = {};
-    if (!this.settings.providerPools[provider]) {
-      this.settings.providerPools[provider] = { keys: [encrypted], strategy: 'round-robin', activeKeyIndex: 0 };
+    if (!this.settings.providerPools[targetKey]) {
+      this.settings.providerPools[targetKey] = { keys: [encrypted], strategy: 'round-robin', activeKeyIndex: 0 };
     } else {
-      this.settings.providerPools[provider].keys = [encrypted];
+      this.settings.providerPools[targetKey].keys = [encrypted];
+    }
+    if (provider !== targetKey) {
+      this.settings.providerPools[provider] = this.settings.providerPools[targetKey];
     }
 
     this.save();
@@ -633,22 +657,29 @@ export class AdminStore {
   public addKeyToPool(provider: string, key: string): number {
     if (!key || key.trim().length === 0) return 0;
     const trimmed = key.trim();
+    const norm = normalizeProviderId(provider);
+    const targetKey = norm || provider;
+
     if (AdminStore.isMaskedKey(trimmed)) {
-      return this.settings.providerPools?.[provider]?.keys?.length || 0;
+      return this.settings.providerPools?.[targetKey]?.keys?.length || 0;
     }
 
     const encrypted = encryptValue(trimmed);
 
     if (!this.settings.providerPools) this.settings.providerPools = {};
-    if (!this.settings.providerPools[provider]) {
-      this.settings.providerPools[provider] = { keys: [encrypted], strategy: 'round-robin', activeKeyIndex: 0 };
-      this.settings.providerKeys[provider] = encrypted;
+    if (!this.settings.providerPools[targetKey]) {
+      this.settings.providerPools[targetKey] = { keys: [encrypted], strategy: 'round-robin', activeKeyIndex: 0 };
+      this.settings.providerKeys[targetKey] = encrypted;
     } else {
-      this.settings.providerPools[provider].keys.push(encrypted);
+      this.settings.providerPools[targetKey].keys.push(encrypted);
+    }
+    if (provider !== targetKey) {
+      this.settings.providerPools[provider] = this.settings.providerPools[targetKey];
+      this.settings.providerKeys[provider] = encrypted;
     }
 
     this.save();
-    return this.settings.providerPools[provider].keys.length;
+    return this.settings.providerPools[targetKey].keys.length;
   }
 
   /**
@@ -656,14 +687,15 @@ export class AdminStore {
    * If a pool exists with multiple keys, rotates through them in round-robin sequence.
    */
   public getProviderKey(provider: string): string | undefined {
-    const pool = this.settings.providerPools?.[provider];
+    const norm = normalizeProviderId(provider);
+    const pool = this.settings.providerPools?.[provider] || (norm ? this.settings.providerPools?.[norm] : undefined);
     if (pool && pool.keys.length > 0) {
       const idx = (pool.activeKeyIndex || 0) % pool.keys.length;
       pool.activeKeyIndex = (idx + 1) % pool.keys.length;
       return decryptValue(pool.keys[idx]);
     }
 
-    const enc = this.settings.providerKeys[provider];
+    const enc = this.settings.providerKeys[provider] || (norm ? this.settings.providerKeys[norm] : undefined);
     if (!enc) return undefined;
     return decryptValue(enc);
   }
@@ -672,7 +704,8 @@ export class AdminStore {
    * Returns all decrypted keys configured for a provider.
    */
   public getAllProviderKeys(provider: string): string[] {
-    const pool = this.settings.providerPools?.[provider];
+    const norm = normalizeProviderId(provider);
+    const pool = this.settings.providerPools?.[provider] || (norm ? this.settings.providerPools?.[norm] : undefined);
     if (pool && pool.keys.length > 0) {
       return pool.keys.map((k) => decryptValue(k)).filter(Boolean);
     }
@@ -689,10 +722,41 @@ export class AdminStore {
   }
 
   public hasProviderKey(provider: string): boolean {
-    const pool = this.settings.providerPools?.[provider];
+    const norm = normalizeProviderId(provider);
+    const pool = this.settings.providerPools?.[provider] || (norm ? this.settings.providerPools?.[norm] : undefined);
     if (pool && pool.keys.length > 0) return true;
-    const enc = this.settings.providerKeys[provider];
+    const enc = this.settings.providerKeys[provider] || (norm ? this.settings.providerKeys[norm] : undefined);
     return Boolean(enc && enc.length > 0);
+  }
+
+  public getProviderModelsState(provider: string): Record<string, ModelHealthState> {
+    const norm = normalizeProviderId(provider);
+    const direct = this.settings.providerModelsState?.[provider];
+    const normalized = norm ? this.settings.providerModelsState?.[norm] : undefined;
+    return direct || normalized || {};
+  }
+
+  public setProviderModelsState(
+    provider: string,
+    modelId: string,
+    stateUpdate: ModelHealthState
+  ): Record<string, ModelHealthState> {
+    const norm = normalizeProviderId(provider);
+    const key = norm || provider;
+    if (!this.settings.providerModelsState) {
+      this.settings.providerModelsState = {};
+    }
+    if (!this.settings.providerModelsState[key]) {
+      this.settings.providerModelsState[key] = {};
+    }
+    const current = this.settings.providerModelsState[key][modelId] || {};
+    this.settings.providerModelsState[key][modelId] = {
+      ...current,
+      ...stateUpdate,
+      testedAt: stateUpdate.testedAt || new Date().toISOString(),
+    };
+    this.save();
+    return this.settings.providerModelsState[key];
   }
 
   public getConfiguredProviderIds(): string[] {

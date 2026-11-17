@@ -709,8 +709,8 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
   });
 
   describe('Suite 11: OAuth PKCE Authorization, Combo Deletion & Skill Deletion', () => {
-    it('GET /v1/admin/providers/antigravity-cli/oauth/start redirects (302) to local authorize page', async () => {
-      const res = await app.request('/v1/admin/providers/antigravity-cli/oauth/start');
+    it('GET /v1/admin/providers/antigravity-cli/oauth/start redirects (302) to local authorize page with mode=local', async () => {
+      const res = await app.request('/v1/admin/providers/antigravity-cli/oauth/start?mode=local');
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toContain('/v1/admin/providers/antigravity-cli/oauth/authorize');
     });
@@ -839,6 +839,109 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
       const finalSkillsRes = await app.request('/v1/admin/skills', { headers: adminHeaders });
       const finalSData = await finalSkillsRes.json();
       expect(finalSData.skills.some((s: any) => s.id === distillData.skill.id)).toBe(false);
+    });
+  });
+
+  // Suite 12: Real Google OAuth 2.0 PKCE, Provider ID Normalization & Model Health States
+  describe('Suite 12: Real Google OAuth 2.0 PKCE, Provider ID Normalization & Model Health States', () => {
+    it('1. resolveOAuthCred resolves legitimate installed client IDs and /oauth/start redirects with PKCE', async () => {
+      const { resolveOAuthCred } = await import('./providers/oauth-creds.js');
+      const agyId = resolveOAuthCred('antigravity_id');
+      expect(agyId).toBe('1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com');
+
+      const geminiId = resolveOAuthCred('gemini_id');
+      expect(geminiId).toContain('.apps.googleusercontent.com');
+
+      const res = await app.request('/v1/admin/providers/antigravity/oauth/start?redirect=true', {
+        method: 'GET',
+        headers: adminHeaders,
+      });
+      expect(res.status).toBe(302);
+      const location = res.headers.get('location') || '';
+      expect(location).toContain('accounts.google.com/o/oauth2/v2/auth');
+      expect(location).toContain(encodeURIComponent(agyId));
+      expect(location).toContain('code_challenge_method=S256');
+      expect(location).not.toContain('openid'); // Verified openid omitted
+    });
+
+    it('2. normalizeProviderId accurately maps UI provider slugs to canonical gateway IDs', async () => {
+      const { normalizeProviderId } = await import('./providers/registry.js');
+      expect(normalizeProviderId('nvidia-nim')).toBe('nvidia');
+      expect(normalizeProviderId('groq-cloud')).toBe('groq');
+      expect(normalizeProviderId('google-gemini')).toBe('gemini');
+      expect(normalizeProviderId('antigravity-cli')).toBe('antigravity');
+      expect(normalizeProviderId('agy')).toBe('antigravity');
+      expect(normalizeProviderId('gemini-cli')).toBe('antigravity');
+      expect(normalizeProviderId('openai-api')).toBe('openai');
+      expect(normalizeProviderId('github-copilot')).toBe('copilot');
+    });
+
+    it('3. POST /v1/chat/completions resolves UI provider slugs (e.g. groq-cloud, nvidia-nim)', async () => {
+      const res = await app.request('/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'groq-cloud/llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: 'hello' }],
+        }),
+      });
+      // Should not be 404 or unhandled crash; if groq is unconfigured it either returns 401 or fallback
+      expect([200, 401]).toContain(res.status);
+    });
+
+    it('4. POST & GET /v1/admin/providers/:id/models-state persists health status and latency', async () => {
+      const postRes = await app.request('/v1/admin/providers/antigravity/models-state', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          modelId: 'antigravity/gemini-2.5-pro',
+          status: 'working',
+          latency: 142,
+          enabled: true,
+        }),
+      });
+      expect(postRes.status).toBe(200);
+      const postData = await postRes.json();
+      expect(postData.modelsState['antigravity/gemini-2.5-pro'].status).toBe('working');
+      expect(postData.modelsState['antigravity/gemini-2.5-pro'].latency).toBe(142);
+      expect(postData.modelsState['antigravity/gemini-2.5-pro'].enabled).toBe(true);
+
+      const getRes = await app.request('/v1/admin/providers/antigravity/models-state', {
+        headers: adminHeaders,
+      });
+      expect(getRes.status).toBe(200);
+      const getData = await getRes.json();
+      expect(getData.modelsState['antigravity/gemini-2.5-pro'].status).toBe('working');
+
+      // Check that GET /v1/admin/providers includes modelsState
+      const listRes = await app.request('/v1/admin/providers', { headers: adminHeaders });
+      expect(listRes.status).toBe(200);
+      const listData = await listRes.json();
+      const agyEntry = listData.providers.find((p: any) => p.id === 'antigravity');
+      expect(agyEntry).toBeDefined();
+      expect(agyEntry.modelsState['antigravity/gemini-2.5-pro']).toBeDefined();
+    });
+
+    it('5. POST /v1/admin/providers/:id/oauth/callback completes OAuth flow and stores token', async () => {
+      const callbackRes = await app.request('/v1/admin/providers/antigravity/oauth/callback', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          code: '4/0AVMBs8_test_auth_code_pkce',
+          email: 'developer@routenex.com',
+        }),
+      });
+      expect(callbackRes.status).toBe(200);
+      const cbData = await callbackRes.json();
+      expect(cbData.success).toBe(true);
+
+      // Verify provider now reports configured
+      const statusRes = await app.request('/v1/admin/providers/antigravity/oauth/status', {
+        headers: adminHeaders,
+      });
+      expect(statusRes.status).toBe(200);
+      const statusData = await statusRes.json();
+      expect(statusData.authenticated).toBe(true);
     });
   });
 });

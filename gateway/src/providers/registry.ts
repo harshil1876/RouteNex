@@ -15,7 +15,39 @@ import { MistralProviderAdapter } from './mistral.js';
 import { SiliconFlowProviderAdapter } from './siliconflow.js';
 import { DuckDuckGoProviderAdapter } from './duckduckgo.js';
 import { OpenAICompatibleAdapter } from './openai-compatible.js';
+import { AntigravityProviderAdapter } from './antigravity.js';
 import catalogData from './catalog.js';
+
+export function normalizeProviderId(id: string): string {
+  if (!id) return '';
+  const clean = id.trim().toLowerCase();
+  const map: Record<string, string> = {
+    'nvidia-nim': 'nvidia',
+    'groq-cloud': 'groq',
+    'google-gemini': 'gemini',
+    'gemini-ai-studio': 'gemini',
+    'antigravity-cli': 'antigravity',
+    'agy': 'antigravity',
+    'gemini-cli': 'antigravity',
+    'openai-api': 'openai',
+    'anthropic-claude': 'anthropic',
+    'deepseek-api': 'deepseek',
+    'github-copilot': 'copilot',
+    'copilot-cli': 'copilot',
+    'claude-code': 'claude-code',
+    'qwen-oauth': 'qwen',
+    'mistral-ai': 'mistral',
+    'together-ai': 'together',
+    'cerebras-cloud': 'cerebras',
+    'sambanova-cloud': 'sambanova',
+    'fireworks-ai': 'fireworks',
+    'hyperbolic-ai': 'hyperbolic',
+    'openrouter-api': 'openrouter',
+    'pollinations-ai': 'pollinations',
+    'siliconflow-ai': 'siliconflow',
+  };
+  return map[clean] || clean;
+}
 
 /**
  * Registry managing provider adapters and available models.
@@ -86,6 +118,12 @@ export class ProviderRegistry {
         this.adapters.set(entry.id, adapter);
       }
     }
+
+    // Initialize Antigravity & Gemini CLI Cloud Code OAuth adapter
+    const antigravity = new AntigravityProviderAdapter();
+    this.adapters.set(antigravity.id, antigravity);
+    this.adapters.set('antigravity-cli', antigravity);
+    this.adapters.set('gemini-cli', antigravity);
   }
 
   /**
@@ -94,57 +132,71 @@ export class ProviderRegistry {
    * Also supports "free" for OpenRouter to route :free models without requiring a paid key.
    */
   configureProviderKey(providerId: string, apiKey: string, baseUrl?: string): void {
+    const norm = normalizeProviderId(providerId);
     const trimmedKey = apiKey?.trim() || '';
-    const isFreeOpenRouter = providerId === 'openrouter' && trimmedKey.toLowerCase() === 'free';
+    const isFreeOpenRouter = (providerId === 'openrouter' || norm === 'openrouter') && trimmedKey.toLowerCase() === 'free';
     const effectiveKey = isFreeOpenRouter ? 'free' : trimmedKey;
 
+    if (norm === 'antigravity' || providerId === 'antigravity' || providerId === 'antigravity-cli' || providerId === 'gemini-cli') {
+      const agy = this.adapters.get('antigravity') as AntigravityProviderAdapter | undefined;
+      if (agy && typeof (agy as any).setApiKey === 'function') {
+        (agy as any).setApiKey(effectiveKey);
+      } else {
+        const newAgy = new AntigravityProviderAdapter(effectiveKey);
+        this.adapters.set('antigravity', newAgy);
+        this.adapters.set('antigravity-cli', newAgy);
+        this.adapters.set('gemini-cli', newAgy);
+      }
+      return;
+    }
+
     // 1. Dedicated adapters
-    if (providerId === 'groq') {
+    if (norm === 'groq') {
       this.adapters.set('groq', new GroqProviderAdapter(effectiveKey));
       return;
     }
-    if (providerId === 'openai') {
+    if (norm === 'openai') {
       this.adapters.set('openai', new OpenAIProviderAdapter(effectiveKey));
       return;
     }
-    if (providerId === 'gemini') {
+    if (norm === 'gemini') {
       this.adapters.set('gemini', new GeminiProviderAdapter(effectiveKey));
       return;
     }
-    if (providerId === 'anthropic') {
+    if (norm === 'anthropic') {
       this.adapters.set('anthropic', new AnthropicProviderAdapter(effectiveKey));
       return;
     }
-    if (providerId === 'cerebras') {
+    if (norm === 'cerebras') {
       this.adapters.set('cerebras', new CerebrasProviderAdapter(effectiveKey));
       return;
     }
-    if (providerId === 'deepseek') {
+    if (norm === 'deepseek') {
       this.adapters.set('deepseek', new DeepSeekProviderAdapter(effectiveKey));
       return;
     }
-    if (providerId === 'ollama') {
+    if (norm === 'ollama') {
       this.adapters.set('ollama', new OllamaProviderAdapter(baseUrl || 'http://localhost:11434/v1'));
       return;
     }
-    if (providerId === 'mistral') {
+    if (norm === 'mistral') {
       this.adapters.set('mistral', new MistralProviderAdapter(effectiveKey));
       return;
     }
-    if (providerId === 'siliconflow') {
+    if (norm === 'siliconflow') {
       this.adapters.set('siliconflow', new SiliconFlowProviderAdapter(effectiveKey));
       return;
     }
 
     // 2. Existing adapter in map (e.g. OpenAICompatibleAdapter or catalog entry)
-    const existing = this.adapters.get(providerId);
+    const existing = this.adapters.get(norm) || this.adapters.get(providerId);
     if (existing && typeof (existing as any).setApiKey === 'function') {
       (existing as any).setApiKey(effectiveKey);
       return;
     }
 
     // 3. Look up in declarative catalog
-    const catalogEntry = (catalogData as unknown as any[]).find((c) => c.id === providerId);
+    const catalogEntry = (catalogData as unknown as any[]).find((c) => c.id === norm || c.id === providerId);
     if (catalogEntry) {
       const adapter = new OpenAICompatibleAdapter({
         id: catalogEntry.id,
@@ -155,25 +207,31 @@ export class ProviderRegistry {
         tos_status: catalogEntry.tos_status || 'official',
       });
       this.adapters.set(catalogEntry.id, adapter);
+      if (norm !== catalogEntry.id) this.adapters.set(norm, adapter);
+      if (providerId !== catalogEntry.id) this.adapters.set(providerId, adapter);
       return;
     }
 
     // 4. Custom generic OpenAI-compatible provider
     const customAdapter = new OpenAICompatibleAdapter({
-      id: providerId,
+      id: norm || providerId,
       name: providerId,
       baseUrl: baseUrl || 'https://api.openai.com/v1',
       apiKey: effectiveKey,
       models: [],
     });
-    this.adapters.set(providerId, customAdapter);
+    this.adapters.set(norm || providerId, customAdapter);
+    if (providerId !== norm) {
+      this.adapters.set(providerId, customAdapter);
+    }
   }
 
   /**
-   * Retrieves an adapter by its provider ID (e.g. 'mock', 'groq', 'openai').
+   * Retrieves an adapter by its provider ID (e.g. 'mock', 'groq', 'openai', 'nvidia-nim').
    */
   getAdapter(providerId: string): IProviderAdapter | undefined {
-    return this.adapters.get(providerId);
+    const norm = normalizeProviderId(providerId);
+    return this.adapters.get(norm) || this.adapters.get(providerId);
   }
 
   /**
@@ -194,7 +252,8 @@ export class ProviderRegistry {
     const parts = modelId.split('/');
     if (parts.length > 1) {
       const providerId = parts[0];
-      const adapter = this.adapters.get(providerId);
+      const norm = normalizeProviderId(providerId);
+      const adapter = this.adapters.get(norm) || this.adapters.get(providerId);
       if (adapter && (adapter.id === 'mock' || adapter.isConfigured())) {
         return adapter;
       }
@@ -224,22 +283,23 @@ export class ProviderRegistry {
       if (match) return match;
     }
 
-    // 2. Dynamically synthesize ModelEntry for custom model IDs (e.g. nvidia/deepseek-r1, openrouter/deepseek/deepseek-r1:free)
+    // 2. Dynamically synthesize ModelEntry for custom model IDs (e.g. nvidia/deepseek-r1, openrouter/deepseek/deepseek-r1:free, nvidia-nim/...)
     const slashIdx = modelId.indexOf('/');
     if (slashIdx > 0) {
       const providerPrefix = modelId.slice(0, slashIdx);
-      if (providerPrefix === 'anthropic') {
+      const normPrefix = normalizeProviderId(providerPrefix);
+      if (normPrefix === 'anthropic') {
         const anthropicAdapter = this.adapters.get('anthropic');
         if (!anthropicAdapter || !anthropicAdapter.isConfigured()) {
           return undefined;
         }
       }
-      const adapter = this.adapters.get(providerPrefix);
-      const inCatalog = (catalogData as unknown as any[]).some((c) => c.id === providerPrefix);
+      const adapter = this.adapters.get(normPrefix) || this.adapters.get(providerPrefix);
+      const inCatalog = (catalogData as unknown as any[]).some((c) => c.id === normPrefix || c.id === providerPrefix);
       if (adapter || inCatalog) {
         return {
           id: modelId,
-          provider: providerPrefix,
+          provider: normPrefix,
           capabilities: {
             chat: true,
             streaming: true,
@@ -305,7 +365,8 @@ export class ProviderRegistry {
    * Retrieves a provider by id.
    */
   getProvider(providerId: string): IProviderAdapter | undefined {
-    return this.adapters.get(providerId);
+    const norm = normalizeProviderId(providerId);
+    return this.adapters.get(norm) || this.adapters.get(providerId);
   }
 
   /**

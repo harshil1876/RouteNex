@@ -1,8 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RouteNexClient, type TestPulseResult } from '../../utils/gateway-client';
 
 interface NexFlowCanvasProps {
   onNavigateTab?: (tabId: string) => void;
+}
+
+interface ConstellationNode {
+  id: string;
+  name: string;
+  modelCount: number;
+  models: Array<{
+    id: string;
+    name: string;
+    status: 'working' | 'offline' | 'untested';
+    latencyMs?: number;
+    enabled?: boolean;
+  }>;
+  status: 'working' | 'offline' | 'ready';
+  latencyMs?: number;
+}
+
+function getAdminHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const token = typeof window !== 'undefined'
+    ? localStorage.getItem('routenex_admin_token') || 'routenex-admin'
+    : 'routenex-admin';
+  return {
+    'Authorization': `Bearer ${token}`,
+    'x-admin-token': token,
+    ...extra,
+  };
 }
 
 export default function NexFlowCanvas({ onNavigateTab }: NexFlowCanvasProps) {
@@ -12,6 +38,108 @@ export default function NexFlowCanvas({ onNavigateTab }: NexFlowCanvasProps) {
   const [isPulsing, setIsPulsing] = useState(false);
   const [pulseStage, setPulseStage] = useState<number>(0);
   const [lastResult, setLastResult] = useState<TestPulseResult | null>(null);
+
+  // Constellation Hub Dynamic State
+  const [constellationNodes, setConstellationNodes] = useState<ConstellationNode[]>([]);
+  const [isProbingAll, setIsProbingAll] = useState(false);
+
+  const loadConstellationData = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:3001/v1/admin/providers', {
+        headers: getAdminHeaders(),
+      }).catch(() => null);
+
+      if (res && res.ok) {
+        const data = await res.json();
+        const providers: any[] = data.providers || [];
+        const connected = providers.filter(
+          (p) => p.hasKey || (p.keyCount && p.keyCount > 0) || (p.accountsCount && p.accountsCount > 0)
+        );
+
+        const nodes: ConstellationNode[] = connected.map((p) => {
+          const modelsState = p.modelsState || {};
+          const stateKeys = Object.keys(modelsState);
+          const models = stateKeys.map((k) => ({
+            id: k,
+            name: k.includes('/') ? k.split('/')[1] : k,
+            status: (modelsState[k]?.status || 'untested') as 'working' | 'offline' | 'untested',
+            latencyMs: modelsState[k]?.latency,
+            enabled: modelsState[k]?.enabled !== false,
+          }));
+
+          const hasWorking = models.some((m) => m.status === 'working');
+          const hasOffline = models.some((m) => m.status === 'offline');
+          const avgLatency =
+            models.filter((m) => m.latencyMs).reduce((a, b) => a + (b.latencyMs || 0), 0) /
+            (models.filter((m) => m.latencyMs).length || 1);
+
+          return {
+            id: p.id,
+            name: p.name || p.id,
+            modelCount: p.modelCount || models.length || 1,
+            models: models.length > 0 ? models : [{ id: `${p.id}/default`, name: 'Default Model', status: 'untested' }],
+            status: hasWorking ? 'working' : (hasOffline ? 'offline' : 'ready'),
+            latencyMs: avgLatency ? Math.round(avgLatency) : undefined,
+          };
+        });
+
+        setConstellationNodes(nodes);
+      }
+    } catch {
+      // offline fallback
+    }
+  };
+
+  useEffect(() => {
+    if (viewMode === 'constellation') {
+      loadConstellationData();
+    }
+  }, [viewMode]);
+
+  const handleProbeAllNodes = async () => {
+    if (isProbingAll || constellationNodes.length === 0) return;
+    setIsProbingAll(true);
+
+    try {
+      const updatedNodes = [...constellationNodes];
+      for (const node of updatedNodes) {
+        const targetModel = node.models[0]?.id || `${node.id}/default`;
+        const start = Date.now();
+        const res = await fetch('http://127.0.0.1:3001/v1/chat/completions', {
+          method: 'POST',
+          headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            model: targetModel.startsWith(`${node.id}/`) ? targetModel : `${node.id}/${targetModel}`,
+            messages: [{ role: 'user', content: 'ping' }],
+            max_tokens: 2,
+          }),
+        }).catch(() => null);
+
+        const latency = Date.now() - start;
+        const success = Boolean(res && res.ok);
+
+        node.status = success ? 'working' : 'offline';
+        node.latencyMs = success ? latency : undefined;
+        if (node.models[0]) {
+          node.models[0].status = success ? 'working' : 'offline';
+          node.models[0].latencyMs = success ? latency : undefined;
+        }
+
+        fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(node.id)}/models-state`, {
+          method: 'POST',
+          headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            modelId: targetModel,
+            status: success ? 'working' : 'offline',
+            latency: success ? latency : undefined,
+          }),
+        }).catch(() => {});
+      }
+      setConstellationNodes([...updatedNodes]);
+    } finally {
+      setIsProbingAll(false);
+    }
+  };
 
   const presets = [
     { label: 'Code Refactor', prompt: 'Refactor TypeScript connection pool to handle 10,000 req/sec with exponential backoff.', model: 'auto:nitro' },
@@ -299,29 +427,142 @@ export default function NexFlowCanvas({ onNavigateTab }: NexFlowCanvasProps) {
         </div>
       )}
 
-      {/* CONSTELLATION HUB VIEW */}
+      {/* DYNAMIC CONSTELLATION HUB VIEW */}
       {viewMode === 'constellation' && (
-        <div className="p-8 rounded-xl bg-[#09090b] border border-[#222226] flex flex-col items-center justify-center text-center space-y-4">
-          <div className="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-              <path d="M2 12h20" />
-            </svg>
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-base font-semibold text-zinc-100 font-sans">RouteNex Constellation Mesh</h3>
-            <p className="text-sm text-zinc-400 max-w-md font-sans">
-              347 connected AI endpoints, 120+ active providers, and circuit-breaker rings clustered around the RouteNex core.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-2 font-mono text-xs pt-1">
-            <span className="px-3 py-1 rounded-md bg-[#111113] border border-[#222226] text-sky-400 font-medium">Antigravity (14 Models)</span>
-            <span className="px-3 py-1 rounded-md bg-[#111113] border border-[#222226] text-zinc-300">Groq (Nitro 114ms)</span>
-            <span className="px-3 py-1 rounded-md bg-[#111113] border border-[#222226] text-zinc-300">Anthropic Claude</span>
-            <span className="px-3 py-1 rounded-md bg-[#111113] border border-[#222226] text-zinc-300">OpenAI GPT-4o</span>
-            <span className="px-3 py-1 rounded-md bg-[#111113] border border-[#222226] text-zinc-300">Pollinations ($0 Free)</span>
-          </div>
+        <div className="space-y-4">
+          {constellationNodes.length === 0 ? (
+            <div className="p-10 rounded-xl bg-[#09090b] border border-[#222226] flex flex-col items-center justify-center text-center space-y-5">
+              <div className="relative flex items-center justify-center">
+                <div className="w-24 h-24 rounded-full border border-[#222226] flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full border border-sky-500/20 bg-sky-500/5 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-sky-500/20 border border-sky-500/40 text-sky-400 flex items-center justify-center">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-zinc-600"></span>
+                  <h3 className="text-base font-semibold text-zinc-100 font-sans">0 Connected Providers • 0 Active Models</h3>
+                </div>
+                <p className="text-xs text-zinc-400 max-w-md font-sans leading-relaxed">
+                  No upstream AI providers or local CLI credentials configured yet. Connect an API key (Groq, OpenAI, Anthropic) or link Antigravity CLI / Gemini CLI to dynamically activate the Constellation Mesh.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => (onNavigateTab ? onNavigateTab('providers') : null)}
+                className="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold text-xs transition inline-flex items-center gap-2 shadow-xs cursor-pointer font-sans"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Connect Providers →
+              </button>
+            </div>
+          ) : (
+            <div className="p-6 rounded-xl bg-[#09090b] border border-[#222226] space-y-6">
+              {/* Top Actions & Summary Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#222226]">
+                <div className="flex items-center gap-3">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-zinc-100 font-sans">
+                      Active Constellation Mesh
+                    </h3>
+                    <p className="text-xs text-zinc-400 font-sans">
+                      {constellationNodes.length} connected providers •{' '}
+                      {constellationNodes.reduce((acc, n) => acc + (n.models.length || 1), 0)} active models
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleProbeAllNodes}
+                    disabled={isProbingAll}
+                    className="px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold text-xs transition inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50 font-sans cursor-pointer"
+                  >
+                    <svg className={`w-3.5 h-3.5 ${isProbingAll ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    {isProbingAll ? 'Probing All Nodes...' : 'Probe All Connected Nodes'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => (onNavigateTab ? onNavigateTab('providers') : null)}
+                    className="px-3.5 py-1.5 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] text-zinc-300 hover:text-white text-xs transition font-sans cursor-pointer"
+                  >
+                    Manage Providers →
+                  </button>
+                </div>
+              </div>
+
+              {/* Dynamic Visual Mesh Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {constellationNodes.map((node) => {
+                  const isWorking = node.status === 'working';
+                  const isOffline = node.status === 'offline';
+                  return (
+                    <div
+                      key={node.id}
+                      className={`p-4 rounded-xl bg-[#111113] border transition-all ${
+                        isWorking
+                          ? 'border-emerald-500/30 shadow-[0_0_15px_-3px_rgba(16,185,129,0.1)]'
+                          : isOffline
+                          ? 'border-rose-500/30'
+                          : 'border-[#222226]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              isWorking
+                                ? 'bg-emerald-400'
+                                : isOffline
+                                ? 'bg-rose-400'
+                                : 'bg-sky-400'
+                            }`}
+                          />
+                          <span className="text-xs font-bold text-zinc-100 font-sans">{node.name}</span>
+                        </div>
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold ${
+                            isWorking
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              : isOffline
+                              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                              : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
+                          }`}
+                        >
+                          {isWorking ? `Healthy ${node.latencyMs ? `(${node.latencyMs}ms)` : ''}` : isOffline ? 'Offline' : 'Ready'}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5 mt-3 pt-2.5 border-t border-[#222226] text-[11px] font-mono">
+                        <div className="flex items-center justify-between text-zinc-400">
+                          <span>Endpoint:</span>
+                          <span className="text-zinc-300">{node.id}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-zinc-400">
+                          <span>Models:</span>
+                          <span className="text-sky-400 font-medium">{node.models.length} active</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

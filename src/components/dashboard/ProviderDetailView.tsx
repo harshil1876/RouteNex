@@ -26,8 +26,9 @@ interface ProviderModel {
   isVisible: boolean;
   isFree: boolean;
   context: string;
-  status: 'working' | 'testing' | 'offline';
+  status: 'working' | 'testing' | 'offline' | 'untested';
   latencyMs?: number;
+  enabled?: boolean;
 }
 
 interface CustomModel {
@@ -411,14 +412,23 @@ export default function ProviderDetailView({
               : m
           )
         );
+        fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(provider.id)}/models-state`, {
+          method: 'POST',
+          headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            modelId,
+            status: 'offline',
+          }),
+        }).catch(() => {});
         return false;
       }
 
+      const targetModel = modelId.startsWith(`${provider.id}/`) ? modelId : `${provider.id}/${modelId}`;
       const res = await fetch('http://127.0.0.1:3001/v1/chat/completions', {
         method: 'POST',
         headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
-          model: modelId,
+          model: targetModel,
           messages: [{ role: 'user', content: 'ping' }],
           max_tokens: 2,
         }),
@@ -434,6 +444,17 @@ export default function ProviderDetailView({
             : m
         )
       );
+
+      fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(provider.id)}/models-state`, {
+        method: 'POST',
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          modelId,
+          status: success ? 'working' : 'offline',
+          latency: success ? latency : undefined,
+        }),
+      }).catch(() => {});
+
       return success;
     } catch {
       setModels((prev) =>
@@ -442,6 +463,48 @@ export default function ProviderDetailView({
       return false;
     }
   };
+
+  const handleToggleModelEnabled = async (modelId: string, enabled: boolean) => {
+    setModels((prev) => prev.map((m) => (m.id === modelId ? { ...m, enabled } : m)));
+    try {
+      await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(provider.id)}/models-state`, {
+        method: 'POST',
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          modelId,
+          enabled,
+        }),
+      });
+    } catch {}
+  };
+
+  useEffect(() => {
+    let active = true;
+    fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(provider.id)}/models-state`, {
+      headers: getAdminHeaders(),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active || !data?.modelsState) return;
+        const stateMap = data.modelsState;
+        setModels((prev) =>
+          prev.map((m) => {
+            const saved = stateMap[m.id];
+            if (!saved) return m;
+            return {
+              ...m,
+              status: saved.status || m.status,
+              latencyMs: saved.latency !== undefined ? saved.latency : m.latencyMs,
+              enabled: saved.enabled !== undefined ? saved.enabled : m.enabled,
+            };
+          })
+        );
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [provider.id]);
 
   const handleTestAllModels = async () => {
     setIsTestingAllModels(true);
@@ -914,6 +977,18 @@ export default function ProviderDetailView({
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
+                        onClick={() => handleToggleModelEnabled(m.id, m.enabled === false ? true : false)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono transition border ${
+                          m.enabled !== false
+                            ? 'bg-sky-500/10 border-sky-500/30 text-sky-400 hover:bg-sky-500/20'
+                            : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                        }`}
+                        title={m.enabled !== false ? 'Model Enabled in RouteNex Gateway' : 'Model Disabled (Hidden from routing)'}
+                      >
+                        {m.enabled !== false ? 'Enabled' : 'Disabled'}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleTestSingleModel(m.id)}
                         className="p-1 rounded bg-[#09090b] border border-[#222226] text-zinc-300 hover:text-white"
                         title="Test Model (▷)"
@@ -977,9 +1052,11 @@ export default function ProviderDetailView({
                     <span
                       className={
                         m.status === 'working'
-                          ? 'text-emerald-400'
+                          ? 'text-emerald-400 font-medium'
                           : m.status === 'testing'
                           ? 'text-amber-400 animate-pulse'
+                          : m.status === 'offline'
+                          ? 'text-rose-400 font-medium'
                           : 'text-zinc-500'
                       }
                     >
@@ -987,9 +1064,9 @@ export default function ProviderDetailView({
                         ? `✓ Healthy ${m.latencyMs ? `(${m.latencyMs}ms)` : ''}`
                         : m.status === 'testing'
                         ? 'Testing...'
-                        : accounts.length === 0 && !isZeroKeyProvider
-                        ? 'offline (401)'
-                        : 'offline'}
+                        : m.status === 'offline'
+                        ? (accounts.length === 0 && !isZeroKeyProvider ? 'Offline (401 No Key)' : 'Offline (Unreachable)')
+                        : 'Untested'}
                     </span>
                   </div>
                 </div>

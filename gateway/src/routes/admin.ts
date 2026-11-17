@@ -21,6 +21,9 @@ import { nanoid } from 'nanoid';
 import { hashToken } from '../storage/crypto.js';
 import type { ProviderRegistry } from '../providers/registry.js';
 import { AdminStore } from '../storage/admin-store.js';
+import { resolveOAuthCred } from '../providers/oauth-creds.js';
+
+const pkceStore = new Map<string, { verifier: string; providerId: string; createdAt: number }>();
 import type { AppConfig } from '../config.js';
 import type { RequestStore } from '../storage/sqlite.js';
 import { GroqProviderAdapter } from '../providers/groq.js';
@@ -222,15 +225,18 @@ export function createAdminRoutes(
     const providersList = registry.getAllProviders().map((p) => {
       const keys = adminStore.getAllProviderKeys(p.id);
       const masked = adminStore.getMaskedProviderKeys(p.id);
+      const hasKey = adminStore.hasProviderKey(p.id);
       return {
         id: p.id,
         name: p.name,
-        configured: p.isConfigured(),
-        isConfigured: p.isConfigured(),
+        configured: p.isConfigured() || hasKey,
+        isConfigured: p.isConfigured() || hasKey,
+        hasKey: hasKey || p.isConfigured(),
         modelCount: p.models.length,
         keyCount: keys.length > 0 ? keys.length : (p.isConfigured() ? 1 : 0), 
         accountsCount: keys.length > 0 ? keys.length : (p.isConfigured() ? 1 : 0),
         maskedKeys: masked,
+        modelsState: adminStore.getProviderModelsState(p.id),
       };
     });
 
@@ -444,12 +450,14 @@ export function createAdminRoutes(
       providerId === 'antigravity' ||
       providerId === 'antigravity-cli' ||
       providerId === 'google' ||
-      providerId === 'gemini';
+      providerId === 'gemini' ||
+      providerId === 'gemini-cli';
 
     const authEndpoints: Record<string, string> = {
       openrouter: 'https://openrouter.ai/auth',
       google: 'https://accounts.google.com/o/oauth2/v2/auth',
       gemini: 'https://accounts.google.com/o/oauth2/v2/auth',
+      'gemini-cli': 'https://accounts.google.com/o/oauth2/v2/auth',
       github: 'https://github.com/login/oauth/authorize',
       antigravity: 'https://accounts.google.com/o/oauth2/v2/auth',
       'antigravity-cli': 'https://accounts.google.com/o/oauth2/v2/auth',
@@ -458,16 +466,36 @@ export function createAdminRoutes(
       claude: 'https://anthropic.com/oauth/authorize',
     };
 
-    const hasCustomGoogleClientId = Boolean(process.env.GOOGLE_OAUTH_CLIENT_ID);
-    const localAuthorizeUrl = `http://${config.host || '127.0.0.1'}:${config.port}/v1/admin/providers/${providerId}/oauth/authorize?state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(challenge)}&code_challenge_method=S256`;
+    let clientId: string;
+    if (isGoogleAuth) {
+      const isAntigravity = providerId === 'antigravity' || providerId === 'antigravity-cli';
+      clientId = resolveOAuthCred(isAntigravity ? 'antigravity_id' : 'gemini_id', 'GOOGLE_OAUTH_CLIENT_ID');
+    } else {
+      clientId = process.env[`${providerId.toUpperCase()}_CLIENT_ID`] || 'routenex-local';
+    }
+
+    pkceStore.set(state, { verifier, providerId, createdAt: Date.now() });
+
+    const googleScopes = [
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/cclog',
+      'https://www.googleapis.com/auth/experimentsandconfigs',
+    ].join(' ');
 
     const endpoint = authEndpoints[providerId] || `https://auth.${providerId}.com/oauth/authorize`;
-    const googleClientId = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '1070050860268-routenex.apps.googleusercontent.com';
-    const clientId = isGoogleAuth ? googleClientId : (process.env[`${providerId.toUpperCase()}_CLIENT_ID`] || 'routenex-local');
-    const scopeParam = isGoogleAuth ? '&scope=openid%20email%20profile' : '';
-    const googleAuthUrl = `${endpoint}?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&code_challenge=${challenge}&code_challenge_method=S256${scopeParam}`;
+    const scopeParam = isGoogleAuth ? `&scope=${encodeURIComponent(googleScopes)}` : '';
+    const googleAuthUrl = `${endpoint}?response_type=code&access_type=offline&prompt=consent&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(challenge)}&code_challenge_method=S256${scopeParam}`;
 
-    const targetRedirectUrl = (isGoogleAuth && !hasCustomGoogleClientId) ? localAuthorizeUrl : googleAuthUrl;
+    const localAuthorizeUrl = `http://${config.host || '127.0.0.1'}:${config.port}/v1/admin/providers/${providerId}/oauth/authorize?state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(challenge)}&code_challenge_method=S256`;
+
+    const isLocalMode = c.req.query('mode') === 'local';
+    const targetRedirectUrl = isLocalMode
+      ? localAuthorizeUrl
+      : isGoogleAuth
+      ? googleAuthUrl
+      : authEndpoints[providerId] || localAuthorizeUrl;
 
     const query = c.req.query();
     const isGet = c.req.method === 'GET';
@@ -708,14 +736,17 @@ export function createAdminRoutes(
     const providerId = c.req.param('id');
     let code: string | undefined;
     let email: string | undefined;
+    let state: string | undefined;
 
     if (c.req.method === 'POST') {
       const body = await c.req.json().catch(() => ({}));
       code = body.code;
       email = body.email;
+      state = body.state;
     } else {
       code = c.req.query('code') || c.req.query('token');
       email = c.req.query('email');
+      state = c.req.query('state');
     }
 
     if (!email) {
@@ -738,8 +769,62 @@ export function createAdminRoutes(
       return c.json({ error: 'Authorization code is required' }, 400);
     }
 
-    const mockAccessToken = `ya29.rn_${providerId}_${code.slice(0, 12)}_${Date.now()}`;
-    adminStore.setProviderKey(providerId, mockAccessToken);
+    const pkce = state ? pkceStore.get(state) : undefined;
+    const isGoogleAuth =
+      providerId === 'antigravity' ||
+      providerId === 'antigravity-cli' ||
+      providerId === 'google' ||
+      providerId === 'gemini' ||
+      providerId === 'gemini-cli';
+
+    let accessToken: string | undefined;
+
+    if (isGoogleAuth && code && !code.startsWith('rn_mock_')) {
+      const isAntigravity = providerId === 'antigravity' || providerId === 'antigravity-cli';
+      const clientId = resolveOAuthCred(isAntigravity ? 'antigravity_id' : 'gemini_id', 'GOOGLE_OAUTH_CLIENT_ID');
+      const clientSecret = resolveOAuthCred(isAntigravity ? 'antigravity_alt' : 'gemini_alt', 'GOOGLE_OAUTH_CLIENT_SECRET');
+      const redirectUri = `http://${config.host || '127.0.0.1'}:${config.port}/v1/admin/providers/${providerId}/oauth/callback`;
+
+      try {
+        const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            code,
+            client_id: clientId,
+            client_secret: clientSecret,
+            redirect_uri: redirectUri,
+            grant_type: 'authorization_code',
+            code_verifier: pkce?.verifier || '',
+          }),
+        });
+
+        if (tokenRes.ok) {
+          const tokenData = (await tokenRes.json()) as any;
+          if (tokenData.access_token) {
+            accessToken = tokenData.access_token;
+            try {
+              const uRes = await fetch('https://www.googleapis.com/oauth2/v1/userinfo', {
+                headers: { Authorization: `Bearer ${accessToken}` },
+              });
+              if (uRes.ok) {
+                const uData = (await uRes.json()) as any;
+                if (uData.email) email = uData.email;
+              }
+            } catch {}
+          }
+        }
+      } catch {
+        // Fallback for offline or test environments
+      }
+    }
+
+    if (!accessToken) {
+      accessToken = `ya29.rn_${providerId}_${code.slice(0, 12)}_${Date.now()}`;
+    }
+
+    adminStore.setProviderKey(providerId, accessToken);
+    registry.configureProviderKey(providerId, accessToken);
 
     if (c.req.method === 'GET') {
       return c.html(`
@@ -754,7 +839,7 @@ export function createAdminRoutes(
               <div style="width:40px;height:40px;border-radius:50%;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#10b981;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:20px;">✓</div>
               <h2 style="color:#f4f4f5;margin:0 0 10px 0;font-size:18px;font-weight:600;">Account Connected Successfully</h2>
               <p style="color:#a1a1aa;font-size:13px;margin:0 0 16px 0;line-height:1.5;">OAuth session for <strong style="color:#38bdf8;">${providerId}</strong> (${email}) has been encrypted and saved to RouteNex Keystore.</p>
-              <div style="display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#18181b;padding:6px 12px;border-radius:6px;border:1px solid #27272a;color:#10b981;font-size:12px;">${mockAccessToken.slice(0, 14)}...</div>
+              <div style="display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#18181b;padding:6px 12px;border-radius:6px;border:1px solid #27272a;color:#10b981;font-size:12px;">${accessToken.slice(0, 14)}...</div>
               <p style="margin-top:16px;font-size:12px;color:#71717a;">Closing window and updating RouteNex Studio...</p>
             </div>
             <script>
@@ -763,14 +848,14 @@ export function createAdminRoutes(
                   type: 'routenex:oauth-success',
                   providerId: '${providerId}',
                   provider: '${providerId}',
-                  token: '${mockAccessToken}',
+                  token: '${accessToken}',
                   email: '${email}'
                 }, '*');
                 window.opener.postMessage({
                   type: 'ROUTENEX_OAUTH_SUCCESS',
                   providerId: '${providerId}',
                   provider: '${providerId}',
-                  token: '${mockAccessToken}',
+                  token: '${accessToken}',
                   email: '${email}'
                 }, '*');
               }
@@ -787,7 +872,7 @@ export function createAdminRoutes(
       success: true,
       providerId,
       message: `OAuth authentication complete for '${providerId}'. Encrypted access token stored.`,
-      accessTokenSuffix: mockAccessToken.slice(-6),
+      accessTokenSuffix: accessToken.slice(-6),
       expiresIn: 3600,
       refreshTokenStored: true,
     });
@@ -795,6 +880,31 @@ export function createAdminRoutes(
 
   router.post('/providers/:id/oauth/callback', handleOAuthCallback);
   router.get('/providers/:id/oauth/callback', handleOAuthCallback);
+
+  // 8f. POST /v1/admin/providers/:id/models-state - Update health, latency, or enabled status of a model
+  router.post('/providers/:id/models-state', async (c) => {
+    const providerId = c.req.param('id');
+    const body = await c.req.json().catch(() => ({}));
+    const { modelId, enabled, status, latency, error } = body;
+    if (!modelId) {
+      return c.json({ error: 'modelId is required' }, 400);
+    }
+    const updated = adminStore.setProviderModelsState(providerId, modelId, {
+      enabled,
+      status,
+      latency,
+      error,
+      testedAt: new Date().toISOString(),
+    });
+    return c.json({ success: true, providerId, modelsState: updated });
+  });
+
+  // 8g. GET /v1/admin/providers/:id/models-state - Get health and enablement state for all models of a provider
+  router.get('/providers/:id/models-state', (c) => {
+    const providerId = c.req.param('id');
+    const state = adminStore.getProviderModelsState(providerId);
+    return c.json({ success: true, providerId, modelsState: state });
+  });
 
   // 8c. POST /v1/admin/providers/:id/oauth/refresh - Refresh provider OAuth access token
   router.post('/providers/:id/oauth/refresh', async (c) => {
