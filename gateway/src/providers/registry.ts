@@ -45,6 +45,9 @@ export function normalizeProviderId(id: string): string {
     'openrouter-api': 'openrouter',
     'pollinations-ai': 'pollinations',
     'siliconflow-ai': 'siliconflow',
+    'opencode-free': 'opencode',
+    'opencode-zen': 'opencode',
+    'chutes-ai': 'chutes',
   };
   return map[clean] || clean;
 }

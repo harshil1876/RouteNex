@@ -569,7 +569,7 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
                     </div>
                     <h3 className="text-sm font-semibold text-zinc-100 font-sans">Providers & Models</h3>
                     <p className="text-[13px] leading-5 text-zinc-400 font-sans">
-                      Connect 120+ providers, Antigravity, and 200+ models.
+                      Connect 256+ providers, Antigravity, and 200+ models.
                     </p>
                   </div>
 
@@ -642,7 +642,7 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
                     Providers & Models
                   </h1>
                   <p className="text-sm text-zinc-400 font-sans mt-1">
-                    Manage 120+ official and zero-key providers, and 200+ models.
+                    Manage 256+ official and zero-key providers, and 200+ models.
                   </p>
                 </div>
                 <div className="inline-flex rounded-lg bg-[#111113] border border-[#222226] p-1 text-xs font-sans">
@@ -653,7 +653,7 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
                       providersSubView === 'providers' ? 'bg-sky-500 !text-zinc-950 font-semibold' : 'text-zinc-400 hover:text-white'
                     }`}
                   >
-                    By Provider (120+)
+                    By Provider (256+)
                   </button>
                   <button
                     type="button"

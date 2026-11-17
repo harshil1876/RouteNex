@@ -89,6 +89,18 @@ export const CATALOG_PROVIDERS = [
         "context_length": 1000000
       },
       {
+        "id": "antigravity/gemini-3.1-pro-high",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 2000000
+      },
+      {
         "id": "antigravity/gemini-3.1-flash-lite",
         "provider": "antigravity",
         "capabilities": {
@@ -101,7 +113,7 @@ export const CATALOG_PROVIDERS = [
         "context_length": 1000000
       },
       {
-        "id": "antigravity/claude-opus-4-6-thinking",
+        "id": "antigravity/gemini-3.8-flash-high",
         "provider": "antigravity",
         "capabilities": {
           "chat": true,
@@ -110,31 +122,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 200000
-      },
-      {
-        "id": "antigravity/claude-sonnet-4-6-thinking",
-        "provider": "antigravity",
-        "capabilities": {
-          "chat": true,
-          "streaming": true,
-          "tool_calls": true,
-          "vision": true,
-          "json_mode": true
-        },
-        "context_length": 200000
-      },
-      {
-        "id": "antigravity/gpt-oss-120b",
-        "provider": "antigravity",
-        "capabilities": {
-          "chat": true,
-          "streaming": true,
-          "tool_calls": true,
-          "vision": false,
-          "json_mode": true
-        },
-        "context_length": 128000
+        "context_length": 1000000
       },
       {
         "id": "antigravity/gemini-3.8-flash-tiered",
@@ -161,7 +149,19 @@ export const CATALOG_PROVIDERS = [
         "context_length": 1000000
       },
       {
-        "id": "antigravity/gemini-3.1-pro-high",
+        "id": "antigravity/gemini-3.6-flash-tiered",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity/gemini-4-argon-high",
         "provider": "antigravity",
         "capabilities": {
           "chat": true,
@@ -173,7 +173,7 @@ export const CATALOG_PROVIDERS = [
         "context_length": 2000000
       },
       {
-        "id": "antigravity/gemini-3.6-flash-tiered",
+        "id": "antigravity/gemini-4-argon-med",
         "provider": "antigravity",
         "capabilities": {
           "chat": true,
@@ -182,18 +182,114 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 1000000
+        "context_length": 2000000
+      },
+      {
+        "id": "antigravity/gemini-4-argon-low",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 2000000
+      },
+      {
+        "id": "antigravity/claude-opus-4-6-thinking",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity/claude-sonnet-4-6",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity/claude-sonnet-4-6-thinking",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity/claude-opus-5-5-high",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity/claude-sonnet-5-5-high",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity/gpt-oss-120b",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "antigravity/gpt-oss-120b-medium",
+        "provider": "antigravity",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
       }
     ]
   },
   {
     "id": "antigravity-cli",
-    "name": "Antigravity CLI",
-    "category": "IDE",
+    "name": "Antigravity CLI (agy)",
+    "category": "OAUTH",
     "baseUrl": "http://127.0.0.1:3001/v1",
-    "envKey": "ANTIGRAVITY_CLI_KEY",
+    "envKey": "ANTIGRAVITY_TOKEN",
     "freeTier": true,
-    "badge": "IDE Agentic Bridge",
+    "badge": "OAuth 2.0 PKCE / CLI",
     "modalities": [
       "text",
       "vision",
@@ -274,6 +370,18 @@ export const CATALOG_PROVIDERS = [
         "context_length": 1000000
       },
       {
+        "id": "antigravity-cli/gemini-3.1-pro-high",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 2000000
+      },
+      {
         "id": "antigravity-cli/gemini-3.1-flash-lite",
         "provider": "antigravity-cli",
         "capabilities": {
@@ -286,7 +394,7 @@ export const CATALOG_PROVIDERS = [
         "context_length": 1000000
       },
       {
-        "id": "antigravity-cli/claude-opus-4-6-thinking",
+        "id": "antigravity-cli/gemini-3.8-flash-high",
         "provider": "antigravity-cli",
         "capabilities": {
           "chat": true,
@@ -295,31 +403,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 200000
-      },
-      {
-        "id": "antigravity-cli/claude-sonnet-4-6-thinking",
-        "provider": "antigravity-cli",
-        "capabilities": {
-          "chat": true,
-          "streaming": true,
-          "tool_calls": true,
-          "vision": true,
-          "json_mode": true
-        },
-        "context_length": 200000
-      },
-      {
-        "id": "antigravity-cli/gpt-oss-120b",
-        "provider": "antigravity-cli",
-        "capabilities": {
-          "chat": true,
-          "streaming": true,
-          "tool_calls": true,
-          "vision": false,
-          "json_mode": true
-        },
-        "context_length": 128000
+        "context_length": 1000000
       },
       {
         "id": "antigravity-cli/gemini-3.8-flash-tiered",
@@ -346,7 +430,19 @@ export const CATALOG_PROVIDERS = [
         "context_length": 1000000
       },
       {
-        "id": "antigravity-cli/gemini-3.1-pro-high",
+        "id": "antigravity-cli/gemini-3.6-flash-tiered",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 1000000
+      },
+      {
+        "id": "antigravity-cli/gemini-4-argon-high",
         "provider": "antigravity-cli",
         "capabilities": {
           "chat": true,
@@ -358,7 +454,7 @@ export const CATALOG_PROVIDERS = [
         "context_length": 2000000
       },
       {
-        "id": "antigravity-cli/gemini-3.6-flash-tiered",
+        "id": "antigravity-cli/gemini-4-argon-med",
         "provider": "antigravity-cli",
         "capabilities": {
           "chat": true,
@@ -367,7 +463,132 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 1000000
+        "context_length": 2000000
+      },
+      {
+        "id": "antigravity-cli/gemini-4-argon-low",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 2000000
+      },
+      {
+        "id": "antigravity-cli/claude-opus-4-6-thinking",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity-cli/claude-sonnet-4-6",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity-cli/claude-sonnet-4-6-thinking",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity-cli/claude-opus-5-5-high",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity-cli/claude-sonnet-5-5-high",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      },
+      {
+        "id": "antigravity-cli/gpt-oss-120b",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "antigravity-cli/gpt-oss-120b-medium",
+        "provider": "antigravity-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "gemini-cli",
+    "name": "Gemini CLI",
+    "category": "OAUTH",
+    "baseUrl": "http://127.0.0.1:3001/v1",
+    "envKey": "GEMINI_CLI_TOKEN",
+    "freeTier": true,
+    "badge": "Google Cloud Code OAuth",
+    "modalities": [
+      "text",
+      "vision",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "gemini-cli/gemini-2.5-pro",
+        "provider": "gemini-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 2000000
       }
     ]
   },
@@ -388,6 +609,42 @@ export const CATALOG_PROVIDERS = [
     "supportsOAuth": true,
     "models": [
       {
+        "id": "openrouter/deepseek/deepseek-r1:free",
+        "provider": "openrouter",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 160000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      },
+      {
+        "id": "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+        "provider": "openrouter",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 0,
+          "completion_per_million": 0,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      },
+      {
         "id": "openrouter/auto",
         "provider": "openrouter",
         "capabilities": {
@@ -397,7 +654,13 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000
+        "context_length": 128000,
+        "pricing": {
+          "prompt_per_million": 1,
+          "completion_per_million": 3,
+          "provenance": "OFFICIAL",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
       }
     ]
   },
@@ -456,6 +719,62 @@ export const CATALOG_PROVIDERS = [
           "json_mode": true
         },
         "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "copilot",
+    "name": "GitHub Copilot Enterprise",
+    "category": "OAUTH",
+    "baseUrl": "https://api.githubcopilot.com",
+    "envKey": "GITHUB_TOKEN",
+    "freeTier": false,
+    "badge": "GitHub Device Flow",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "copilot/claude-3-7-sonnet",
+        "provider": "copilot",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      }
+    ]
+  },
+  {
+    "id": "ghe-copilot",
+    "name": "GitHub Enterprise Copilot",
+    "category": "OAUTH",
+    "baseUrl": "https://copilot.github.enterprise/api",
+    "envKey": "GHE_TOKEN",
+    "freeTier": false,
+    "badge": "Enterprise SSO Flow",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "ghe-copilot/gpt-4o",
+        "provider": "ghe-copilot",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
       }
     ]
   },
@@ -957,6 +1276,35 @@ export const CATALOG_PROVIDERS = [
     ]
   },
   {
+    "id": "xai-oauth",
+    "name": "xAI Grok Cloud (OAuth)",
+    "category": "OAUTH",
+    "baseUrl": "https://api.x.ai/v1",
+    "envKey": "XAI_API_KEY",
+    "freeTier": false,
+    "badge": "xAI OAuth 2.0",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "xai/grok-2",
+        "provider": "xai-oauth",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
     "id": "cursor",
     "name": "Cursor IDE Native",
     "category": "IDE",
@@ -971,7 +1319,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "cursor/core-model",
+        "id": "cursor/composer-v2",
         "provider": "cursor",
         "capabilities": {
           "chat": true,
@@ -980,13 +1328,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 200000
       }
     ]
   },
@@ -1004,7 +1346,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "continue/core-model",
+        "id": "continue/tab-autocomplete",
         "provider": "continue",
         "capabilities": {
           "chat": true,
@@ -1013,13 +1355,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -1038,7 +1374,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "cline/core-model",
+        "id": "cline/autonomous-code",
         "provider": "cline",
         "capabilities": {
           "chat": true,
@@ -1047,13 +1383,35 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 200000
+      }
+    ]
+  },
+  {
+    "id": "clinepass",
+    "name": "ClinePass Virtual Proxy",
+    "category": "IDE",
+    "baseUrl": "http://127.0.0.1:3001/v1",
+    "envKey": "ROUTENEX_VIRTUAL_KEY",
+    "freeTier": true,
+    "badge": "Autonomous Cline Tunnel",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "clinepass/virtual-tunnel",
+        "provider": "clinepass",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
       }
     ]
   },
@@ -1071,7 +1429,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "aider/core-model",
+        "id": "aider/architect-edit",
         "provider": "aider",
         "capabilities": {
           "chat": true,
@@ -1080,13 +1438,707 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "kilocode",
+    "name": "Kilo Code IDE",
+    "category": "IDE",
+    "baseUrl": "https://api.kilo.code/v1",
+    "envKey": "KILOCODE_API_KEY",
+    "freeTier": true,
+    "badge": "Kilo Code Agent",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "kilocode/kilo-chat",
+        "provider": "kilocode",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "qoder",
+    "name": "Qoder AI Assistant",
+    "category": "IDE",
+    "baseUrl": "https://api.qoder.ai/v1",
+    "envKey": "QODER_API_KEY",
+    "freeTier": true,
+    "badge": "Qoder IDE Flow",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "qoder/qoder-coder",
+        "provider": "qoder",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "kiro",
+    "name": "Kiro AI Assistant",
+    "category": "IDE",
+    "baseUrl": "https://api.kiro.ai/v1",
+    "envKey": "KIRO_API_KEY",
+    "freeTier": true,
+    "badge": "Kiro Dev Flow",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "kiro/kiro-agent",
+        "provider": "kiro",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "amazon-q",
+    "name": "Amazon Q Developer",
+    "category": "IDE",
+    "baseUrl": "https://q.us-east-1.amazonaws.com/v1",
+    "envKey": "AWS_ACCESS_KEY_ID",
+    "freeTier": true,
+    "badge": "AWS Q Developer IDE",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "amazon-q/developer-assistant",
+        "provider": "amazon-q",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "trae",
+    "name": "Trae AI IDE (ByteDance)",
+    "category": "IDE",
+    "baseUrl": "https://api.trae.ai/v1",
+    "envKey": "TRAE_API_KEY",
+    "freeTier": true,
+    "badge": "Trae Adaptive Agent",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "trae/claude-3-7-sonnet",
+        "provider": "trae",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      }
+    ]
+  },
+  {
+    "id": "zed",
+    "name": "Zed Editor AI",
+    "category": "IDE",
+    "baseUrl": "https://api.zed.dev/v1",
+    "envKey": "ZED_API_KEY",
+    "freeTier": true,
+    "badge": "Zed High Performance IDE",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "supportsOAuth": true,
+    "models": [
+      {
+        "id": "zed/claude-3-7-sonnet",
+        "provider": "zed",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      }
+    ]
+  },
+  {
+    "id": "windsurf",
+    "name": "Codeium Windsurf Cascade",
+    "category": "IDE",
+    "baseUrl": "https://api.codeium.com/v1",
+    "envKey": "CODEIUM_API_KEY",
+    "freeTier": true,
+    "badge": "Cascade Multi-File Flows",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "windsurf/cascade-v2",
+        "provider": "windsurf",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      }
+    ]
+  },
+  {
+    "id": "codeium",
+    "name": "Codeium Assistant",
+    "category": "IDE",
+    "baseUrl": "https://api.codeium.com/v1",
+    "envKey": "CODEIUM_API_KEY",
+    "freeTier": true,
+    "badge": "Unlimited Free Autocomplete",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "codeium/chat-v1",
+        "provider": "codeium",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "supermaven",
+    "name": "Supermaven Ultra-Fast",
+    "category": "IDE",
+    "baseUrl": "https://api.supermaven.com/v1",
+    "envKey": "SUPERMAVEN_API_KEY",
+    "freeTier": true,
+    "badge": "300,000 Token Context",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "supermaven/babylon",
+        "provider": "supermaven",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 300000
+      }
+    ]
+  },
+  {
+    "id": "augment-code",
+    "name": "Augment Code AI",
+    "category": "IDE",
+    "baseUrl": "https://api.augmentcode.com/v1",
+    "envKey": "AUGMENT_API_KEY",
+    "freeTier": false,
+    "badge": "Enterprise Code Intelligence",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "augment/code-indexer",
+        "provider": "augment-code",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 200000
+      }
+    ]
+  },
+  {
+    "id": "void-editor",
+    "name": "Void Open Source IDE",
+    "category": "IDE",
+    "baseUrl": "http://localhost:8080/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Local/Self-Hosted IDE",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "void/local-agent",
+        "provider": "void-editor",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "pearai",
+    "name": "PearAI Open Source Editor",
+    "category": "IDE",
+    "baseUrl": "http://localhost:8080/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Open Source Copilot",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "pearai/pear-chat",
+        "provider": "pearai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "sourcegraph-cody",
+    "name": "Sourcegraph Cody",
+    "category": "IDE",
+    "baseUrl": "https://sourcegraph.com/.api/graphql",
+    "envKey": "SRC_ACCESS_TOKEN",
+    "freeTier": true,
+    "badge": "Enterprise Code Graph",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "cody/claude-3-5-sonnet",
+        "provider": "sourcegraph-cody",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 200000
+      }
+    ]
+  },
+  {
+    "id": "opencode",
+    "name": "OpenCode Free (Zen)",
+    "category": "FREE",
+    "baseUrl": "https://opencode.ai/api/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero-Key Free Community Tier",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "freeLimit": "Unlimited / Free Community Tier",
+    "models": [
+      {
+        "id": "opencode/kimi-k2.7-code",
+        "provider": "opencode",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode/qwen3.5-plus",
+        "provider": "opencode",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode/qwen3.6-plus",
+        "provider": "opencode",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode/deepseek-r1",
+        "provider": "opencode",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 160000
+      },
+      {
+        "id": "opencode/deepseek-v3",
+        "provider": "opencode",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode/big-pickle",
+        "provider": "opencode",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode/glm-4.5-air",
+        "provider": "opencode",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "opencode-free",
+    "name": "OpenCode Free Gateway",
+    "category": "FREE",
+    "baseUrl": "https://opencode.ai/api/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero-Key Community",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "freeLimit": "Unlimited",
+    "models": [
+      {
+        "id": "opencode-free/kimi-k2.7-code",
+        "provider": "opencode-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode-free/qwen3.5-plus",
+        "provider": "opencode-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode-free/qwen3.6-plus",
+        "provider": "opencode-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode-free/deepseek-r1",
+        "provider": "opencode-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 160000
+      },
+      {
+        "id": "opencode-free/deepseek-v3",
+        "provider": "opencode-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode-free/big-pickle",
+        "provider": "opencode-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode-free/glm-4.5-air",
+        "provider": "opencode-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "opencode-zen",
+    "name": "OpenCode Zen Cluster",
+    "category": "FREE",
+    "baseUrl": "https://opencode.ai/api/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero-Key Zen Tier",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "freeLimit": "Unlimited",
+    "models": [
+      {
+        "id": "opencode-zen/kimi-k2.7-code",
+        "provider": "opencode-zen",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode-zen/qwen3.5-plus",
+        "provider": "opencode-zen",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode-zen/qwen3.6-plus",
+        "provider": "opencode-zen",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode-zen/deepseek-r1",
+        "provider": "opencode-zen",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 160000
+      },
+      {
+        "id": "opencode-zen/deepseek-v3",
+        "provider": "opencode-zen",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode-zen/big-pickle",
+        "provider": "opencode-zen",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      },
+      {
+        "id": "opencode-zen/glm-4.5-air",
+        "provider": "opencode-zen",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "chutes",
+    "name": "Chutes AI",
+    "category": "FREE",
+    "baseUrl": "https://chutes.ai/v1",
+    "envKey": "CHUTES_API_KEY",
+    "freeTier": true,
+    "badge": "High Speed Open Source",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Free community credits",
+    "models": [
+      {
+        "id": "chutes/deepseek-ai/DeepSeek-R1",
+        "provider": "chutes",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 160000
+      },
+      {
+        "id": "chutes/meta-llama/Llama-3.3-70B-Instruct",
+        "provider": "chutes",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
       }
     ]
   },
@@ -1106,22 +2158,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Unlimited / Anonymous",
     "models": [
       {
-        "id": "pollinations/core-model",
+        "id": "pollinations/openai",
         "provider": "pollinations",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1140,22 +2186,128 @@ export const CATALOG_PROVIDERS = [
     "tos_status": "caution",
     "models": [
       {
-        "id": "duckduckgo/core-model",
+        "id": "duckduckgo/claude-3-haiku",
         "provider": "duckduckgo",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
+          "json_mode": false
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "cloudflare-ai",
+    "name": "Cloudflare AI Playground",
+    "category": "FREE",
+    "baseUrl": "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero-Key Free Preview",
+    "modalities": [
+      "text",
+      "image"
+    ],
+    "freeLimit": "10,000 neurons/day",
+    "models": [
+      {
+        "id": "cloudflare/@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
+        "provider": "cloudflare-ai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "minimax-code",
+    "name": "MiniMax Code Engine",
+    "category": "FREE",
+    "baseUrl": "https://api.minimax.chat/v1",
+    "envKey": "MINIMAX_API_KEY",
+    "freeTier": true,
+    "badge": "Coding Specialist Free",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Free trial quota",
+    "models": [
+      {
+        "id": "minimax/abab6.5s-chat",
+        "provider": "minimax-code",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 245000
+      }
+    ]
+  },
+  {
+    "id": "zcode",
+    "name": "ZCode GLM AI",
+    "category": "FREE",
+    "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
+    "envKey": "ZHIPU_API_KEY",
+    "freeTier": true,
+    "badge": "GLM Code Zero-Cost",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Free unlimited code assistance",
+    "models": [
+      {
+        "id": "zcode/glm-4-flash",
+        "provider": "zcode",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "kimi-coding",
+    "name": "Kimi Coding Agent",
+    "category": "FREE",
+    "baseUrl": "https://api.moonshot.cn/v1",
+    "envKey": "MOONSHOT_API_KEY",
+    "freeTier": true,
+    "badge": "128k Free Context",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "15M tokens signup",
+    "models": [
+      {
+        "id": "kimi/moonshot-v1-128k",
+        "provider": "kimi-coding",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
       }
     ]
   },
@@ -1175,7 +2327,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "14,400 req/day free",
     "models": [
       {
-        "id": "groq/core-model",
+        "id": "groq/llama-3.3-70b-versatile",
         "provider": "groq",
         "capabilities": {
           "chat": true,
@@ -1184,13 +2336,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1209,7 +2355,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "1,000,000 tokens/day free",
     "models": [
       {
-        "id": "cerebras/core-model",
+        "id": "cerebras/llama-3.3-70b",
         "provider": "cerebras",
         "capabilities": {
           "chat": true,
@@ -1218,13 +2364,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -1245,7 +2385,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "1 Billion tokens/mo free",
     "models": [
       {
-        "id": "mistral/core-model",
+        "id": "mistral/codestral-2501",
         "provider": "mistral",
         "capabilities": {
           "chat": true,
@@ -1254,13 +2394,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 256000
       }
     ]
   },
@@ -1280,7 +2414,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "20M tokens signup free",
     "models": [
       {
-        "id": "siliconflow/core-model",
+        "id": "siliconflow/deepseek-ai/DeepSeek-R1",
         "provider": "siliconflow",
         "capabilities": {
           "chat": true,
@@ -1289,13 +2423,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 160000
       }
     ]
   },
@@ -1344,22 +2472,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Aggregated free models",
     "models": [
       {
-        "id": "openrouter-free/core-model",
+        "id": "openrouter/deepseek/deepseek-r1:free",
         "provider": "openrouter-free",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": true,
-          "vision": true,
+          "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 160000
       }
     ]
   },
@@ -1407,7 +2529,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Llama 3.3 70B serverless free",
     "models": [
       {
-        "id": "sambanova/core-model",
+        "id": "sambanova/Meta-Llama-3.3-70B-Instruct",
         "provider": "sambanova",
         "capabilities": {
           "chat": true,
@@ -1416,13 +2538,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1443,7 +2559,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "1,500 req/day free",
     "models": [
       {
-        "id": "gemini-free/core-model",
+        "id": "gemini-free/gemini-2.5-flash",
         "provider": "gemini-free",
         "capabilities": {
           "chat": true,
@@ -1452,13 +2568,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 1000000
       }
     ]
   },
@@ -1478,7 +2588,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "1,000 free API calls/mo",
     "models": [
       {
-        "id": "cohere-free/core-model",
+        "id": "cohere/command-r",
         "provider": "cohere-free",
         "capabilities": {
           "chat": true,
@@ -1487,13 +2597,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1513,22 +2617,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Rate limited free community models",
     "models": [
       {
-        "id": "huggingface-free/core-model",
+        "id": "hf/meta-llama/Llama-3.3-70B-Instruct",
         "provider": "huggingface-free",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1548,22 +2646,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "10,000 free neurons daily",
     "models": [
       {
-        "id": "cloudflare-free/core-model",
+        "id": "cloudflare/@cf/meta/llama-3.3-70b-instruct",
         "provider": "cloudflare-free",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1582,7 +2674,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Select open models free",
     "models": [
       {
-        "id": "deepinfra-free/core-model",
+        "id": "deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct",
         "provider": "deepinfra-free",
         "capabilities": {
           "chat": true,
@@ -1591,13 +2683,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1618,7 +2704,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "150 req/day free preview",
     "models": [
       {
-        "id": "github-models/core-model",
+        "id": "github/gpt-4o",
         "provider": "github-models",
         "capabilities": {
           "chat": true,
@@ -1627,13 +2713,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1652,22 +2732,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "$10 free compute on signup",
     "models": [
       {
-        "id": "hyperbolic/core-model",
+        "id": "hyperbolic/deepseek-r1",
         "provider": "hyperbolic",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 160000
       }
     ]
   },
@@ -1687,7 +2761,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "$5 free starter tier",
     "models": [
       {
-        "id": "novita/core-model",
+        "id": "novita/meta-llama/llama-3.3-70b-instruct",
         "provider": "novita",
         "capabilities": {
           "chat": true,
@@ -1696,13 +2770,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1721,22 +2789,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "$5 free trial balance",
     "models": [
       {
-        "id": "together-free/core-model",
+        "id": "together/meta-llama/Llama-3.3-70B-Instruct-Turbo",
         "provider": "together-free",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 131072
       }
     ]
   },
@@ -1755,7 +2817,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Free monthly credits",
     "models": [
       {
-        "id": "scaleway/core-model",
+        "id": "scaleway/llama-3.3-70b-instruct",
         "provider": "scaleway",
         "capabilities": {
           "chat": true,
@@ -1764,13 +2826,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1789,7 +2845,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Free community inference",
     "models": [
       {
-        "id": "modelscope/core-model",
+        "id": "modelscope/qwen-2.5-coder-32b",
         "provider": "modelscope",
         "capabilities": {
           "chat": true,
@@ -1798,13 +2854,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1823,22 +2873,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "ERNIE-Speed & Lite 100% free",
     "models": [
       {
-        "id": "qianfan/core-model",
+        "id": "qianfan/ernie-speed",
         "provider": "qianfan",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": true,
+          "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1857,7 +2901,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Hunyuan Lite free quota",
     "models": [
       {
-        "id": "hunyuan/core-model",
+        "id": "hunyuan/hunyuan-lite",
         "provider": "hunyuan",
         "capabilities": {
           "chat": true,
@@ -1866,13 +2910,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1891,7 +2929,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "500,000 free tokens pool",
     "models": [
       {
-        "id": "doubao/core-model",
+        "id": "doubao/doubao-pro-128k",
         "provider": "doubao",
         "capabilities": {
           "chat": true,
@@ -1900,13 +2938,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -1924,22 +2956,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Unlimited free queries",
     "models": [
       {
-        "id": "spark/core-model",
+        "id": "spark/spark-lite",
         "provider": "spark",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -1958,7 +2984,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "15M free tokens on signup",
     "models": [
       {
-        "id": "moonshot/core-model",
+        "id": "moonshot/moonshot-v1-32k",
         "provider": "moonshot",
         "capabilities": {
           "chat": true,
@@ -1967,13 +2993,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -1993,7 +3013,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Free trial tokens balance",
     "models": [
       {
-        "id": "minimax/core-model",
+        "id": "minimax/abab6.5s-chat",
         "provider": "minimax",
         "capabilities": {
           "chat": true,
@@ -2002,13 +3022,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 245000
       }
     ]
   },
@@ -2028,22 +3042,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Free starter tier",
     "models": [
       {
-        "id": "stepfun/core-model",
+        "id": "stepfun/step-1-8k",
         "provider": "stepfun",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": true,
-          "vision": true,
+          "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -2063,22 +3071,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Free signup balance",
     "models": [
       {
-        "id": "yi-01/core-model",
+        "id": "yi/yi-lightning",
         "provider": "yi-01",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": true,
-          "vision": true,
+          "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 16000
       }
     ]
   },
@@ -2097,7 +3099,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "5M tokens free on registration",
     "models": [
       {
-        "id": "deepseek-free/core-model",
+        "id": "deepseek/deepseek-chat",
         "provider": "deepseek-free",
         "capabilities": {
           "chat": true,
@@ -2106,13 +3108,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -2131,22 +3127,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Free monthly inference allowance",
     "models": [
       {
-        "id": "lepton/core-model",
+        "id": "lepton/llama3-70b",
         "provider": "lepton",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -2165,7 +3155,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Free tier proxy",
     "models": [
       {
-        "id": "glama/core-model",
+        "id": "glama/llama-3.3-70b",
         "provider": "glama",
         "capabilities": {
           "chat": true,
@@ -2174,13 +3164,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -2199,7 +3183,7 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Daily free queries",
     "models": [
       {
-        "id": "ai360/core-model",
+        "id": "ai360/360gpt-pro",
         "provider": "ai360",
         "capabilities": {
           "chat": true,
@@ -2208,13 +3192,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -2232,22 +3210,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Community sponsored free gateway",
     "models": [
       {
-        "id": "openfreeai/core-model",
+        "id": "openfreeai/gpt-3.5-turbo",
         "provider": "openfreeai",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 16000
       }
     ]
   },
@@ -2265,22 +3237,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Public free tier",
     "models": [
       {
-        "id": "freegpt/core-model",
+        "id": "freegpt/gpt-3.5-turbo",
         "provider": "freegpt",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 16000
       }
     ]
   },
@@ -2298,22 +3264,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Free reverse proxy pool",
     "models": [
       {
-        "id": "pawan/core-model",
+        "id": "pawan/cosmos-rp",
         "provider": "pawan",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -2331,22 +3291,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Free browser/cloud AI calls",
     "models": [
       {
-        "id": "puter/core-model",
+        "id": "puter/claude-3-5-sonnet",
         "provider": "puter",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 200000
       }
     ]
   },
@@ -2364,22 +3318,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Public pool",
     "models": [
       {
-        "id": "chathub/core-model",
+        "id": "chathub/gpt-3.5",
         "provider": "chathub",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 16000
       }
     ]
   },
@@ -2397,22 +3345,16 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Free coding queries",
     "models": [
       {
-        "id": "blackbox/core-model",
+        "id": "blackbox/blackbox-code",
         "provider": "blackbox",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -2430,22 +3372,673 @@ export const CATALOG_PROVIDERS = [
     "freeLimit": "Free community compute",
     "models": [
       {
-        "id": "neuro-free/core-model",
+        "id": "neuroengine/llama-3-70b",
         "provider": "neuro-free",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
+          "json_mode": false
+        },
+        "context_length": 8192
+      }
+    ]
+  },
+  {
+    "id": "cohere-aya",
+    "name": "Cohere Aya Multilingual",
+    "category": "FREE",
+    "baseUrl": "https://api.cohere.com/v2",
+    "envKey": "COHERE_API_KEY",
+    "freeTier": true,
+    "badge": "Aya 23 Multilingual Free",
+    "modalities": [
+      "text"
+    ],
+    "freeLimit": "Free tier",
+    "models": [
+      {
+        "id": "cohere/aya-23-35b",
+        "provider": "cohere-aya",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "ai-studios",
+    "name": "DeepBrain AI Studios",
+    "category": "FREE",
+    "baseUrl": "https://api.deepbrain.io/v1",
+    "envKey": "DEEPBRAIN_KEY",
+    "freeTier": true,
+    "badge": "Starter Video Free",
+    "modalities": [
+      "video"
+    ],
+    "freeLimit": "Starter trial credits",
+    "models": [
+      {
+        "id": "deepbrain/avatar-gen",
+        "provider": "ai-studios",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 4096
+      }
+    ]
+  },
+  {
+    "id": "lepton-code",
+    "name": "Lepton Code Llama Free",
+    "category": "FREE",
+    "baseUrl": "https://api.lepton.ai/v1",
+    "envKey": "LEPTON_API_KEY",
+    "freeTier": true,
+    "badge": "Fast Code Serverless",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Free community tier",
+    "models": [
+      {
+        "id": "lepton/codellama-70b",
+        "provider": "lepton-code",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 16000
+      }
+    ]
+  },
+  {
+    "id": "sambanova-fast",
+    "name": "SambaNova 40L Serverless",
+    "category": "FREE",
+    "baseUrl": "https://api.sambanova.ai/v1",
+    "envKey": "SAMBANOVA_API_KEY",
+    "freeTier": true,
+    "badge": "Sub-second 70B",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Free serverless quota",
+    "models": [
+      {
+        "id": "sambanova/DeepSeek-R1-Distill-Llama-70B",
+        "provider": "sambanova-fast",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "glhf",
+    "name": "GLHF.chat Free Serverless",
+    "category": "FREE",
+    "baseUrl": "https://glhf.chat/api/openai/v1",
+    "envKey": "GLHF_API_KEY",
+    "freeTier": true,
+    "badge": "Decentralized Fast Free",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Free serverless pool",
+    "models": [
+      {
+        "id": "glhf/llama-3.3-70b",
+        "provider": "glhf",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "infermatic",
+    "name": "Infermatic AI Studio",
+    "category": "FREE",
+    "baseUrl": "https://api.infermatic.ai/v1",
+    "envKey": "INFERMATIC_KEY",
+    "freeTier": true,
+    "badge": "Open Weights Playground",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Free starter tier",
+    "models": [
+      {
+        "id": "infermatic/hermes-3-70b",
+        "provider": "infermatic",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "siliconflow-r1",
+    "name": "SiliconFlow DeepSeek R1",
+    "category": "FREE",
+    "baseUrl": "https://api.siliconflow.cn/v1",
+    "envKey": "SILICONFLOW_API_KEY",
+    "freeTier": true,
+    "badge": "DeepSeek R1 Free 20M",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "20M tokens",
+    "models": [
+      {
+        "id": "siliconflow/deepseek-ai/DeepSeek-R1",
+        "provider": "siliconflow-r1",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 160000
+      }
+    ]
+  },
+  {
+    "id": "together-llama-free",
+    "name": "Together AI Meta Llama",
+    "category": "FREE",
+    "baseUrl": "https://api.together.xyz/v1",
+    "envKey": "TOGETHER_API_KEY",
+    "freeTier": true,
+    "badge": "Meta Llama 3.3 Turbo Free",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Free trial credits",
+    "models": [
+      {
+        "id": "together/meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        "provider": "together-llama-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 131072
+      }
+    ]
+  },
+  {
+    "id": "groq-whisper-free",
+    "name": "Groq Whisper Large Free",
+    "category": "FREE",
+    "baseUrl": "https://api.groq.com/openai/v1",
+    "envKey": "GROQ_API_KEY",
+    "freeTier": true,
+    "badge": "10x Real-Time STT",
+    "modalities": [
+      "stt"
+    ],
+    "freeLimit": "Free tier",
+    "models": [
+      {
+        "id": "groq/whisper-large-v3",
+        "provider": "groq-whisper-free",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "cerebras-ultra",
+    "name": "Cerebras Llama 70B Ultra",
+    "category": "FREE",
+    "baseUrl": "https://api.cerebras.ai/v1",
+    "envKey": "CEREBRAS_API_KEY",
+    "freeTier": true,
+    "badge": "2100 Tokens/Sec Free",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "1M tokens/day",
+    "models": [
+      {
+        "id": "cerebras/llama-3.3-70b",
+        "provider": "cerebras-ultra",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 8192
+      }
+    ]
+  },
+  {
+    "id": "zhipu-glm4-flash",
+    "name": "Zhipu GLM-4 Flash Free",
+    "category": "FREE",
+    "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
+    "envKey": "ZHIPU_API_KEY",
+    "freeTier": true,
+    "badge": "100% Free Forever",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "freeLimit": "Unlimited",
+    "models": [
+      {
+        "id": "zhipu/glm-4-flash",
+        "provider": "zhipu-glm4-flash",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "baichuan-free",
+    "name": "Baichuan 4 Free Tier",
+    "category": "FREE",
+    "baseUrl": "https://api.baichuan-ai.com/v1",
+    "envKey": "BAICHUAN_API_KEY",
+    "freeTier": true,
+    "badge": "Baichuan 4 Starter",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Free starter tier",
+    "models": [
+      {
+        "id": "baichuan/Baichuan4-Air",
+        "provider": "baichuan-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "sensenova",
+    "name": "SenseTime SenseNova Free",
+    "category": "FREE",
+    "baseUrl": "https://api.sensenova.cn/v1",
+    "envKey": "SENSENOVA_KEY",
+    "freeTier": true,
+    "badge": "SenseNova 5.5 Free",
+    "modalities": [
+      "text",
+      "vision"
+    ],
+    "freeLimit": "Free credits",
+    "models": [
+      {
+        "id": "sensenova/SenseNova-5.5",
+        "provider": "sensenova",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "internlm",
+    "name": "Shanghai AI Lab InternLM",
+    "category": "FREE",
+    "baseUrl": "https://internlm-chat.intern-ai.org.cn/puyu/api/v1",
+    "envKey": "INTERNLM_API_KEY",
+    "freeTier": true,
+    "badge": "InternLM 2.5 100% Free",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Unlimited free queries",
+    "models": [
+      {
+        "id": "internlm/internlm2.5-latest",
+        "provider": "internlm",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "metagpt",
+    "name": "MetaGPT Multi-Agent Free",
+    "category": "FREE",
+    "baseUrl": "http://127.0.0.1:3001/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Multi-Agent Framework",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "freeLimit": "Open source local/free",
+    "models": [
+      {
+        "id": "metagpt/software-company",
+        "provider": "metagpt",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "uncloseai",
+    "name": "UncloseAI Free Gateway",
+    "category": "NO_AUTH",
+    "baseUrl": "https://uncloseai.com/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "uncloseai/deepseek-r1",
+        "provider": "uncloseai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 160000
+      }
+    ]
+  },
+  {
+    "id": "ai-horde",
+    "name": "AI Horde Distributed Pool",
+    "category": "NO_AUTH",
+    "baseUrl": "https://aihorde.net/api/v2",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text",
+      "image"
+    ],
+    "models": [
+      {
+        "id": "ai-horde/kudos-free-cluster",
+        "provider": "ai-horde",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 16000
+      }
+    ]
+  },
+  {
+    "id": "puter-free",
+    "name": "Puter Free AI Cloud",
+    "category": "NO_AUTH",
+    "baseUrl": "https://api.puter.com/drivers/express/chat",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "puter/gpt-4o-mini",
+        "provider": "puter-free",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "duckduckgo-lite",
+    "name": "DuckDuckGo DuckChat Lite",
+    "category": "NO_AUTH",
+    "baseUrl": "https://duckduckgo.com/duckchat/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "duckduckgo/gpt-4o-mini",
+        "provider": "duckduckgo-lite",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "airforce",
+    "name": "Free AI Force Proxy",
+    "category": "NO_AUTH",
+    "baseUrl": "https://api.airforce/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "airforce/llama-3.3-70b",
+        "provider": "airforce",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "nexra",
+    "name": "Nexra Public Gateway",
+    "category": "NO_AUTH",
+    "baseUrl": "https://nexra.aryahcr.cc/api",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text",
+      "image"
+    ],
+    "models": [
+      {
+        "id": "nexra/chat-gpt",
+        "provider": "nexra",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 16000
+      }
+    ]
+  },
+  {
+    "id": "kobold-horde",
+    "name": "Kobold AI Horde",
+    "category": "NO_AUTH",
+    "baseUrl": "https://aihorde.net/api/v2",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "kobold/mythomax-13b",
+        "provider": "kobold-horde",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 8192
+      }
+    ]
+  },
+  {
+    "id": "flowise-demo",
+    "name": "Flowise AI Public Sandbox",
+    "category": "NO_AUTH",
+    "baseUrl": "https://flowiseai.com/api/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "flowise/agent-demo",
+        "provider": "flowise-demo",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "langflow-demo",
+    "name": "Langflow AI Sandbox",
+    "category": "NO_AUTH",
+    "baseUrl": "https://langflow.astra.datastax.com/api/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth Required",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "langflow/rag-flow",
+        "provider": "langflow-demo",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
       }
     ]
   },
@@ -2464,22 +4057,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "pollinations-noauth/core-model",
+        "id": "pollinations/openai",
         "provider": "pollinations-noauth",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -2497,22 +4084,16 @@ export const CATALOG_PROVIDERS = [
     "tos_status": "caution",
     "models": [
       {
-        "id": "ddg-noauth/core-model",
+        "id": "duckduckgo/claude-3-haiku",
         "provider": "ddg-noauth",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -2529,22 +4110,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "freegpt-noauth/core-model",
+        "id": "freegpt/gpt-3.5",
         "provider": "freegpt-noauth",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 16000
       }
     ]
   },
@@ -2561,22 +4136,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "pawan-noauth/core-model",
+        "id": "pawan/cosmos-rp",
         "provider": "pawan-noauth",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -2593,22 +4162,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "puter-noauth/core-model",
+        "id": "puter/claude-3-5-sonnet",
         "provider": "puter-noauth",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 200000
       }
     ]
   },
@@ -2625,22 +4188,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "chathub-noauth/core-model",
+        "id": "chathub/gpt-3.5",
         "provider": "chathub-noauth",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 16000
       }
     ]
   },
@@ -2657,22 +4214,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "blackbox-noauth/core-model",
+        "id": "blackbox/blackbox-code",
         "provider": "blackbox-noauth",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -2689,22 +4240,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "deepinfra-public/core-model",
+        "id": "deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct",
         "provider": "deepinfra-public",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -2721,22 +4266,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "localai-demo/core-model",
+        "id": "localai/phi-2",
         "provider": "localai-demo",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 4096
       }
     ]
   },
@@ -2753,57 +4292,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "huggingface-serverless/core-model",
+        "id": "hf/meta-llama/Llama-3.3-70B-Instruct",
         "provider": "huggingface-serverless",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
-      }
-    ]
-  },
-  {
-    "id": "ollama-local",
-    "name": "Ollama Local Instance",
-    "category": "NO_AUTH",
-    "baseUrl": "http://localhost:11434/v1",
-    "envKey": "",
-    "freeTier": true,
-    "badge": "Zero Auth (Localhost)",
-    "modalities": [
-      "text",
-      "tools",
-      "vision",
-      "embedding"
-    ],
-    "models": [
-      {
-        "id": "ollama-local/core-model",
-        "provider": "ollama-local",
-        "capabilities": {
-          "chat": true,
-          "streaming": true,
-          "tool_calls": true,
-          "vision": true,
-          "json_mode": true
-        },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -2820,55 +4318,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "webllm/core-model",
+        "id": "webllm/Llama-3-8B-Instruct-q4f32_1",
         "provider": "webllm",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
-      }
-    ]
-  },
-  {
-    "id": "jan-local",
-    "name": "Jan.ai Local Runtime",
-    "category": "NO_AUTH",
-    "baseUrl": "http://localhost:1337/v1",
-    "envKey": "",
-    "freeTier": true,
-    "badge": "Zero Auth (Localhost)",
-    "modalities": [
-      "text",
-      "tools"
-    ],
-    "models": [
-      {
-        "id": "jan-local/core-model",
-        "provider": "jan-local",
-        "capabilities": {
-          "chat": true,
-          "streaming": true,
-          "tool_calls": true,
-          "vision": false,
-          "json_mode": true
-        },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -2888,7 +4347,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "chatgpt-web/core-model",
+        "id": "chatgpt/gpt-4o",
         "provider": "chatgpt-web",
         "capabilities": {
           "chat": true,
@@ -2897,13 +4356,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -2922,7 +4375,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "claude-web/core-model",
+        "id": "claude/claude-3-7-sonnet",
         "provider": "claude-web",
         "capabilities": {
           "chat": true,
@@ -2931,13 +4384,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 200000
       }
     ]
   },
@@ -2957,7 +4404,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "gemini-web/core-model",
+        "id": "gemini/gemini-2.0-flash",
         "provider": "gemini-web",
         "capabilities": {
           "chat": true,
@@ -2966,13 +4413,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 1000000
       }
     ]
   },
@@ -2991,22 +4432,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "copilot-web/core-model",
+        "id": "copilot/gpt-4o",
         "provider": "copilot-web",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": true,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -3024,7 +4459,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "perplexity-web/core-model",
+        "id": "perplexity/sonar-medium",
         "provider": "perplexity-web",
         "capabilities": {
           "chat": true,
@@ -3033,13 +4468,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3057,22 +4486,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "poe-web/core-model",
+        "id": "poe/claude-3-5-sonnet",
         "provider": "poe-web",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": true,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 200000
       }
     ]
   },
@@ -3089,22 +4512,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "you-web/core-model",
+        "id": "you/smart-search",
         "provider": "you-web",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -3123,7 +4540,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "lechat-web/core-model",
+        "id": "lechat/mistral-large-2",
         "provider": "lechat-web",
         "capabilities": {
           "chat": true,
@@ -3132,13 +4549,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3155,22 +4566,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "deepseek-web/core-model",
+        "id": "deepseek/deepseek-r1",
         "provider": "deepseek-web",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 160000
       }
     ]
   },
@@ -3189,7 +4594,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "qwen-web/core-model",
+        "id": "qwen/qwen-2.5-max",
         "provider": "qwen-web",
         "capabilities": {
           "chat": true,
@@ -3198,13 +4603,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3222,7 +4621,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "kimi-web/core-model",
+        "id": "kimi/k1.5",
         "provider": "kimi-web",
         "capabilities": {
           "chat": true,
@@ -3231,13 +4630,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3255,7 +4648,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "doubao-web/core-model",
+        "id": "doubao/doubao-pro",
         "provider": "doubao-web",
         "capabilities": {
           "chat": true,
@@ -3264,13 +4657,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3287,22 +4674,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "hunyuan-web/core-model",
+        "id": "hunyuan/hunyuan-large",
         "provider": "hunyuan-web",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3321,22 +4702,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "glm-web/core-model",
+        "id": "glm/glm-4-plus",
         "provider": "glm-web",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": true,
-          "vision": false,
+          "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3353,22 +4728,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "character-ai/core-model",
+        "id": "cai/cai-chat",
         "provider": "character-ai",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -3385,22 +4754,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "pi-ai/core-model",
+        "id": "pi/pi-2.5",
         "provider": "pi-ai",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -3418,7 +4781,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "phind-web/core-model",
+        "id": "phind/phind-70b",
         "provider": "phind-web",
         "capabilities": {
           "chat": true,
@@ -3427,13 +4790,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -3451,22 +4808,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "grok-web/core-model",
+        "id": "grok/grok-2-web",
         "provider": "grok-web",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": true,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3483,22 +4834,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "liner-web/core-model",
+        "id": "liner/liner-copilot",
         "provider": "liner-web",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -3516,7 +4861,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "coral-web/core-model",
+        "id": "coral/command-r-plus",
         "provider": "coral-web",
         "capabilities": {
           "chat": true,
@@ -3525,13 +4870,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3550,7 +4889,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "claude-pro-web/core-model",
+        "id": "claude/claude-3-7-pro",
         "provider": "claude-pro-web",
         "capabilities": {
           "chat": true,
@@ -3559,13 +4898,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 200000
       }
     ]
   },
@@ -3584,7 +4917,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "chatgpt-plus-web/core-model",
+        "id": "chatgpt/o1-preview",
         "provider": "chatgpt-plus-web",
         "capabilities": {
           "chat": true,
@@ -3593,13 +4926,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3617,7 +4944,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "perplexity-pro-web/core-model",
+        "id": "perplexity/pro-search",
         "provider": "perplexity-pro-web",
         "capabilities": {
           "chat": true,
@@ -3626,13 +4953,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3650,7 +4971,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "genspark-web/core-model",
+        "id": "genspark/sparkpage",
         "provider": "genspark-web",
         "capabilities": {
           "chat": true,
@@ -3659,13 +4980,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -3683,7 +4998,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "monica-web/core-model",
+        "id": "monica/all-in-one",
         "provider": "monica-web",
         "capabilities": {
           "chat": true,
@@ -3692,13 +5007,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -3721,7 +5030,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "openai/core-model",
+        "id": "openai/gpt-4o",
         "provider": "openai",
         "capabilities": {
           "chat": true,
@@ -3730,13 +5039,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3755,7 +5058,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "anthropic/core-model",
+        "id": "anthropic/claude-3-7-sonnet",
         "provider": "anthropic",
         "capabilities": {
           "chat": true,
@@ -3764,13 +5067,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 200000
       }
     ]
   },
@@ -3788,7 +5085,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "deepseek/core-model",
+        "id": "deepseek/deepseek-r1",
         "provider": "deepseek",
         "capabilities": {
           "chat": true,
@@ -3797,13 +5094,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 160000
       }
     ]
   },
@@ -3910,7 +5201,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "perplexity/core-model",
+        "id": "perplexity/sonar-reasoning",
         "provider": "perplexity",
         "capabilities": {
           "chat": true,
@@ -3919,13 +5210,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3944,7 +5229,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "cohere/core-model",
+        "id": "cohere/command-r-plus",
         "provider": "cohere",
         "capabilities": {
           "chat": true,
@@ -3953,13 +5238,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -3979,7 +5258,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "mistral-enterprise/core-model",
+        "id": "mistral/mistral-large-2411",
         "provider": "mistral-enterprise",
         "capabilities": {
           "chat": true,
@@ -3988,13 +5267,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -4012,7 +5285,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "ai21/core-model",
+        "id": "ai21/jamba-1.5-large",
         "provider": "ai21",
         "capabilities": {
           "chat": true,
@@ -4021,13 +5294,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 256000
       }
     ]
   },
@@ -4047,7 +5314,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "aws-bedrock/core-model",
+        "id": "bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0",
         "provider": "aws-bedrock",
         "capabilities": {
           "chat": true,
@@ -4056,13 +5323,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 200000
       }
     ]
   },
@@ -4082,7 +5343,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "azure-openai/core-model",
+        "id": "azure/gpt-4o",
         "provider": "azure-openai",
         "capabilities": {
           "chat": true,
@@ -4091,13 +5352,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -4117,7 +5372,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "google-vertex/core-model",
+        "id": "vertex/gemini-1.5-pro",
         "provider": "google-vertex",
         "capabilities": {
           "chat": true,
@@ -4126,13 +5381,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 2000000
       }
     ]
   },
@@ -4151,7 +5400,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "groq-enterprise/core-model",
+        "id": "groq/llama-3.3-70b-versatile",
         "provider": "groq-enterprise",
         "capabilities": {
           "chat": true,
@@ -4160,13 +5409,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -4184,7 +5427,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "cerebras-enterprise/core-model",
+        "id": "cerebras/llama-3.3-70b",
         "provider": "cerebras-enterprise",
         "capabilities": {
           "chat": true,
@@ -4193,13 +5436,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -4217,7 +5454,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "sambanova-enterprise/core-model",
+        "id": "sambanova/Meta-Llama-3.3-70B-Instruct",
         "provider": "sambanova-enterprise",
         "capabilities": {
           "chat": true,
@@ -4226,13 +5463,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -4251,22 +5482,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "nvidia-enterprise/core-model",
+        "id": "nvidia/meta/llama-3.1-405b-instruct",
         "provider": "nvidia-enterprise",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": true,
-          "vision": true,
+          "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -4285,7 +5510,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "anyscale/core-model",
+        "id": "anyscale/meta-llama/Llama-3-70b-chat-hf",
         "provider": "anyscale",
         "capabilities": {
           "chat": true,
@@ -4294,13 +5519,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -4319,22 +5538,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "octoai/core-model",
+        "id": "octoai/meta-llama-3-70b-instruct",
         "provider": "octoai",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -4352,7 +5565,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "baseten/core-model",
+        "id": "baseten/meta-llama-3-70b-instruct",
         "provider": "baseten",
         "capabilities": {
           "chat": true,
@@ -4361,13 +5574,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -4387,22 +5594,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "replicate/core-model",
+        "id": "replicate/meta/meta-llama-3-70b-instruct",
         "provider": "replicate",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -4422,7 +5623,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "deepinfra/core-model",
+        "id": "deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct",
         "provider": "deepinfra",
         "capabilities": {
           "chat": true,
@@ -4431,13 +5632,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -4455,7 +5650,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "predibase/core-model",
+        "id": "predibase/lora-adapter-v1",
         "provider": "predibase",
         "capabilities": {
           "chat": true,
@@ -4464,13 +5659,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -4488,7 +5677,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "runpod/core-model",
+        "id": "runpod/vllm-endpoint",
         "provider": "runpod",
         "capabilities": {
           "chat": true,
@@ -4497,13 +5686,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -4521,7 +5704,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "lambdalabs/core-model",
+        "id": "lambda/hermes-3-70b",
         "provider": "lambdalabs",
         "capabilities": {
           "chat": true,
@@ -4530,13 +5713,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -4555,7 +5732,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "databricks/core-model",
+        "id": "databricks/dbrx-instruct",
         "provider": "databricks",
         "capabilities": {
           "chat": true,
@@ -4564,13 +5741,521 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "scaleway-generative",
+    "name": "Scaleway Elements Generative",
+    "category": "API_KEY",
+    "baseUrl": "https://api.scaleway.ai/v1",
+    "envKey": "SCW_SECRET_KEY",
+    "freeTier": false,
+    "badge": "European Cloud AI",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "scaleway/llama-3.3-70b",
+        "provider": "scaleway-generative",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "ovh-ai",
+    "name": "OVHcloud AI Endpoints",
+    "category": "API_KEY",
+    "baseUrl": "https://endpoints.ai.cloud.ovh.net/v1",
+    "envKey": "OVH_AI_TOKEN",
+    "freeTier": false,
+    "badge": "Secured European Sovereign",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "ovh/mistral-large-2407",
+        "provider": "ovh-ai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "hetzner-ai",
+    "name": "Hetzner Cloud GPU AI",
+    "category": "API_KEY",
+    "baseUrl": "http://localhost:8080/v1",
+    "envKey": "HETZNER_API_TOKEN",
+    "freeTier": false,
+    "badge": "High Value German Cloud",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "hetzner/vllm-host",
+        "provider": "hetzner-ai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "coreweave",
+    "name": "CoreWeave Specialized Cloud",
+    "category": "API_KEY",
+    "baseUrl": "https://api.coreweave.com/v1",
+    "envKey": "COREWEAVE_TOKEN",
+    "freeTier": false,
+    "badge": "Tier-1 NVIDIA HGX Cloud",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "coreweave/deepseek-r1-serving",
+        "provider": "coreweave",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 160000
+      }
+    ]
+  },
+  {
+    "id": "nebius",
+    "name": "Nebius AI Studio",
+    "category": "API_KEY",
+    "baseUrl": "https://api.studio.nebius.ai/v1",
+    "envKey": "NEBIUS_API_KEY",
+    "freeTier": false,
+    "badge": "Low Latency H100 Clusters",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "nebius/deepseek-ai/DeepSeek-R1",
+        "provider": "nebius",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 160000
+      }
+    ]
+  },
+  {
+    "id": "crusoe",
+    "name": "Crusoe Cloud Clean Compute",
+    "category": "API_KEY",
+    "baseUrl": "https://api.crusoecloud.com/v1",
+    "envKey": "CRUSOE_KEY",
+    "freeTier": false,
+    "badge": "Zero-Emission GPU Cloud",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "crusoe/llama-3.3-70b",
+        "provider": "crusoe",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "fluidstack",
+    "name": "FluidStack GPU Cloud",
+    "category": "API_KEY",
+    "baseUrl": "https://api.fluidstack.io/v1",
+    "envKey": "FLUIDSTACK_TOKEN",
+    "freeTier": false,
+    "badge": "Global GPU Cloud",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "fluidstack/vllm-llama",
+        "provider": "fluidstack",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "tensorwave",
+    "name": "TensorWave AMD Instinct Cloud",
+    "category": "API_KEY",
+    "baseUrl": "https://api.tensorwave.com/v1",
+    "envKey": "TENSORWAVE_KEY",
+    "freeTier": false,
+    "badge": "AMD MI300X Clusters",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "tensorwave/llama-3.3-70b",
+        "provider": "tensorwave",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "vultr-ai",
+    "name": "Vultr Cloud Inference",
+    "category": "API_KEY",
+    "baseUrl": "https://api.vultrinference.com/v1",
+    "envKey": "VULTR_API_KEY",
+    "freeTier": false,
+    "badge": "Global Edge Cloud AI",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "vultr/meta-llama-3-70b-instruct",
+        "provider": "vultr-ai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 8192
+      }
+    ]
+  },
+  {
+    "id": "paperspace",
+    "name": "Paperspace Gradient AI",
+    "category": "API_KEY",
+    "baseUrl": "https://api.paperspace.com/v1",
+    "envKey": "PAPERSPACE_API_KEY",
+    "freeTier": false,
+    "badge": "DigitalOcean ML Cloud",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "paperspace/deployment-vllm",
+        "provider": "paperspace",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "genesis-cloud",
+    "name": "Genesis Cloud GPU",
+    "category": "API_KEY",
+    "baseUrl": "https://api.genesiscloud.com/v1",
+    "envKey": "GENESIS_TOKEN",
+    "freeTier": false,
+    "badge": "Renewable Nordic GPU Cloud",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "genesis/vllm-serve",
+        "provider": "genesis-cloud",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "datacrunch",
+    "name": "DataCrunch Low Cost Cloud",
+    "category": "API_KEY",
+    "baseUrl": "https://api.datacrunch.io/v1",
+    "envKey": "DATACRUNCH_KEY",
+    "freeTier": false,
+    "badge": "High Efficiency GPU Bare Metal",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "datacrunch/h100-endpoint",
+        "provider": "datacrunch",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "civo-gpu",
+    "name": "Civo Kubernetes GPU Cloud",
+    "category": "API_KEY",
+    "baseUrl": "https://api.civo.com/v2",
+    "envKey": "CIVO_API_KEY",
+    "freeTier": false,
+    "badge": "K3s Managed GPU Cloud",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "civo/k3s-inference",
+        "provider": "civo-gpu",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "jarvislabs",
+    "name": "JarvisLabs Fast GPU Serving",
+    "category": "API_KEY",
+    "baseUrl": "https://api.jarvislabs.ai/v1",
+    "envKey": "JARVISLABS_TOKEN",
+    "freeTier": false,
+    "badge": "1-Click Serverless Endpoints",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "jarvis/vllm-service",
+        "provider": "jarvislabs",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "shadeform",
+    "name": "Shadeform Multi-Cloud",
+    "category": "API_KEY",
+    "baseUrl": "https://api.shadeform.ai/v1",
+    "envKey": "SHADEFORM_API_KEY",
+    "freeTier": false,
+    "badge": "Multi-Provider Orchestrator",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "shadeform/routed-gpu",
+        "provider": "shadeform",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "salad-cloud",
+    "name": "SaladCloud Decentralized GPU",
+    "category": "API_KEY",
+    "baseUrl": "https://api.salad.com/api/public",
+    "envKey": "SALAD_API_KEY",
+    "freeTier": false,
+    "badge": "Global Residential Compute",
+    "modalities": [
+      "text",
+      "image",
+      "stt"
+    ],
+    "models": [
+      {
+        "id": "salad/whisper-large",
+        "provider": "salad-cloud",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 16000
+      }
+    ]
+  },
+  {
+    "id": "vast-ai",
+    "name": "Vast.ai Peer-to-Peer GPU",
+    "category": "API_KEY",
+    "baseUrl": "https://cloud.vast.ai/api/v0",
+    "envKey": "VAST_API_KEY",
+    "freeTier": false,
+    "badge": "Lowest Cost Peer Market",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "vast/rental-instance",
+        "provider": "vast-ai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "io-net",
+    "name": "io.net Decentralized Compute",
+    "category": "API_KEY",
+    "baseUrl": "https://api.io.net/v1",
+    "envKey": "IONET_API_KEY",
+    "freeTier": false,
+    "badge": "Solana-Powered DePIN Cloud",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "ionet/cluster-worker",
+        "provider": "io-net",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "akash",
+    "name": "Akash Network Cloud",
+    "category": "API_KEY",
+    "baseUrl": "https://api.akash.network/v1",
+    "envKey": "AKASH_KEY",
+    "freeTier": false,
+    "badge": "Decentralized Supercloud",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "akash/provider-vllm",
+        "provider": "akash",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 64000
       }
     ]
   },
@@ -4588,7 +6273,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "perplexity-sonar/core-model",
+        "id": "perplexity/sonar-reasoning",
         "provider": "perplexity-sonar",
         "capabilities": {
           "chat": true,
@@ -4597,13 +6282,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -4621,22 +6300,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "tavily/core-model",
+        "id": "tavily/search-context",
         "provider": "tavily",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -4654,22 +6327,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "exa/core-model",
+        "id": "exa/neural-search",
         "provider": "exa",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -4686,22 +6353,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "brave-search/core-model",
+        "id": "brave/web-search",
         "provider": "brave-search",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -4718,22 +6379,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "serper/core-model",
+        "id": "serper/google-search",
         "provider": "serper",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -4750,22 +6405,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "ddg-search/core-model",
+        "id": "duckduckgo/instant-answer",
         "provider": "ddg-search",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 16000
       }
     ]
   },
@@ -4782,22 +6431,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "bing-search/core-model",
+        "id": "bing/web-search-v7",
         "provider": "bing-search",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -4814,22 +6457,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "google-custom-search/core-model",
+        "id": "google/custom-search-v1",
         "provider": "google-custom-search",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -4846,22 +6483,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "you-search/core-model",
+        "id": "you/ydc-search",
         "provider": "you-search",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -4878,22 +6509,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "kagi-search/core-model",
+        "id": "kagi/fastgpt-v1",
         "provider": "kagi-search",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -4910,22 +6535,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "searchapi/core-model",
+        "id": "searchapi/google-serp",
         "provider": "searchapi",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -4942,22 +6561,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "serpapi/core-model",
+        "id": "serpapi/google-results",
         "provider": "serpapi",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -4974,22 +6587,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "websearch-free/core-model",
+        "id": "routenex/search-grounding",
         "provider": "websearch-free",
         "capabilities": {
           "chat": true,
-          "streaming": true,
-          "tool_calls": false,
+          "streaming": false,
+          "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -5007,22 +6614,121 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "firecrawl-search/core-model",
+        "id": "firecrawl/deep-search",
         "provider": "firecrawl-search",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "you-grounding",
+    "name": "You.com Web Grounding Pro",
+    "category": "SEARCH",
+    "baseUrl": "https://api.ydc-index.io/rag",
+    "envKey": "YDC_API_KEY",
+    "freeTier": true,
+    "badge": "RAG Grounding Snippets",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "you/rag-grounding",
+        "provider": "you-grounding",
+        "capabilities": {
+          "chat": true,
+          "streaming": false,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "diffbot",
+    "name": "Diffbot Knowledge Graph",
+    "category": "SEARCH",
+    "baseUrl": "https://api.diffbot.com/v3",
+    "envKey": "DIFFBOT_TOKEN",
+    "freeTier": true,
+    "badge": "Automatic Entity Extraction",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "diffbot/knowledge-graph",
+        "provider": "diffbot",
+        "capabilities": {
+          "chat": true,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "asknews",
+    "name": "AskNews Real-Time Intel",
+    "category": "SEARCH",
+    "baseUrl": "https://api.asknews.app/v1",
+    "envKey": "ASKNEWS_CLIENT_ID",
+    "freeTier": true,
+    "badge": "Real-Time News Analysis",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "asknews/news-rag",
+        "provider": "asknews",
+        "capabilities": {
+          "chat": true,
+          "streaming": false,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "duckduckgo-news",
+    "name": "DuckDuckGo Instant News",
+    "category": "SEARCH",
+    "baseUrl": "https://api.duckduckgo.com",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero-Key News Feed",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "duckduckgo/news-feed",
+        "provider": "duckduckgo-news",
+        "capabilities": {
+          "chat": true,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 16000
       }
     ]
   },
@@ -5040,22 +6746,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "jina-reader/core-model",
+        "id": "jina/reader-markdown",
         "provider": "jina-reader",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -5073,22 +6773,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "firecrawl-reader/core-model",
+        "id": "firecrawl/scrape-markdown",
         "provider": "firecrawl-reader",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": true,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -5105,22 +6799,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "scrapingbee/core-model",
+        "id": "scrapingbee/headless-browser",
         "provider": "scrapingbee",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -5137,22 +6825,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "zyte/core-model",
+        "id": "zyte/smart-extract",
         "provider": "zyte",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -5169,22 +6851,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "brightdata/core-model",
+        "id": "brightdata/web-unlocker",
         "provider": "brightdata",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -5201,22 +6877,121 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "routenex-fetch/core-model",
+        "id": "routenex/native-fetcher",
         "provider": "routenex-fetch",
         "capabilities": {
           "chat": true,
-          "streaming": true,
+          "streaming": false,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "crawl4ai",
+    "name": "Crawl4AI Open Markdown",
+    "category": "WEB_FETCH",
+    "baseUrl": "http://localhost:11235",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Self-Hosted Async Crawler",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "crawl4ai/async-crawler",
+        "provider": "crawl4ai",
+        "capabilities": {
+          "chat": true,
+          "streaming": false,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "trafilatura",
+    "name": "Trafilatura Web Extractor",
+    "category": "WEB_FETCH",
+    "baseUrl": "http://127.0.0.1:3001/v1/extract",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Fast Python Boilerplate Stripper",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "trafilatura/text-extractor",
+        "provider": "trafilatura",
+        "capabilities": {
+          "chat": true,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "html2text",
+    "name": "HTML2Text Clean Markdown",
+    "category": "WEB_FETCH",
+    "baseUrl": "http://127.0.0.1:3001/v1/markdown",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Instant DOM to MD",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "html2text/converter",
+        "provider": "html2text",
+        "capabilities": {
+          "chat": true,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "postman-echo",
+    "name": "RouteNex Echo Inspect",
+    "category": "WEB_FETCH",
+    "baseUrl": "https://postman-echo.com/get",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Diagnostic HTTP Ingress",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "postman/echo-debugger",
+        "provider": "postman-echo",
+        "capabilities": {
+          "chat": true,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 16000
       }
     ]
   },
@@ -5234,22 +7009,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "elevenlabs/core-model",
+        "id": "elevenlabs/multilingual_v2",
         "provider": "elevenlabs",
         "capabilities": {
-          "chat": true,
+          "chat": false,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 4096
       }
     ]
   },
@@ -5266,22 +7035,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "cartesia/core-model",
+        "id": "cartesia/sonic-english",
         "provider": "cartesia",
         "capabilities": {
-          "chat": true,
+          "chat": false,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 4096
       }
     ]
   },
@@ -5299,22 +7062,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "deepgram/core-model",
+        "id": "deepgram/nova-3",
         "provider": "deepgram",
         "capabilities": {
-          "chat": true,
+          "chat": false,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -5331,22 +7088,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "whisper-openai/core-model",
+        "id": "openai/whisper-1",
         "provider": "whisper-openai",
         "capabilities": {
-          "chat": true,
-          "streaming": true,
+          "chat": false,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -5363,22 +7114,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "suno/core-model",
+        "id": "suno/v3.5",
         "provider": "suno",
         "capabilities": {
-          "chat": true,
-          "streaming": true,
+          "chat": false,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 4096
       }
     ]
   },
@@ -5395,22 +7140,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "udio/core-model",
+        "id": "udio/v1.5",
         "provider": "udio",
         "capabilities": {
-          "chat": true,
-          "streaming": true,
+          "chat": false,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 4096
       }
     ]
   },
@@ -5427,22 +7166,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "playht/core-model",
+        "id": "playht/playht2.0-turbo",
         "provider": "playht",
         "capabilities": {
-          "chat": true,
+          "chat": false,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 4096
       }
     ]
   },
@@ -5459,22 +7192,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "speechify/core-model",
+        "id": "speechify/george",
         "provider": "speechify",
         "capabilities": {
-          "chat": true,
-          "streaming": true,
+          "chat": false,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 4096
       }
     ]
   },
@@ -5492,22 +7219,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "replicate-audio/core-model",
+        "id": "replicate/musicgen",
         "provider": "replicate-audio",
         "capabilities": {
-          "chat": true,
-          "streaming": true,
+          "chat": false,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 4096
       }
     ]
   },
@@ -5525,22 +7246,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "fal-audio/core-model",
+        "id": "fal/fast-sdxl",
         "provider": "fal-audio",
         "capabilities": {
-          "chat": true,
-          "streaming": true,
+          "chat": false,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 4096
       }
     ]
   },
@@ -5557,22 +7272,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "resemble-ai/core-model",
+        "id": "resemble/neural-clone",
         "provider": "resemble-ai",
         "capabilities": {
-          "chat": true,
+          "chat": false,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 1,
-          "completion_per_million": 3,
-          "provenance": "ESTIMATED",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 4096
       }
     ]
   },
@@ -5589,22 +7298,225 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "neets-ai/core-model",
+        "id": "neets/vits",
         "provider": "neets-ai",
         "capabilities": {
-          "chat": true,
-          "streaming": true,
+          "chat": false,
+          "streaming": false,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 4096
+      }
+    ]
+  },
+  {
+    "id": "bark-audio",
+    "name": "Suno Bark Open Source",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "http://localhost:8000/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Open Weights Audio & Speech",
+    "modalities": [
+      "tts",
+      "music"
+    ],
+    "models": [
+      {
+        "id": "suno/bark-large",
+        "provider": "bark-audio",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 4096
+      }
+    ]
+  },
+  {
+    "id": "coqui-tts",
+    "name": "Coqui XTTS v2 Studio",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "http://localhost:8020/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Local Zero-Shot Voice Clone",
+    "modalities": [
+      "tts"
+    ],
+    "models": [
+      {
+        "id": "coqui/xtts-v2",
+        "provider": "coqui-tts",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 4096
+      }
+    ]
+  },
+  {
+    "id": "parler-tts",
+    "name": "Parler-TTS High Quality",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "http://localhost:8000/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Natural Controllable TTS",
+    "modalities": [
+      "tts"
+    ],
+    "models": [
+      {
+        "id": "parler/parler-tts-large-v1",
+        "provider": "parler-tts",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 4096
+      }
+    ]
+  },
+  {
+    "id": "f5-tts",
+    "name": "F5-TTS Non-Autoregressive",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "http://localhost:8000/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Rapid Flow-Matching TTS",
+    "modalities": [
+      "tts"
+    ],
+    "models": [
+      {
+        "id": "f5/f5-tts-base",
+        "provider": "f5-tts",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 4096
+      }
+    ]
+  },
+  {
+    "id": "kokoro-tts",
+    "name": "Kokoro-82M Lightweight",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "http://localhost:8880/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Ultra-Lightweight 82M TTS",
+    "modalities": [
+      "tts"
+    ],
+    "models": [
+      {
+        "id": "kokoro/kokoro-82m",
+        "provider": "kokoro-tts",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 4096
+      }
+    ]
+  },
+  {
+    "id": "styletts2",
+    "name": "StyleTTS 2 Expressive Voice",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "http://localhost:8000/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Human-Level Expressiveness",
+    "modalities": [
+      "tts"
+    ],
+    "models": [
+      {
+        "id": "styletts/styletts2-libri",
+        "provider": "styletts2",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 4096
+      }
+    ]
+  },
+  {
+    "id": "stable-audio",
+    "name": "Stability Stable Audio 2",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "https://api.stability.ai/v2beta/audio",
+    "envKey": "STABILITY_KEY",
+    "freeTier": false,
+    "badge": "Full-Track Instrumental Sound",
+    "modalities": [
+      "music"
+    ],
+    "models": [
+      {
+        "id": "stability/stable-audio-2.0",
+        "provider": "stable-audio",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 4096
+      }
+    ]
+  },
+  {
+    "id": "faster-whisper",
+    "name": "Faster-Whisper CTranslate2",
+    "category": "AUDIO_MEDIA",
+    "baseUrl": "http://localhost:8000/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "4x Faster Transcriptions",
+    "modalities": [
+      "stt"
+    ],
+    "models": [
+      {
+        "id": "whisper/large-v3-turbo",
+        "provider": "faster-whisper",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 16000
       }
     ]
   },
@@ -5624,7 +7536,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "ollama/core-model",
+        "id": "ollama/llama3.2",
         "provider": "ollama",
         "capabilities": {
           "chat": true,
@@ -5633,13 +7545,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -5658,7 +7564,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "lmstudio/core-model",
+        "id": "lmstudio/local-model",
         "provider": "lmstudio",
         "capabilities": {
           "chat": true,
@@ -5667,13 +7573,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -5694,22 +7594,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "localai/core-model",
+        "id": "localai/gpt-4",
         "provider": "localai",
         "capabilities": {
           "chat": true,
           "streaming": true,
-          "tool_calls": false,
-          "vision": false,
+          "tool_calls": true,
+          "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -5727,7 +7621,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "vllm/core-model",
+        "id": "vllm/meta-llama/Llama-3.1-8B-Instruct",
         "provider": "vllm",
         "capabilities": {
           "chat": true,
@@ -5736,13 +7630,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
       }
     ]
   },
@@ -5759,7 +7647,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "llamacpp/core-model",
+        "id": "llamacpp/default",
         "provider": "llamacpp",
         "capabilities": {
           "chat": true,
@@ -5768,13 +7656,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -5792,7 +7674,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "jan/core-model",
+        "id": "jan/cortex-v1",
         "provider": "jan",
         "capabilities": {
           "chat": true,
@@ -5801,13 +7683,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -5825,7 +7701,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "text-gen-webui/core-model",
+        "id": "oobabooga/active-model",
         "provider": "text-gen-webui",
         "capabilities": {
           "chat": true,
@@ -5834,13 +7710,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -5857,7 +7727,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "koboldcpp/core-model",
+        "id": "koboldcpp/gguf-chat",
         "provider": "koboldcpp",
         "capabilities": {
           "chat": true,
@@ -5866,13 +7736,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -5889,7 +7753,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "exo/core-model",
+        "id": "exo/p2p-cluster",
         "provider": "exo",
         "capabilities": {
           "chat": true,
@@ -5898,13 +7762,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -5922,7 +7780,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "aphrodite/core-model",
+        "id": "aphrodite/distributed-llm",
         "provider": "aphrodite",
         "capabilities": {
           "chat": true,
@@ -5931,13 +7789,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -5954,7 +7806,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "tabby/core-model",
+        "id": "tabby/tabby-coder",
         "provider": "tabby",
         "capabilities": {
           "chat": true,
@@ -5963,13 +7815,7 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 32000
       }
     ]
   },
@@ -5986,22 +7832,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "fastchat/core-model",
+        "id": "fastchat/vicuna-13b",
         "provider": "fastchat",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": false,
           "vision": false,
-          "json_mode": true
+          "json_mode": false
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 8192
       }
     ]
   },
@@ -6020,7 +7860,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "open-webui/core-model",
+        "id": "open-webui/pip-endpoint",
         "provider": "open-webui",
         "capabilities": {
           "chat": true,
@@ -6029,13 +7869,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
       }
     ]
   },
@@ -6053,7 +7887,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "tgi/core-model",
+        "id": "tgi/tgi-served-model",
         "provider": "tgi",
         "capabilities": {
           "chat": true,
@@ -6062,13 +7896,224 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "sglang",
+    "name": "SGLang RadixAttention",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:30000/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "RadixAttention Fast Caching",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "sglang/deepseek-ai/DeepSeek-V3",
+        "provider": "sglang",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "exllamav2",
+    "name": "ExLlamaV2 High Speed",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:5000/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "EXL2 Fast Inference",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "exllama/exl2-quant",
+        "provider": "exllamav2",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "tensorrt-llm",
+    "name": "NVIDIA TensorRT-LLM",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:8001/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Triton Server Optimized",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "tensorrt/llama-3-8b-trt",
+        "provider": "tensorrt-llm",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "mlx-lm",
+    "name": "Apple Silicon MLX Server",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:8080/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Unified Memory Apple Silicon",
+    "modalities": [
+      "text"
+    ],
+    "models": [
+      {
+        "id": "mlx/mlx-community/Llama-3.2-3B-Instruct-4bit",
+        "provider": "mlx-lm",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "mistral-rs",
+    "name": "mistral.rs Rust Engine",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:1234/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Pure Rust Fast Runner",
+    "modalities": [
+      "text",
+      "tools",
+      "vision"
+    ],
+    "models": [
+      {
+        "id": "mistral-rs/default-model",
+        "provider": "mistral-rs",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 32000
+      }
+    ]
+  },
+  {
+    "id": "speaches",
+    "name": "Speaches Local Whisper/Kokoro",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:8000/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Drop-in Audio APIs",
+    "modalities": [
+      "tts",
+      "stt"
+    ],
+    "models": [
+      {
+        "id": "speaches/whisper-base",
+        "provider": "speaches",
+        "capabilities": {
+          "chat": false,
+          "streaming": false,
+          "tool_calls": false,
+          "vision": false,
+          "json_mode": false
+        },
+        "context_length": 8192
+      }
+    ]
+  },
+  {
+    "id": "ollama-local",
+    "name": "Ollama Local Daemon",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:11434/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth (Localhost)",
+    "modalities": [
+      "text",
+      "tools",
+      "vision",
+      "embedding"
+    ],
+    "models": [
+      {
+        "id": "ollama/llama3.2",
+        "provider": "ollama-local",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "jan-local",
+    "name": "Jan.ai Local Runtime",
+    "category": "LOCAL",
+    "baseUrl": "http://localhost:1337/v1",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Zero Auth (Localhost)",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "jan/cortex-v1",
+        "provider": "jan-local",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 32000
       }
     ]
   },
@@ -6086,7 +8131,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "claude-code/core-model",
+        "id": "claude-code/autonomous-session",
         "provider": "claude-code",
         "capabilities": {
           "chat": true,
@@ -6095,13 +8140,61 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 200000
+      }
+    ]
+  },
+  {
+    "id": "devin-cli",
+    "name": "Cognition Devin CLI",
+    "category": "CLOUD_AGENT",
+    "baseUrl": "https://api.devin.ai/v1",
+    "envKey": "DEVIN_API_KEY",
+    "freeTier": false,
+    "badge": "Autonomous SWE Agent",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "devin/autonomous-swe",
+        "provider": "devin-cli",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
+      }
+    ]
+  },
+  {
+    "id": "openhands",
+    "name": "OpenHands Autonomous Agent",
+    "category": "CLOUD_AGENT",
+    "baseUrl": "http://localhost:3000/api",
+    "envKey": "OPENHANDS_KEY",
+    "freeTier": true,
+    "badge": "Open-Source Software Engineer",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "openhands/agent-runtime",
+        "provider": "openhands",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 200000
       }
     ]
   },
@@ -6119,22 +8212,16 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "cursor-agent/core-model",
+        "id": "cursor/composer-v2",
         "provider": "cursor-agent",
         "capabilities": {
           "chat": true,
           "streaming": true,
           "tool_calls": true,
-          "vision": false,
+          "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 200000
       }
     ]
   },
@@ -6153,7 +8240,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "cline-agent/core-model",
+        "id": "cline/autonomous-code",
         "provider": "cline-agent",
         "capabilities": {
           "chat": true,
@@ -6162,13 +8249,7 @@ export const CATALOG_PROVIDERS = [
           "vision": true,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 200000
       }
     ]
   },
@@ -6186,7 +8267,7 @@ export const CATALOG_PROVIDERS = [
     ],
     "models": [
       {
-        "id": "aider-agent/core-model",
+        "id": "aider/architect-edit",
         "provider": "aider-agent",
         "capabilities": {
           "chat": true,
@@ -6195,13 +8276,169 @@ export const CATALOG_PROVIDERS = [
           "vision": false,
           "json_mode": true
         },
-        "context_length": 128000,
-        "pricing": {
-          "prompt_per_million": 0,
-          "completion_per_million": 0,
-          "provenance": "OFFICIAL",
-          "updated_at": "2026-01-01T00:00:00Z"
-        }
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "pr-agent",
+    "name": "Qodo PR-Agent Pro",
+    "category": "CLOUD_AGENT",
+    "baseUrl": "https://api.qodo.ai/v1",
+    "envKey": "QODO_API_KEY",
+    "freeTier": true,
+    "badge": "Automated PR Reviewer",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "pr-agent/reviewer-v1",
+        "provider": "pr-agent",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "sweep-ai",
+    "name": "Sweep AI Junior Developer",
+    "category": "CLOUD_AGENT",
+    "baseUrl": "https://api.sweep.dev/v1",
+    "envKey": "SWEEP_API_KEY",
+    "freeTier": true,
+    "badge": "GitHub Issue to PR",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "sweep/issue-resolver",
+        "provider": "sweep-ai",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "devika",
+    "name": "Devika Open Source Agent",
+    "category": "CLOUD_AGENT",
+    "baseUrl": "http://localhost:1337/api",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Autonomous Open Source SWE",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "devika/agent-core",
+        "provider": "devika",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "auto-gpt",
+    "name": "AutoGPT Cloud Runner",
+    "category": "CLOUD_AGENT",
+    "baseUrl": "http://localhost:8000/api",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "Autonomous Task Execution",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "autogpt/task-agent",
+        "provider": "auto-gpt",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": false,
+          "json_mode": true
+        },
+        "context_length": 64000
+      }
+    ]
+  },
+  {
+    "id": "gpt-engineer",
+    "name": "GPT Engineer App Builder",
+    "category": "CLOUD_AGENT",
+    "baseUrl": "https://api.gptengineer.app/v1",
+    "envKey": "GPTE_API_KEY",
+    "freeTier": true,
+    "badge": "Full-Stack Rapid Prototyping",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "gpt-engineer/app-builder",
+        "provider": "gpt-engineer",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
+      }
+    ]
+  },
+  {
+    "id": "boltdiy",
+    "name": "Bolt.diy Browser Agent",
+    "category": "CLOUD_AGENT",
+    "baseUrl": "http://localhost:5173/api",
+    "envKey": "",
+    "freeTier": true,
+    "badge": "In-Browser Full-Stack Builder",
+    "modalities": [
+      "text",
+      "tools"
+    ],
+    "models": [
+      {
+        "id": "boltdiy/stack-builder",
+        "provider": "boltdiy",
+        "capabilities": {
+          "chat": true,
+          "streaming": true,
+          "tool_calls": true,
+          "vision": true,
+          "json_mode": true
+        },
+        "context_length": 128000
       }
     ]
   }

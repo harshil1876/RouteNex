@@ -10,6 +10,10 @@ export function createModelsRoute(registry: ProviderRegistry, adminStore?: Admin
   const router = new Hono();
 
   router.get('/models', (c) => {
+    const accept = c.req.header('accept') || '';
+    if (accept.includes('text/html') && !accept.includes('application/json')) {
+      return c.redirect('/dashboard?tab=providers');
+    }
     const catalog = registry.getModelCatalog();
 
     const combos = adminStore ? adminStore.getCombos() : [];
@@ -194,6 +198,10 @@ export function createModelsRoute(registry: ProviderRegistry, adminStore?: Admin
 
   // GET /v1/models/:model - OpenAI-compatible retrieve model endpoint
   router.get('/models/:model{.*}', (c) => {
+    const accept = c.req.header('accept') || '';
+    if (accept.includes('text/html') && !accept.includes('application/json')) {
+      return c.redirect('/dashboard?tab=providers');
+    }
     const rawParam = c.req.param('model');
     const modelId = decodeURIComponent(rawParam).replace(/^\//, '');
 

@@ -108,20 +108,30 @@ export default function ProviderCredentials({
       } catch {}
     }
 
-    return (catalogProvidersData as any[]).map((p) => ({
-      ...p,
-      isConfigured:
+    return (catalogProvidersData as any[]).map((p) => {
+      const isZeroKey =
         p.id === 'pollinations' ||
         p.id === 'duckduckgo' ||
         p.id === 'pollinations-noauth' ||
         p.id === 'ddg-noauth' ||
-        p.category === 'LOCAL',
-      isEnabled: !disabledSet.has(p.id),
-      status: 'idle',
-      keyCount:
-        p.id === 'pollinations' || p.id === 'duckduckgo' || p.category === 'LOCAL' ? 1 : 0,
-      maskedKeys: [],
-    }));
+        p.id === 'opencode' ||
+        p.id === 'opencode-free' ||
+        p.id === 'opencode-zen' ||
+        p.id === 'uncloseai' ||
+        p.id === 'ai-horde' ||
+        p.id === 'puter-free' ||
+        p.category === 'NO_AUTH' ||
+        p.category === 'LOCAL';
+
+      return {
+        ...p,
+        isConfigured: isZeroKey,
+        isEnabled: !disabledSet.has(p.id),
+        status: 'idle',
+        keyCount: isZeroKey ? 1 : 0,
+        maskedKeys: [],
+      };
+    });
   });
 
   // Filters & Search state (Screenshot 603)
@@ -183,18 +193,34 @@ export default function ProviderCredentials({
                 const found = data.providers.find((item: any) => item.id === p.id);
                 const isEnabled = !mergedDisabled.has(p.id);
 
+                const isZeroKey =
+                  p.id === 'pollinations' ||
+                  p.id === 'duckduckgo' ||
+                  p.id === 'pollinations-noauth' ||
+                  p.id === 'ddg-noauth' ||
+                  p.id === 'opencode' ||
+                  p.id === 'opencode-free' ||
+                  p.id === 'opencode-zen' ||
+                  p.id === 'uncloseai' ||
+                  p.id === 'ai-horde' ||
+                  p.id === 'puter-free' ||
+                  p.category === 'NO_AUTH' ||
+                  p.category === 'LOCAL';
+
                 if (found) {
                   return {
                     ...p,
-                    isConfigured: found.configured,
+                    isConfigured: found.configured || isZeroKey,
                     isEnabled,
-                    keyCount: found.keyCount || (found.configured ? 1 : 0),
+                    keyCount: found.keyCount || (found.configured || isZeroKey ? 1 : 0),
                     maskedKeys: found.maskedKeys || [],
                   };
                 }
                 return {
                   ...p,
+                  isConfigured: isZeroKey,
                   isEnabled,
+                  keyCount: isZeroKey ? 1 : 0,
                 };
               })
             );
@@ -568,7 +594,7 @@ export default function ProviderCredentials({
                 type="text"
                 value={searchProvider}
                 onChange={(e) => setSearchProvider(e.target.value)}
-                placeholder="Search 120+ providers..."
+                placeholder="Search 256+ providers (Groq, NVIDIA, Antigravity, OpenCode Free, Cerebras, Together)..."
                 className="w-full bg-[#09090b] border border-[#222226] rounded-lg pl-8 pr-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 font-sans"
               />
             </div>

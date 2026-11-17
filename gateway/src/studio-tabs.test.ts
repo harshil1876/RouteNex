@@ -943,5 +943,62 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
       const statusData = await statusRes.json();
       expect(statusData.authenticated).toBe(true);
     });
+
+    it('6. POST /v1/admin/providers/:id/sync-models dynamically syncs live models', async () => {
+      const syncRes = await app.request('/v1/admin/providers/groq/sync-models', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({ freeOnly: false }),
+      });
+      expect(syncRes.status).toBe(200);
+      const syncData = await syncRes.json();
+      expect(syncData.success).toBe(true);
+      expect(syncData.provider).toBe('groq');
+      expect(syncData.modelCount).toBeGreaterThan(0);
+      expect(Array.isArray(syncData.models)).toBe(true);
+    });
+
+    it('7. POST /v1/admin/providers/openrouter/sync-models with freeOnly: true filters to free models', async () => {
+      const syncRes = await app.request('/v1/admin/providers/openrouter/sync-models', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({ freeOnly: true }),
+      });
+      expect(syncRes.status).toBe(200);
+      const syncData = await syncRes.json();
+      expect(syncData.success).toBe(true);
+      expect(syncData.freeOnly).toBe(true);
+      for (const m of syncData.models) {
+        const sm = syncData.syncedModels?.find((item: any) => item.id === m);
+        const isFree = m.includes(':free') || (sm?.pricing?.prompt_per_million ?? 0) === 0;
+        expect(isFree).toBe(true);
+      }
+    });
+
+    it('8. GET /models with Accept: text/html redirects to dashboard instead of returning raw JSON', async () => {
+      const res = await app.request('/v1/models/antigravity-cli/flagship', {
+        headers: { Accept: 'text/html,application/xhtml+xml' },
+      });
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toBe('/dashboard?tab=providers');
+    });
+
+    it('9. OpenCode Free (Zen) is registered as zero-key provider with real models', async () => {
+      const modelsRes = await app.request('/v1/models');
+      const modelsData = await modelsRes.json();
+      const opencodeModels = modelsData.data.filter((m: any) => m.id.startsWith('opencode/'));
+      expect(opencodeModels.length).toBeGreaterThan(0);
+      expect(opencodeModels.some((m: any) => m.id.includes('deepseek-r1'))).toBe(true);
+      expect(opencodeModels.some((m: any) => m.id.includes('kimi-k2.7-code'))).toBe(true);
+    });
+
+    it('10. Antigravity real models exist in catalog and do not return fake flagship stubs', async () => {
+      const modelsRes = await app.request('/v1/models');
+      const modelsData = await modelsRes.json();
+      const agyModels = modelsData.data.filter((m: any) => m.id.startsWith('antigravity/'));
+      expect(agyModels.some((m: any) => m.id.includes('flagship'))).toBe(false);
+      expect(agyModels.some((m: any) => m.id.includes('claude-opus-4-6-thinking'))).toBe(true);
+      expect(agyModels.some((m: any) => m.id.includes('gemini-3.7-flash-high'))).toBe(true);
+    });
   });
 });

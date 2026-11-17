@@ -202,10 +202,9 @@ export function createApp(appConfig: AppConfig = config) {
   app.route('/v1', explainRoute);
   app.route('/v1', usageRoute);
 
-  // Also support root endpoints for flexibility
+  // Also support root endpoints for flexibility (modelsRoutes is strictly mounted under /v1 only so /models/* never hijacks browser navigation with raw JSON)
   app.route('/', chatRoute);
   app.route('/', messagesRoute);
-  app.route('/', modelsRoute);
   app.route('/', explainRoute);
   app.route('/', usageRoute);
 

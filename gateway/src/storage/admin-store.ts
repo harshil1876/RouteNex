@@ -109,6 +109,7 @@ export interface AdminSettings {
   memories?: MemoryItem[];
   lexiPacks?: Array<{ code: string; name: string; rulesCount: number; enabled: boolean }>;
   providerModelsState?: Record<string, Record<string, ModelHealthState>>;
+  syncedProviderModels?: Record<string, string[]>;
 }
 
 export class AdminStore {
@@ -1250,6 +1251,20 @@ export class AdminStore {
 
   public setLexiPacks(packs: Array<{ code: string; name: string; rulesCount: number; enabled: boolean }>): void {
     this.settings.lexiPacks = packs;
+    this.save();
+  }
+
+  public getSyncedModels(providerId: string): string[] {
+    const norm = normalizeProviderId(providerId);
+    return this.settings.syncedProviderModels?.[norm] || this.settings.syncedProviderModels?.[providerId] || [];
+  }
+
+  public saveSyncedModels(providerId: string, modelIds: string[]): void {
+    if (!this.settings.syncedProviderModels) {
+      this.settings.syncedProviderModels = {};
+    }
+    const norm = normalizeProviderId(providerId);
+    this.settings.syncedProviderModels[norm] = modelIds;
     this.save();
   }
 }

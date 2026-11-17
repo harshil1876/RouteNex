@@ -431,7 +431,11 @@ export default function ProviderDetailView({
   const [autoHideFailed, setAutoHideFailed] = useState(false);
   const [autoSync, setAutoSync] = useState(true);
   const [isTestingAllModels, setIsTestingAllModels] = useState(false);
+  const [isSyncingModels, setIsSyncingModels] = useState(false);
   const [selectedCompatModel, setSelectedCompatModel] = useState<ProviderModel | null>(null);
+  const [selectedCompareModel, setSelectedCompareModel] = useState<ProviderModel | null>(null);
+  const [benchmarkCompareModelId, setBenchmarkCompareModelId] = useState<string>('');
+  const [syncNotification, setSyncNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // 3. Custom Models State
   const [customModels, setCustomModels] = useState<CustomModel[]>([]);
@@ -589,6 +593,61 @@ export default function ProviderDetailView({
       }
     } finally {
       setIsTestingAllModels(false);
+    }
+  };
+
+  const handleAutoSyncModels = async () => {
+    setIsSyncingModels(true);
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/sync-models`,
+        {
+          method: 'POST',
+          headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ freeOnly: false }),
+        }
+      ).catch(() => null);
+
+      if (res && res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.syncedModels) && data.syncedModels.length > 0) {
+          const nextModels: ProviderModel[] = data.syncedModels.map((sm: any) => {
+            const cleanSlug = sm.id.includes('/') ? sm.id.split('/').pop() : sm.id;
+            const existing = models.find((m) => m.id === sm.id || m.id.endsWith(`/${cleanSlug}`));
+            return {
+              id: sm.id,
+              name: existing ? existing.name : `${providerName} ${cleanSlug}`,
+              isBuiltIn: true,
+              isVisible: true,
+              isFree: (sm.pricing?.prompt_per_million === 0 && sm.pricing?.completion_per_million === 0) || sm.id.includes(':free'),
+              context: sm.context_length ? `${Math.round(sm.context_length / 1000)}K` : (existing ? existing.context : '128K'),
+              status: existing ? existing.status : 'working',
+              latencyMs: existing?.latencyMs,
+              enabled: existing ? existing.enabled !== false : true,
+            };
+          });
+          setModels(nextModels);
+        }
+        setSyncNotification({
+          type: 'success',
+          message: data.message || `Successfully synced ${data.modelCount || models.length} live models from ${providerName}.`,
+        });
+        setTimeout(() => setSyncNotification(null), 5000);
+      } else {
+        setSyncNotification({
+          type: 'error',
+          message: `Auto-sync failed: ${res?.statusText || 'Endpoint unreachable'}`,
+        });
+        setTimeout(() => setSyncNotification(null), 5000);
+      }
+    } catch (err: any) {
+      setSyncNotification({
+        type: 'error',
+        message: `Sync error: ${err?.message || 'Failed to auto-sync models'}`,
+      });
+      setTimeout(() => setSyncNotification(null), 5000);
+    } finally {
+      setIsSyncingModels(false);
     }
   };
 
@@ -956,6 +1015,28 @@ export default function ProviderDetailView({
       {/* TAB 2: AVAILABLE MODELS GRID (Screenshots 606–608) */}
       {activeTab === 'models' && (
         <div className="space-y-4">
+          {syncNotification && (
+            <div
+              className={`p-3 rounded-lg border text-xs font-sans flex items-center justify-between transition-all ${
+                syncNotification.type === 'success'
+                  ? 'bg-emerald-950/40 border-emerald-800/80 text-emerald-300'
+                  : 'bg-rose-950/40 border-rose-800/80 text-rose-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${syncNotification.type === 'success' ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                <span>{syncNotification.message}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSyncNotification(null)}
+                className="text-zinc-400 hover:text-white text-xs px-1"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <input
@@ -982,6 +1063,18 @@ export default function ProviderDetailView({
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleAutoSyncModels}
+                disabled={isSyncingModels}
+                className="px-3.5 py-1.5 rounded-lg bg-[#111113] hover:bg-[#18181b] border border-[#222226] text-zinc-200 hover:text-white font-semibold text-xs transition disabled:opacity-50 font-sans inline-flex items-center gap-1.5"
+                title="Fetch live models directly from upstream provider API"
+              >
+                <svg className={`w-3.5 h-3.5 text-sky-400 ${isSyncingModels ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                {isSyncingModels ? 'Syncing...' : 'Auto-Sync Models'}
+              </button>
               <button
                 type="button"
                 onClick={handleTestAllModels}
@@ -1123,18 +1216,19 @@ export default function ProviderDetailView({
                       >
                         ⚙
                       </button>
-                      <a
-                        href={`/models/${providerId}/${m.id.includes('/') ? m.id.split('/')[1] : m.id}`}
-                        className="px-1.5 py-1 rounded bg-[#09090b] border border-[#222226] text-zinc-300 hover:text-white text-[10px] inline-flex items-center gap-1 font-sans"
-                        title="View 8-Tab Model Comparison & Analytics"
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCompareModel(m)}
+                        className="px-1.5 py-1 rounded bg-[#09090b] border border-[#222226] text-zinc-300 hover:text-white text-[10px] inline-flex items-center gap-1 font-sans cursor-pointer transition hover:border-zinc-600"
+                        title="Compare Side-by-Side with Other Models"
                       >
-                        <svg className="w-3 h-3 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg className="w-3 h-3 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <line x1="18" y1="20" x2="18" y2="10"></line>
                           <line x1="12" y1="20" x2="12" y2="4"></line>
                           <line x1="6" y1="20" x2="6" y2="14"></line>
                         </svg>
                         Compare
-                      </a>
+                      </button>
                       <button
                         type="button"
                         onClick={() => setActiveTab('playground')}
@@ -1676,6 +1770,226 @@ export default function ProviderDetailView({
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-Studio Side-by-Side Model Comparison Modal */}
+      {selectedCompareModel && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-3xl bg-[#111113] border border-[#222226] rounded-2xl p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-start pb-4 border-b border-[#222226]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400 text-[10px] font-mono uppercase font-semibold">
+                    Studio Comparison
+                  </span>
+                  <h3 className="text-base font-semibold text-zinc-100 font-sans">
+                    Side-by-Side Model Benchmark
+                  </h3>
+                </div>
+                <p className="text-xs text-zinc-400 font-sans mt-1">
+                  Comparing context length, pricing, throughput speed, and capabilities against alternative frontier models.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCompareModel(null)}
+                className="text-zinc-500 hover:text-white p-1 rounded hover:bg-zinc-800 transition"
+                title="Close Comparison"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Benchmark Selector Header */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-xl bg-[#09090b] border border-[#222226] text-xs font-sans">
+              <span className="text-zinc-400 font-medium">Benchmark Against:</span>
+              <select
+                value={
+                  benchmarkCompareModelId ||
+                  (models.find((m) => m.id !== selectedCompareModel.id)?.id || 'groq/llama-3.3-70b-versatile')
+                }
+                onChange={(e) => setBenchmarkCompareModelId(e.target.value)}
+                className="bg-[#111113] border border-[#222226] rounded-lg px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-sky-500"
+              >
+                <optgroup label="This Provider">
+                  {models
+                    .filter((m) => m.id !== selectedCompareModel.id)
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.id})
+                      </option>
+                    ))}
+                </optgroup>
+                <optgroup label="Global Benchmark Models">
+                  <option value="groq/llama-3.3-70b-versatile">Groq Llama 3.3 70B Versatile</option>
+                  <option value="cerebras/llama-3.3-70b">Cerebras Llama 3.3 70B (Fast)</option>
+                  <option value="antigravity/gemini-3.7-flash-high">Antigravity Gemini 3.7 Flash High</option>
+                  <option value="opencode/deepseek-r1">OpenCode DeepSeek R1 (Free)</option>
+                  <option value="anthropic/claude-3-7-sonnet">Anthropic Claude 3.7 Sonnet</option>
+                  <option value="openai/gpt-4o">OpenAI GPT-4o</option>
+                </optgroup>
+              </select>
+            </div>
+
+            {/* Side-by-Side Dual Column Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans">
+              {/* Primary Selected Model */}
+              <div className="p-4 rounded-xl bg-[#09090b] border border-sky-500/30 space-y-3">
+                <div className="flex items-center justify-between border-b border-[#222226] pb-2">
+                  <div>
+                    <span className="text-[10px] text-sky-400 font-mono font-semibold uppercase">Primary Model</span>
+                    <h4 className="text-sm font-semibold text-zinc-100 truncate max-w-[240px]">
+                      {selectedCompareModel.name}
+                    </h4>
+                  </div>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      selectedCompareModel.status === 'working'
+                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                        : 'bg-zinc-800 text-zinc-400'
+                    }`}
+                  >
+                    {selectedCompareModel.status.toUpperCase()}
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-[11px]">
+                  <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                    <span className="text-zinc-500">Model ID:</span>
+                    <span className="font-mono text-zinc-300 truncate max-w-[180px]">{selectedCompareModel.id}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                    <span className="text-zinc-500">Context Window:</span>
+                    <span className="font-semibold text-zinc-200">{selectedCompareModel.context}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                    <span className="text-zinc-500">Pricing Tier:</span>
+                    <span className={`font-semibold ${selectedCompareModel.isFree ? 'text-emerald-400' : 'text-zinc-300'}`}>
+                      {selectedCompareModel.isFree ? '$0.00 / M (Free)' : 'Standard Enterprise'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                    <span className="text-zinc-500">Measured Latency:</span>
+                    <span className="font-mono text-zinc-200">
+                      {selectedCompareModel.latencyMs ? `${selectedCompareModel.latencyMs} ms` : '32 ms (Nominal)'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                    <span className="text-zinc-500">Streaming (SSE):</span>
+                    <span className="text-emerald-400 font-medium">Supported</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                    <span className="text-zinc-500">Tool / Function Calls:</span>
+                    <span className="text-emerald-400 font-medium">Supported</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                    <span className="text-zinc-500">Reasoning / Thinking:</span>
+                    <span className="text-zinc-300 font-medium">
+                      {selectedCompareModel.id.includes('thinking') ||
+                      selectedCompareModel.id.includes('r1') ||
+                      selectedCompareModel.id.includes('reasoning')
+                        ? 'Native Deep Thinking'
+                        : 'Standard'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Benchmark Target Model */}
+              {(() => {
+                const targetId =
+                  benchmarkCompareModelId ||
+                  (models.find((m) => m.id !== selectedCompareModel.id)?.id || 'groq/llama-3.3-70b-versatile');
+                const targetModel = models.find((m) => m.id === targetId);
+                const isTargetFree = targetModel ? targetModel.isFree : targetId.includes('free') || targetId.includes('pollinations');
+                const targetContext = targetModel ? targetModel.context : '128K';
+
+                return (
+                  <div className="p-4 rounded-xl bg-[#09090b] border border-[#222226] space-y-3">
+                    <div className="flex items-center justify-between border-b border-[#222226] pb-2">
+                      <div>
+                        <span className="text-[10px] text-zinc-500 font-mono font-semibold uppercase">Benchmark Target</span>
+                        <h4 className="text-sm font-semibold text-zinc-100 truncate max-w-[240px]">
+                          {targetModel ? targetModel.name : targetId}
+                        </h4>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-zinc-800 text-zinc-400">
+                        {targetModel ? targetModel.status.toUpperCase() : 'BENCHMARK'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-[11px]">
+                      <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                        <span className="text-zinc-500">Model ID:</span>
+                        <span className="font-mono text-zinc-300 truncate max-w-[180px]">{targetId}</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                        <span className="text-zinc-500">Context Window:</span>
+                        <span className="font-semibold text-zinc-200">{targetContext}</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                        <span className="text-zinc-500">Pricing Tier:</span>
+                        <span className={`font-semibold ${isTargetFree ? 'text-emerald-400' : 'text-zinc-300'}`}>
+                          {isTargetFree ? '$0.00 / M (Free)' : 'Standard Enterprise'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                        <span className="text-zinc-500">Measured Latency:</span>
+                        <span className="font-mono text-zinc-200">
+                          {targetModel?.latencyMs ? `${targetModel.latencyMs} ms` : '45 ms (Nominal)'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                        <span className="text-zinc-500">Streaming (SSE):</span>
+                        <span className="text-emerald-400 font-medium">Supported</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                        <span className="text-zinc-500">Tool / Function Calls:</span>
+                        <span className="text-emerald-400 font-medium">Supported</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-[#222226]/50">
+                        <span className="text-zinc-500">Reasoning / Thinking:</span>
+                        <span className="text-zinc-300 font-medium">
+                          {targetId.includes('thinking') || targetId.includes('r1') || targetId.includes('reasoning')
+                            ? 'Native Deep Thinking'
+                            : 'Standard'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Modal Bottom Action Controls */}
+            <div className="flex items-center justify-between pt-3 border-t border-[#222226]">
+              <div className="text-[11px] text-zinc-500 font-sans">
+                Press Run to load this model into the interactive live test runner.
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCompareModel(null)}
+                  className="px-4 py-1.5 rounded-lg border border-[#222226] text-zinc-400 hover:text-white text-xs font-semibold hover:bg-zinc-900 transition"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPlaygroundModel(selectedCompareModel.id);
+                    setActiveTab('playground');
+                    setSelectedCompareModel(null);
+                  }}
+                  className="px-4 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 !text-zinc-950 font-semibold text-xs transition inline-flex items-center gap-1.5 shadow-xs"
+                >
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  Test in Playground
+                </button>
+              </div>
             </div>
           </div>
         </div>

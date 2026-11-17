@@ -53,7 +53,20 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
   }
 
   isConfigured(): boolean {
-    return Boolean(this.apiKey && this.apiKey.trim().length > 0);
+    const isZeroKey =
+      this.id === 'opencode' ||
+      this.id === 'opencode-free' ||
+      this.id === 'opencode-zen' ||
+      this.id === 'uncloseai' ||
+      this.id === 'ai-horde' ||
+      this.id === 'puter-free' ||
+      this.id === 'cloudflare-ai' ||
+      this.id === 'duckduckgo-lite' ||
+      this.id === 'airforce' ||
+      this.id === 'nexra' ||
+      this.id === 'kobold-horde' ||
+      this.id === 'webllm';
+    return isZeroKey || Boolean(this.apiKey && this.apiKey.trim().length > 0);
   }
 
   setApiKey(key?: string): void {

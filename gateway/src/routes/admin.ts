@@ -19,7 +19,8 @@ import path from 'node:path';
 import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
 import { hashToken } from '../storage/crypto.js';
-import type { ProviderRegistry } from '../providers/registry.js';
+import { normalizeProviderId, type ProviderRegistry } from '../providers/registry.js';
+import catalogData from '../providers/catalog.js';
 import { AdminStore } from '../storage/admin-store.js';
 import { resolveOAuthCred } from '../providers/oauth-creds.js';
 
@@ -474,10 +475,11 @@ export function createAdminRoutes(
     });
   });
 
-  // 8. POST /v1/admin/providers/:id/sync - Live model sync from upstream (supports freeOnly)
-  router.post('/providers/:id/sync', async (c) => {
+  // 8. POST /v1/admin/providers/:id/sync & /sync-models - Live upstream model discovery & sync
+  const handleSyncModels = async (c: any) => {
     const providerId = c.req.param('id');
-    const p = registry.getProvider(providerId);
+    const norm = normalizeProviderId(providerId);
+    const p = registry.getProvider(providerId) || registry.getProvider(norm);
     if (!p) {
       return c.json({ error: `Provider '${providerId}' not found.` }, 404);
     }
@@ -485,9 +487,85 @@ export function createAdminRoutes(
     const body = await c.req.json().catch(() => ({}));
     const freeOnly = Boolean(body.freeOnly);
 
+    // Look up provider configuration for live upstream querying
+    const catalogEntry = (catalogData as any[]).find((entry) => entry.id === norm || entry.id === providerId);
+    const baseUrl = (p as any).baseUrl || catalogEntry?.baseUrl;
+    const apiKey = adminStore.getProviderKey(providerId) || adminStore.getProviderKey(norm) || (p as any).apiKey;
+
+    let discoveredModels: any[] = [];
+    let syncSuccess = false;
+
+    // If provider has a valid external baseUrl, probe upstream /models
+    if (baseUrl && !baseUrl.includes('127.0.0.1') && !baseUrl.includes('localhost') && !baseUrl.startsWith('webllm://')) {
+      try {
+        const url = baseUrl.endsWith('/v1') ? `${baseUrl}/models` : `${baseUrl.replace(/\/+$/, '')}/models`;
+        const headers: Record<string, string> = { Accept: 'application/json' };
+        if (apiKey && apiKey.trim().length > 0 && apiKey.toLowerCase() !== 'free') {
+          headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+        }
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 6000);
+        const res = await fetch(url, { headers, signal: controller.signal });
+        clearTimeout(timer);
+
+        if (res.ok) {
+          const data = (await res.json()) as any;
+          const rawList = Array.isArray(data)
+            ? data
+            : Array.isArray(data.data)
+            ? data.data
+            : Array.isArray(data.models)
+            ? data.models
+            : [];
+
+          if (rawList.length > 0) {
+            syncSuccess = true;
+            discoveredModels = rawList.map((item: any) => {
+              const rawId = typeof item === 'string' ? item : item.id || item.name;
+              const cleanId = rawId.startsWith(`${providerId}/`) ? rawId.slice(providerId.length + 1) : rawId;
+              const isFreeModel = cleanId.includes(':free') || item.pricing?.prompt === 0 || item.pricing?.prompt === '0';
+              return {
+                id: `${providerId}/${cleanId}`,
+                provider: providerId,
+                capabilities: {
+                  chat: true,
+                  streaming: true,
+                  tool_calls: true,
+                  vision: cleanId.includes('vision') || cleanId.includes('vl') || cleanId.includes('4o'),
+                  json_mode: true,
+                },
+                context_length: item.context_length || 128000,
+                pricing: {
+                  prompt_per_million: isFreeModel ? 0 : item.pricing?.prompt ? Number(item.pricing.prompt) * 1000000 : 0.5,
+                  completion_per_million: isFreeModel ? 0 : item.pricing?.completion ? Number(item.pricing.completion) * 1000000 : 1.5,
+                  provenance: 'OFFICIAL' as const,
+                  updated_at: new Date().toISOString(),
+                },
+              };
+            });
+          }
+        }
+      } catch {
+        // Upstream endpoint unreachable/offline: gracefully falls back to existing registered models
+      }
+    }
+
+    // Merge discovered models into the provider adapter models
+    if (discoveredModels.length > 0) {
+      const existingIds = new Set(p.models.map((m: any) => m.id));
+      for (const dm of discoveredModels) {
+        if (!existingIds.has(dm.id)) {
+          p.models.push(dm);
+          existingIds.add(dm.id);
+        }
+      }
+      adminStore.saveSyncedModels(providerId, discoveredModels.map((m: any) => m.id));
+    }
+
     let modelsToReturn = p.models;
-    if (freeOnly) {
-      modelsToReturn = p.models.filter((m) => {
+    const isFreeOpenRouter = (providerId === 'openrouter' || norm === 'openrouter') && (apiKey?.toLowerCase() === 'free' || freeOnly);
+    if (freeOnly || isFreeOpenRouter) {
+      modelsToReturn = p.models.filter((m: any) => {
         const pPrompt = m.pricing?.prompt_per_million ?? 0;
         const pComp = m.pricing?.completion_per_million ?? 0;
         return (pPrompt === 0 && pComp === 0) || m.id.includes(':free');
@@ -499,10 +577,17 @@ export function createAdminRoutes(
       provider: providerId,
       freeOnly,
       modelCount: modelsToReturn.length,
-      models: modelsToReturn.map((m) => m.id),
-      message: `Model catalog for '${p.name}' is up-to-date with ${modelsToReturn.length} ${freeOnly ? 'free ($0/M) ' : ''}registered models.`,
+      models: modelsToReturn.map((m: any) => m.id),
+      syncedModels: modelsToReturn,
+      syncedFromUpstream: syncSuccess,
+      message: syncSuccess
+        ? `Successfully synchronized ${discoveredModels.length} live models from ${p.name} upstream API.`
+        : `Model catalog for '${p.name}' is up-to-date with ${modelsToReturn.length} ${freeOnly || isFreeOpenRouter ? 'free ($0/M) ' : ''}registered models.`,
     });
-  });
+  };
+
+  router.post('/providers/:id/sync', handleSyncModels);
+  router.post('/providers/:id/sync-models', handleSyncModels);
 
   // 8a. POST/GET /v1/admin/providers/:id/oauth/start - Initiate OAuth 2.0 PKCE / Device Flow
   const handleOAuthStart = async (c: any) => {
