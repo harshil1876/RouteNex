@@ -138,7 +138,10 @@ export class RoutingEngine {
     let isFloorTag = false;
     let isZdrTag = Boolean((request as any).zdr || (request.provider as any)?.zdr);
 
-    if (rawModel.includes(':free')) {
+    if (rawModel === 'auto:free' || rawModel === ':free' || rawModel === 'openrouter/auto:free') {
+      isFreeTag = true;
+      rawModel = 'auto';
+    } else if (rawModel.startsWith('auto:') && rawModel.includes(':free')) {
       isFreeTag = true;
       rawModel = rawModel.replace(':free', '');
     }
@@ -566,9 +569,16 @@ export class RoutingEngine {
       reason: route.reason,
       reason_code: route.reasonCode,
       candidates_evaluated: route.candidates.map((c) => ({
-        model: c.model.id,
-        provider: c.model.provider,
+        model: typeof c.model === 'string' ? c.model : c.model.id,
+        provider: typeof c.model === 'string' ? 'unknown' : c.model.provider,
         eligible: c.eligible,
+        rejection_reason: c.rejectionReason,
+        score: c.score,
+      })),
+      candidates: route.candidates.map((c) => ({
+        model: c.model,
+        eligible: c.eligible,
+        rejectionReason: c.rejectionReason,
         rejection_reason: c.rejectionReason,
         score: c.score,
       })),
@@ -663,6 +673,13 @@ export class RoutingEngine {
           }
         }
         if (status === 429) {
+          // Automatic Key Pool rotation on 429
+          if (this.adminStore && typeof this.adminStore.getProviderKey === 'function') {
+            const nextKey = this.adminStore.getProviderKey(targetModel.provider);
+            if (nextKey) {
+              this.registry.configureProviderKey(targetModel.provider, nextKey);
+            }
+          }
           // Layer 2: Key Rate Limit Cooldown
           this.circuitBreaker.recordKeyCooldown(targetModel.provider, 30000, err.message);
         } else if (status === 404 || err.message?.toLowerCase().includes('model') || err.message?.toLowerCase().includes('not found')) {

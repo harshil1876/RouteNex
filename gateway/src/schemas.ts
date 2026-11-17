@@ -200,6 +200,7 @@ export const RoutingExplanationSchema = z.object({
     rejection_reason: z.string().optional(),
     score: z.number().optional(),
   })),
+  candidates: z.array(z.any()).optional(),
   fallback_chain: z.array(z.string()),
 });
 

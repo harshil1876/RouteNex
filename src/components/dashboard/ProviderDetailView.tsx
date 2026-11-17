@@ -47,6 +47,17 @@ interface CustomModel {
   };
 }
 
+function getAdminHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const token = typeof window !== 'undefined'
+    ? localStorage.getItem('routenex_admin_token') || 'routenex-admin'
+    : 'routenex-admin';
+  return {
+    'Authorization': `Bearer ${token}`,
+    'x-admin-token': token,
+    ...extra,
+  };
+}
+
 export default function ProviderDetailView({
   providerId,
   providerName,
@@ -102,9 +113,8 @@ export default function ProviderDetailView({
   useEffect(() => {
     async function syncBackendConfig() {
       try {
-        const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
         const res = await fetch('http://127.0.0.1:3001/v1/admin/config', {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: getAdminHeaders(),
         }).catch(() => null);
         if (res && res.ok) {
           const data = await res.json();
@@ -404,13 +414,9 @@ export default function ProviderDetailView({
         return false;
       }
 
-      const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
       const res = await fetch('http://127.0.0.1:3001/v1/chat/completions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           model: modelId,
           messages: [{ role: 'user', content: 'ping' }],
@@ -454,13 +460,9 @@ export default function ProviderDetailView({
     setPlaygroundResponse('');
 
     try {
-      const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
       const res = await fetch('http://127.0.0.1:3001/v1/chat/completions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           model: playgroundModel || 'auto',
           messages: [{ role: 'user', content: playgroundPrompt }],
@@ -504,13 +506,9 @@ export default function ProviderDetailView({
 
     // Encrypt and persist to Gateway backend in real time
     try {
-      const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
       await fetch('http://127.0.0.1:3001/v1/admin/providers', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           provider: providerId,
           apiKey: rawKey,
@@ -544,10 +542,9 @@ export default function ProviderDetailView({
     localStorage.setItem(`rn_accounts_${providerId}`, JSON.stringify(updated));
     if (updated.length === 0) {
       try {
-        const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
         await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
+          headers: getAdminHeaders(),
         }).catch(() => null);
       } catch {}
     }

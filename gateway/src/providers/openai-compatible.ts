@@ -72,7 +72,7 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
       'Content-Type': 'application/json',
       ...this.customHeaders,
     };
-    if (this.apiKey) {
+    if (this.apiKey && this.apiKey.toLowerCase() !== 'free') {
       headers['Authorization'] = `${this.authHeaderPrefix} ${this.apiKey}`;
     }
     return headers;
@@ -134,9 +134,10 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
     if (!res.ok) {
       let errBody = '';
       try { errBody = await res.text(); } catch {}
+      const isRetriable = res.status === 429 || res.status >= 500 || (res.status === 401 && this.apiKey?.toLowerCase() === 'free');
       throw new ProviderError(
         `${this.name} API error (${res.status}): ${errBody}`,
-        { status: res.status, retriable: res.status === 429 || res.status >= 500 }
+        { status: res.status, retriable: isRetriable }
       );
     }
 
@@ -212,9 +213,10 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
     if (!res.ok) {
       let errBody = '';
       try { errBody = await res.text(); } catch {}
+      const isRetriable = res.status === 429 || res.status >= 500 || (res.status === 401 && this.apiKey?.toLowerCase() === 'free');
       throw new ProviderError(`${this.name} stream error (${res.status}): ${errBody}`, {
         status: res.status,
-        retriable: res.status === 429 || res.status >= 500,
+        retriable: isRetriable,
       });
     }
 

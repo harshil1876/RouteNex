@@ -69,6 +69,17 @@ const MODALITY_FILTERS = [
   { id: 'embedding', label: 'Embedding' },
 ];
 
+function getAdminHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const token = typeof window !== 'undefined'
+    ? localStorage.getItem('routenex_admin_token') || 'routenex-admin'
+    : 'routenex-admin';
+  return {
+    'Authorization': `Bearer ${token}`,
+    'x-admin-token': token,
+    ...extra,
+  };
+}
+
 export default function ProviderCredentials({
   selectedProviderId,
   onSelectProvider,
@@ -127,9 +138,8 @@ export default function ProviderCredentials({
   useEffect(() => {
     async function loadGatewayConfig() {
       try {
-        const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
         const res = await fetch('http://127.0.0.1:3001/v1/admin/config', {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: getAdminHeaders(),
         }).catch(() => null);
 
         if (res && res.ok) {
@@ -254,7 +264,7 @@ export default function ProviderCredentials({
     try {
       const res = await fetch('http://127.0.0.1:3001/v1/admin/providers/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ provider: providerId }),
       }).catch(() => null);
 

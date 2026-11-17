@@ -9,6 +9,18 @@ import { type ApiError, ChatCompletionRequestSchema } from '../schemas.js';
 export function createExplainRoute(engine: RoutingEngine) {
   const router = new Hono();
 
+  router.get('/router/explain', (c) => {
+    const model = c.req.query('model') || 'auto';
+    const requestId = `exp_${nanoid()}`;
+    const explanation = engine.explain({
+      model,
+      messages: [{ role: 'user', content: 'Explain route dry-run' }],
+      stream: false,
+      n: 1,
+    }, requestId);
+    return c.json(explanation);
+  });
+
   router.post('/router/explain', async (c) => {
     let body: unknown;
     try {

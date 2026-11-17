@@ -695,6 +695,12 @@ export class AdminStore {
     return Boolean(enc && enc.length > 0);
   }
 
+  public getConfiguredProviderIds(): string[] {
+    const fromKeys = Object.keys(this.settings.providerKeys || {});
+    const fromPools = Object.keys(this.settings.providerPools || {});
+    return Array.from(new Set([...fromKeys, ...fromPools]));
+  }
+
   public setCompression(enabled: boolean): void {
     this.settings.compressionEnabled = enabled;
     this.save();

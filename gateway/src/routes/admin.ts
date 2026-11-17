@@ -262,35 +262,12 @@ export function createAdminRoutes(
     }
 
     try {
-      if (provider === 'groq') {
-        adminStore.setProviderKey('groq', apiKey);
-        registry.register(new GroqProviderAdapter(apiKey));
-      } else if (provider === 'openai') {
-        adminStore.setProviderKey('openai', apiKey);
-        registry.register(new OpenAIProviderAdapter(apiKey));
-      } else if (provider === 'gemini') {
-        adminStore.setProviderKey('gemini', apiKey);
-        registry.register(new GeminiProviderAdapter(apiKey));
-      } else if (provider === 'anthropic') {
-        adminStore.setProviderKey('anthropic', apiKey);
-        registry.register(new AnthropicProviderAdapter(apiKey));
-      } else if (provider === 'cerebras') {
-        adminStore.setProviderKey('cerebras', apiKey);
-        registry.register(new CerebrasProviderAdapter(apiKey));
-      } else if (provider === 'deepseek') {
-        adminStore.setProviderKey('deepseek', apiKey);
-        registry.register(new DeepSeekProviderAdapter(apiKey));
-      } else if (provider === 'ollama') {
+      if (provider === 'ollama') {
         adminStore.setProviderKey('ollamaBaseUrl', baseUrl || 'http://localhost:11434/v1');
-        registry.register(new OllamaProviderAdapter(baseUrl));
-      } else if (provider === 'mistral') {
-        adminStore.setProviderKey('mistral', apiKey);
-        registry.register(new MistralProviderAdapter(apiKey));
-      } else if (provider === 'siliconflow') {
-        adminStore.setProviderKey('siliconflow', apiKey);
-        registry.register(new SiliconFlowProviderAdapter(apiKey));
+        registry.configureProviderKey('ollama', '', baseUrl);
       } else {
-        return c.json({ error: `Unknown provider '${provider}'` }, 400);
+        adminStore.setProviderKey(provider, apiKey);
+        registry.configureProviderKey(provider, apiKey, baseUrl);
       }
 
       return c.json({
@@ -315,12 +292,26 @@ export function createAdminRoutes(
     }
 
     const count = adminStore.addKeyToPool(provider, apiKey);
+    registry.configureProviderKey(provider, apiKey);
     return c.json({
       success: true,
       provider,
       poolSize: count,
       strategy: 'round-robin',
       message: `Key added to pool for '${provider}'. Active keys in pool: ${count}.`,
+    });
+  });
+
+  // 5b. DELETE /v1/admin/providers/:id - Remove provider credentials and unconfigure
+  router.delete('/providers/:id', (c) => {
+    const id = c.req.param('id');
+    adminStore.deleteProviderKey(id);
+    registry.configureProviderKey(id, '');
+    return c.json({
+      success: true,
+      provider: id,
+      configured: false,
+      message: `Provider '${id}' credentials removed successfully.`,
     });
   });
 

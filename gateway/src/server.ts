@@ -36,6 +36,18 @@ export function createApp(appConfig: AppConfig = config) {
   // 1. Initialize core subsystems
   const adminStore = new AdminStore('./routenex_admin.json', !appConfig.persistenceEnabled);
   const registry = new ProviderRegistry(appConfig);
+
+  // Hydrate saved provider keys and multi-account key pools from AdminStore into ProviderRegistry
+  for (const providerId of adminStore.getConfiguredProviderIds()) {
+    const key = adminStore.getProviderKey(providerId);
+    if (key) {
+      if (providerId === 'ollamaBaseUrl') {
+        registry.configureProviderKey('ollama', '', key);
+      } else {
+        registry.configureProviderKey(providerId, key);
+      }
+    }
+  }
   const circuitBreaker = new CircuitBreaker();
   const responseCache = new ResponseCache();
   const store = new RequestStore(appConfig.dbPath, appConfig.persistenceEnabled);

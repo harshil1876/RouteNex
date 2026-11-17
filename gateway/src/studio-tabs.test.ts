@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createApp } from './server.js';
 import type { AppConfig } from './config.js';
+import { AdminStore } from './storage/admin-store.js';
+import { ProviderRegistry } from './providers/registry.js';
 
 const testConfig: AppConfig = {
   port: 3001,
@@ -144,6 +146,56 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
       });
       expect(res.status).toBe(200);
     });
+
+    it('POST /v1/admin/providers saves API keys for catalog providers (nvidia, openrouter) with HTTP 200', async () => {
+      // 1. Save nvidia key
+      const nvidiaRes = await app.request('/v1/admin/providers', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          provider: 'nvidia',
+          apiKey: 'nvapi-test-key-12345',
+        }),
+      });
+      expect(nvidiaRes.status).toBe(200);
+      const nvidiaData = await nvidiaRes.json();
+      expect(nvidiaData.success).toBe(true);
+      expect(nvidiaData.configured).toBe(true);
+
+      // 2. Save openrouter key with "free" workflow
+      const openRouterRes = await app.request('/v1/admin/providers', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          provider: 'openrouter',
+          apiKey: 'free',
+        }),
+      });
+      expect(openRouterRes.status).toBe(200);
+      const openRouterData = await openRouterRes.json();
+      expect(openRouterData.success).toBe(true);
+      expect(openRouterData.configured).toBe(true);
+    });
+
+    it('hydrates saved provider keys from AdminStore into fresh ProviderRegistry instance on startup', () => {
+      const store = new AdminStore(':memory:', true);
+      store.setProviderKey('nvidia', 'nvapi-hydrated-secret-key');
+      store.setProviderKey('openrouter', 'free');
+
+      const testRegistry = new ProviderRegistry(testConfig);
+      // Before hydration, nvidia and openrouter are unconfigured
+      expect(testRegistry.getAdapter('nvidia')?.isConfigured()).toBe(false);
+
+      // Hydrate from store
+      for (const pId of store.getConfiguredProviderIds()) {
+        const k = store.getProviderKey(pId);
+        if (k) testRegistry.configureProviderKey(pId, k);
+      }
+
+      // After hydration, both are configured
+      expect(testRegistry.getAdapter('nvidia')?.isConfigured()).toBe(true);
+      expect(testRegistry.getAdapter('openrouter')?.isConfigured()).toBe(true);
+    });
   });
 
   // Tab 3: Routing & Combos
@@ -222,6 +274,58 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
       expect(persisted).toBeDefined();
       expect(persisted.targets).toHaveLength(5);
       expect(persisted.targets).toEqual(updated5ModelTargets);
+    });
+
+    it('resolves and executes custom model IDs in Combos (nvidia/deepseek-r1 + pollinations/openai) without model-not-found rejection', async () => {
+      // 1. Register custom combo with custom model ID
+      const comboSlug = 'combo/nvidia-deepseek-custom';
+      const createRes = await app.request('/v1/admin/combos', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          name: 'NVIDIA DeepSeek Custom Combo',
+          slug: comboSlug,
+          description: 'Custom combo chaining nvidia/deepseek-r1 with fallback to pollinations/openai',
+          targets: ['nvidia/deepseek-r1', 'pollinations/openai'],
+          strategy: 'priority',
+        }),
+      });
+      expect(createRes.status).toBe(200);
+
+      // 2. Explain route dry-run: nvidia/deepseek-r1 must not be rejected as "Target model not found"
+      const explainRes = await app.request('/v1/router/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: comboSlug,
+          messages: [{ role: 'user', content: 'Explain custom combo route' }],
+        }),
+      });
+      expect(explainRes.status).toBe(200);
+      const explainData = await explainRes.json();
+      expect(explainData.candidates).toBeDefined();
+      const nvidiaCandidate = explainData.candidates.find((c: any) => (c.model?.id || c.model) === 'nvidia/deepseek-r1');
+      expect(nvidiaCandidate).toBeDefined();
+      expect(nvidiaCandidate.rejectionReason || nvidiaCandidate.rejection_reason || '').not.toContain('not found');
+
+      // Also test GET /v1/router/explain?model=combo/<slug>
+      const getExplainRes = await app.request(`/v1/router/explain?model=${comboSlug}`);
+      expect(getExplainRes.status).toBe(200);
+      const getExplainData = await getExplainRes.json();
+      expect(getExplainData.candidates).toBeDefined();
+
+      // 3. Chat completion through custom combo executes cleanly
+      const chatRes = await app.request('/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: comboSlug,
+          messages: [{ role: 'user', content: 'Ping custom combo' }],
+        }),
+      });
+      expect(chatRes.status).toBe(200);
+      const chatData = await chatRes.json();
+      expect(chatData.choices?.[0]?.message?.content).toBeDefined();
     });
 
     it('POST /v1/admin/policy returns HTTP 200 when updating routing policy', async () => {

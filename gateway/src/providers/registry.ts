@@ -89,6 +89,87 @@ export class ProviderRegistry {
   }
 
   /**
+   * Configures or updates the API key (and optional baseUrl) for any provider.
+   * Supports dedicated adapters, 120+ declarative catalog providers, and custom providers.
+   * Also supports "free" for OpenRouter to route :free models without requiring a paid key.
+   */
+  configureProviderKey(providerId: string, apiKey: string, baseUrl?: string): void {
+    const trimmedKey = apiKey?.trim() || '';
+    const isFreeOpenRouter = providerId === 'openrouter' && trimmedKey.toLowerCase() === 'free';
+    const effectiveKey = isFreeOpenRouter ? 'free' : trimmedKey;
+
+    // 1. Dedicated adapters
+    if (providerId === 'groq') {
+      this.adapters.set('groq', new GroqProviderAdapter(effectiveKey));
+      return;
+    }
+    if (providerId === 'openai') {
+      this.adapters.set('openai', new OpenAIProviderAdapter(effectiveKey));
+      return;
+    }
+    if (providerId === 'gemini') {
+      this.adapters.set('gemini', new GeminiProviderAdapter(effectiveKey));
+      return;
+    }
+    if (providerId === 'anthropic') {
+      this.adapters.set('anthropic', new AnthropicProviderAdapter(effectiveKey));
+      return;
+    }
+    if (providerId === 'cerebras') {
+      this.adapters.set('cerebras', new CerebrasProviderAdapter(effectiveKey));
+      return;
+    }
+    if (providerId === 'deepseek') {
+      this.adapters.set('deepseek', new DeepSeekProviderAdapter(effectiveKey));
+      return;
+    }
+    if (providerId === 'ollama') {
+      this.adapters.set('ollama', new OllamaProviderAdapter(baseUrl || 'http://localhost:11434/v1'));
+      return;
+    }
+    if (providerId === 'mistral') {
+      this.adapters.set('mistral', new MistralProviderAdapter(effectiveKey));
+      return;
+    }
+    if (providerId === 'siliconflow') {
+      this.adapters.set('siliconflow', new SiliconFlowProviderAdapter(effectiveKey));
+      return;
+    }
+
+    // 2. Existing adapter in map (e.g. OpenAICompatibleAdapter or catalog entry)
+    const existing = this.adapters.get(providerId);
+    if (existing && typeof (existing as any).setApiKey === 'function') {
+      (existing as any).setApiKey(effectiveKey);
+      return;
+    }
+
+    // 3. Look up in declarative catalog
+    const catalogEntry = (catalogData as unknown as any[]).find((c) => c.id === providerId);
+    if (catalogEntry) {
+      const adapter = new OpenAICompatibleAdapter({
+        id: catalogEntry.id,
+        name: catalogEntry.name,
+        baseUrl: baseUrl || catalogEntry.baseUrl,
+        apiKey: effectiveKey,
+        models: catalogEntry.models || [],
+        tos_status: catalogEntry.tos_status || 'official',
+      });
+      this.adapters.set(catalogEntry.id, adapter);
+      return;
+    }
+
+    // 4. Custom generic OpenAI-compatible provider
+    const customAdapter = new OpenAICompatibleAdapter({
+      id: providerId,
+      name: providerId,
+      baseUrl: baseUrl || 'https://api.openai.com/v1',
+      apiKey: effectiveKey,
+      models: [],
+    });
+    this.adapters.set(providerId, customAdapter);
+  }
+
+  /**
    * Retrieves an adapter by its provider ID (e.g. 'mock', 'groq', 'openai').
    */
   getAdapter(providerId: string): IProviderAdapter | undefined {
@@ -131,14 +212,52 @@ export class ProviderRegistry {
 
   /**
    * Returns a model entry matching the given ID.
+   * If not found statically, dynamically synthesizes a ModelEntry for custom model IDs
+   * formatted as <provider>/<modelName> when the provider is registered or in catalog.
    */
   getModel(modelId: string): ModelEntry | undefined {
+    // 1. Check configured adapters first
     for (const adapter of this.getConfiguredAdapters()) {
       const match = adapter.models.find(
         (m) => m.id === modelId || m.id.endsWith(`/${modelId}`)
       );
       if (match) return match;
     }
+
+    // 2. Dynamically synthesize ModelEntry for custom model IDs (e.g. nvidia/deepseek-r1, openrouter/deepseek/deepseek-r1:free)
+    const slashIdx = modelId.indexOf('/');
+    if (slashIdx > 0) {
+      const providerPrefix = modelId.slice(0, slashIdx);
+      if (providerPrefix === 'anthropic') {
+        const anthropicAdapter = this.adapters.get('anthropic');
+        if (!anthropicAdapter || !anthropicAdapter.isConfigured()) {
+          return undefined;
+        }
+      }
+      const adapter = this.adapters.get(providerPrefix);
+      const inCatalog = (catalogData as unknown as any[]).some((c) => c.id === providerPrefix);
+      if (adapter || inCatalog) {
+        return {
+          id: modelId,
+          provider: providerPrefix,
+          capabilities: {
+            chat: true,
+            streaming: true,
+            tool_calls: true,
+            vision: false,
+            json_mode: true,
+          },
+          context_length: 128000,
+          pricing: {
+            prompt_per_million: 0,
+            completion_per_million: 0,
+            provenance: 'OFFICIAL',
+            updated_at: '2026-01-01T00:00:00Z',
+          },
+        };
+      }
+    }
+
     return undefined;
   }
 
