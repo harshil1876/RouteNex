@@ -15,7 +15,7 @@ export const MessageSchema = z.object({
   name: z.string().optional(),
   tool_calls: z.array(z.any()).optional(),
   tool_call_id: z.string().optional(),
-});
+}).passthrough();
 
 export type Message = z.infer<typeof MessageSchema>;
 
@@ -43,7 +43,7 @@ export const ProviderPreferencesSchema = z.object({
   }).optional(),
   allow_caution: z.boolean().optional(),
   allow_caution_fallback: z.boolean().optional(),
-}).optional();
+}).passthrough().optional();
 
 export type ProviderPreferences = z.infer<typeof ProviderPreferencesSchema>;
 
@@ -59,6 +59,9 @@ export const ChatCompletionRequestSchema = z.object({
   temperature: z.number().min(0).max(2).optional(),
   top_p: z.number().min(0).max(1).optional(),
   max_tokens: z.number().int().positive().optional(),
+  max_completion_tokens: z.number().int().positive().optional(),
+  reasoning_effort: z.enum(['low', 'medium', 'high']).optional(),
+  parallel_tool_calls: z.boolean().optional(),
   stream: z.boolean().default(false),
   stop: z.union([z.string(), z.array(z.string())]).optional(),
   presence_penalty: z.number().min(-2).max(2).optional(),
@@ -66,11 +69,11 @@ export const ChatCompletionRequestSchema = z.object({
   n: z.number().int().positive().default(1),
   user: z.string().optional(),
   compress: z.boolean().optional(),
-  // Tool calling
+  // Tool calling & Structured outputs
   tools: z.array(z.any()).optional(),
   tool_choice: z.any().optional(),
   response_format: z.any().optional(),
-});
+}).passthrough();
 
 export type ChatCompletionRequest = z.infer<typeof ChatCompletionRequestSchema>;
 

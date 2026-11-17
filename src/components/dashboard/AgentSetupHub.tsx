@@ -2,6 +2,17 @@ import React, { useState, useEffect } from 'react';
 
 type AgentType = 'cursor' | 'claudecode' | 'cline' | 'aider' | 'python' | 'node';
 
+function getAdminHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const token = typeof window !== 'undefined'
+    ? localStorage.getItem('routenex_admin_token') || 'routenex-admin'
+    : 'routenex-admin';
+  return {
+    'Authorization': `Bearer ${token}`,
+    'x-admin-token': token,
+    ...extra,
+  };
+}
+
 export default function AgentSetupHub() {
   const [selectedAgent, setSelectedAgent] = useState<AgentType>('cursor');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -31,7 +42,9 @@ export default function AgentSetupHub() {
 
   useEffect(() => {
     // 1. Fetch live combos
-    fetch('http://127.0.0.1:3001/v1/admin/combos')
+    fetch('http://127.0.0.1:3001/v1/admin/combos', {
+      headers: getAdminHeaders(),
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && Array.isArray(data.combos) && data.combos.length > 0) {
@@ -42,7 +55,9 @@ export default function AgentSetupHub() {
       .catch(() => {});
 
     // 2. Fetch live virtual keys
-    fetch('http://127.0.0.1:3001/v1/admin/config')
+    fetch('http://127.0.0.1:3001/v1/admin/config', {
+      headers: getAdminHeaders(),
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && Array.isArray(data.virtualKeys) && data.virtualKeys.length > 0) {
@@ -97,7 +112,7 @@ export default function AgentSetupHub() {
     try {
       const res = await fetch('http://127.0.0.1:3001/v1/admin/cli-sync/claude-code', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': 'routenex-admin' },
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload),
       });
 

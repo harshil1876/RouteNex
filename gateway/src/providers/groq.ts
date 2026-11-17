@@ -134,6 +134,8 @@ export class GroqProviderAdapter implements IProviderAdapter {
     if (request.frequency_penalty !== undefined) payload.frequency_penalty = request.frequency_penalty;
     if (request.tools !== undefined) payload.tools = request.tools;
     if (request.tool_choice !== undefined) payload.tool_choice = request.tool_choice;
+    if (request.response_format !== undefined) payload.response_format = request.response_format;
+    if ((request as any).max_completion_tokens !== undefined) payload.max_completion_tokens = (request as any).max_completion_tokens;
     return payload;
   }
 

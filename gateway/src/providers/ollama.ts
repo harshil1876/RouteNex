@@ -80,7 +80,8 @@ export class OllamaProviderAdapter implements IProviderAdapter {
     baseUrl?: string,
     private readonly timeoutMs: number = 120000
   ) {
-    this.baseUrl = (baseUrl || 'http://localhost:11434').replace(/\/+$/, '') + '/v1';
+    const raw = (baseUrl || 'http://localhost:11434').trim().replace(/\/+$/, '');
+    this.baseUrl = raw.endsWith('/v1') ? raw : `${raw}/v1`;
   }
 
   isConfigured(): boolean {

@@ -134,6 +134,10 @@ export class OpenAIProviderAdapter implements IProviderAdapter {
     if (request.frequency_penalty !== undefined) payload.frequency_penalty = request.frequency_penalty;
     if (request.tools !== undefined) payload.tools = request.tools;
     if (request.tool_choice !== undefined) payload.tool_choice = request.tool_choice;
+    if (request.response_format !== undefined) payload.response_format = request.response_format;
+    if ((request as any).max_completion_tokens !== undefined) payload.max_completion_tokens = (request as any).max_completion_tokens;
+    if ((request as any).reasoning_effort !== undefined) payload.reasoning_effort = (request as any).reasoning_effort;
+    if ((request as any).parallel_tool_calls !== undefined) payload.parallel_tool_calls = (request as any).parallel_tool_calls;
     if (stream) payload.stream_options = { include_usage: true };
     return payload;
   }

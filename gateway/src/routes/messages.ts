@@ -78,6 +78,24 @@ export function createMessagesRoute(
       targetModel = virtualKey.defaultCombo;
     }
 
+    // Enforce Virtual Key allowedModels restriction if configured
+    if (virtualKey?.allowedModels && virtualKey.allowedModels.length > 0) {
+      const allowed = virtualKey.allowedModels.some((pattern: string) => {
+        if (pattern === '*' || pattern === model || pattern === targetModel) return true;
+        if (pattern.endsWith('*') && (model.startsWith(pattern.slice(0, -1)) || targetModel.startsWith(pattern.slice(0, -1)))) return true;
+        return false;
+      });
+      if (!allowed) {
+        return c.json({
+          type: 'error',
+          error: {
+            type: 'permission_error',
+            message: `Model '${model}' is not permitted for this API key. Allowed models: ${virtualKey.allowedModels.join(', ')}`,
+          },
+        }, 403);
+      }
+    }
+
     // 1. Translate Anthropic tools to OpenAI functions format
     let openAiTools: any[] | undefined = undefined;
     if (Array.isArray(rawTools) && rawTools.length > 0) {
@@ -615,6 +633,13 @@ export function createMessagesRoute(
 
         // Event 5: message_stop
         controller.enqueue(encoder.encode(`event: message_stop\ndata: ${JSON.stringify({ type: 'message_stop' })}\n\n`));
+
+        // Record virtual key spend for completed stream
+        const streamCost = engine.calculateCost(modelEntry, { prompt_tokens: 15, completion_tokens: Math.max(1, outputTokens), total_tokens: 15 + Math.max(1, outputTokens) });
+        if (virtualKey?.id && typeof streamCost?.total_usd === 'number' && adminStore) {
+          adminStore.recordKeySpend(virtualKey.id, streamCost.total_usd);
+        }
+
         controller.close();
       },
     });

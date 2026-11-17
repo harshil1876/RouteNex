@@ -130,11 +130,12 @@ export function hashToken(token: string): string {
 
 /**
  * Constant-time string equality check to prevent timing attacks.
+ * Pre-hashes inputs with SHA-256 to ensure identical buffer lengths (32 bytes),
+ * completely eliminating length-variance timing leaks.
  */
 export function secureTimingSafeEqual(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) return false;
-  return crypto.timingSafeEqual(bufA, bufB);
+  const hashA = crypto.createHash('sha256').update(a).digest();
+  const hashB = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(hashA, hashB);
 }

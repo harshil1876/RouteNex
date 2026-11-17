@@ -189,7 +189,11 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
 
   const handleLock = async () => {
     try {
-      await fetch('http://127.0.0.1:3001/v1/admin/auth/session', { method: 'DELETE' }).catch(() => null);
+      const token = localStorage.getItem('routenex_admin_token') || 'routenex-admin';
+      await fetch('http://127.0.0.1:3001/v1/admin/auth/session', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}`, 'x-admin-token': token },
+      }).catch(() => null);
     } catch {}
     sessionStorage.removeItem('routenex_unlocked');
     localStorage.removeItem('routenex_admin_token');

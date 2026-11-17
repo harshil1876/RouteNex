@@ -269,7 +269,9 @@ export default function ProviderDetailView({
       if (polls > 60 || isPopupClosed) {
         // Final verification check on popup close before clearing
         try {
-          const finalRes = await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/oauth/status`);
+          const finalRes = await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/oauth/status`, {
+            headers: getAdminHeaders(),
+          });
           if (finalRes.ok) {
             const finalData = await finalRes.json();
             if (finalData.authenticated && finalData.token) {
@@ -299,7 +301,9 @@ export default function ProviderDetailView({
       }
 
       try {
-        const res = await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/oauth/status`);
+        const res = await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/oauth/status`, {
+          headers: getAdminHeaders(),
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.authenticated && data.token) {

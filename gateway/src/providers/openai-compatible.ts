@@ -109,10 +109,12 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
 
     if (request.temperature !== undefined) body.temperature = request.temperature;
     if (request.max_tokens !== undefined) body.max_tokens = request.max_tokens;
+    if ((request as any).max_completion_tokens !== undefined) body.max_completion_tokens = (request as any).max_completion_tokens;
     if (request.top_p !== undefined) body.top_p = request.top_p;
     if (request.stop !== undefined) body.stop = request.stop;
     if (request.tools !== undefined) body.tools = request.tools;
     if (request.tool_choice !== undefined) body.tool_choice = request.tool_choice;
+    if (request.response_format !== undefined) body.response_format = request.response_format;
 
     let res: Response;
     try {
@@ -184,8 +186,12 @@ export class OpenAICompatibleAdapter implements IProviderAdapter {
 
     if (request.temperature !== undefined) body.temperature = request.temperature;
     if (request.max_tokens !== undefined) body.max_tokens = request.max_tokens;
+    if ((request as any).max_completion_tokens !== undefined) body.max_completion_tokens = (request as any).max_completion_tokens;
     if (request.top_p !== undefined) body.top_p = request.top_p;
     if (request.stop !== undefined) body.stop = request.stop;
+    if (request.tools !== undefined) body.tools = request.tools;
+    if (request.tool_choice !== undefined) body.tool_choice = request.tool_choice;
+    if (request.response_format !== undefined) body.response_format = request.response_format;
 
     const timeoutSignal = AbortSignal.timeout(60000);
     const combinedSignal = clientSignal ? AbortSignal.any([clientSignal, timeoutSignal]) : timeoutSignal;

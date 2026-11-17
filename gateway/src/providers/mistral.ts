@@ -6,7 +6,7 @@
  * API Endpoint: https://api.mistral.ai/v1
  */
 
-import type { IProviderAdapter, ModelEntry } from './types.js';
+import { type IProviderAdapter, type ModelEntry, ProviderError } from './types.js';
 import type { ChatCompletionRequest, ChatCompletionResponse, StreamChunk } from '../schemas.js';
 
 export class MistralProviderAdapter implements IProviderAdapter {
@@ -65,27 +65,45 @@ export class MistralProviderAdapter implements IProviderAdapter {
 
   async chat(request: ChatCompletionRequest): Promise<ChatCompletionResponse> {
     if (!this.isConfigured()) {
-      throw new Error('Mistral API key is not configured');
+      throw new ProviderError('Mistral API key is not configured', { status: 401, retriable: false });
     }
 
     const rawModel = request.model.replace('mistral/', '');
-    const res = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: rawModel,
-        messages: request.messages,
-        temperature: request.temperature,
-        stream: false,
-      }),
-    });
+    const body: Record<string, unknown> = {
+      model: rawModel,
+      messages: request.messages,
+      stream: false,
+    };
+    if (request.temperature !== undefined) body.temperature = request.temperature;
+    if (request.max_tokens !== undefined) body.max_tokens = request.max_tokens;
+    if (request.top_p !== undefined) body.top_p = request.top_p;
+    if (request.tools !== undefined) body.tools = request.tools;
+    if (request.tool_choice !== undefined) body.tool_choice = request.tool_choice;
+    if (request.response_format !== undefined) body.response_format = request.response_format;
+
+    let res: Response;
+    try {
+      res = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
+    } catch (err: any) {
+      throw new ProviderError(`Mistral network error: ${err.message}`, { status: 502, retriable: true });
+    }
 
     if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Mistral API error (${res.status}): ${errText}`);
+      let errText = '';
+      try { errText = await res.text(); } catch {}
+      const retriable = res.status === 429 || res.status >= 500;
+      throw new ProviderError(`Mistral API error (${res.status}): ${errText}`, {
+        status: res.status,
+        retriable,
+      });
     }
 
     return (await res.json()) as ChatCompletionResponse;

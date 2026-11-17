@@ -74,6 +74,25 @@ export function createChatRoute(
     }
     request.model = normalizeDiscoveryModel(request.model);
 
+    // Enforce Virtual Key allowedModels restriction if configured
+    if (virtualKey?.allowedModels && virtualKey.allowedModels.length > 0) {
+      const allowed = virtualKey.allowedModels.some((pattern: string) => {
+        if (pattern === '*' || pattern === request.model) return true;
+        if (pattern.endsWith('*') && request.model.startsWith(pattern.slice(0, -1))) return true;
+        return false;
+      });
+      if (!allowed) {
+        return c.json({
+          error: {
+            message: `Model '${request.model}' is not permitted for this API key. Allowed models: ${virtualKey.allowedModels.join(', ')}`,
+            type: 'invalid_request_error',
+            code: 'model_not_allowed',
+            param: 'model',
+          },
+        }, 403);
+      }
+    }
+
     // Virtual Model Ingress: model: "worker/<slug>"
     if (request.model.startsWith('worker/')) {
       const workerSlug = request.model.replace(/^worker\//, '').trim();
@@ -353,6 +372,11 @@ export function createChatRoute(
             total_tokens: promptTokens + completionTokens,
           } : undefined;
 
+          const streamCost = engine.calculateCost(modelEntry, usage);
+          if (virtualKey?.id && typeof streamCost?.total_usd === 'number' && adminStore) {
+            adminStore.recordKeySpend(virtualKey.id, streamCost.total_usd);
+          }
+
           store.logRequest({
             request_id: requestId,
             timestamp: new Date().toISOString(),
@@ -362,7 +386,7 @@ export function createChatRoute(
             latency_ms: latencyMs,
             status: 'success',
             token_usage: usage,
-            cost_estimate: engine.calculateCost(modelEntry, usage),
+            cost_estimate: streamCost,
             routing_reason: reason,
           });
         } catch (streamErr: any) {
@@ -400,6 +424,11 @@ export function createChatRoute(
 
       if (cache && !skipCache && response) {
         cache.set(effectiveRequest, response);
+      }
+
+      const costUsd = response.routenex?.cost_estimate?.total_usd;
+      if (virtualKey?.id && typeof costUsd === 'number' && adminStore) {
+        adminStore.recordKeySpend(virtualKey.id, costUsd);
       }
 
       store.logRequest({

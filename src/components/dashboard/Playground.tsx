@@ -17,6 +17,17 @@ interface CompletionResult {
   };
 }
 
+function getAdminHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const token = typeof window !== 'undefined'
+    ? localStorage.getItem('routenex_admin_token') || 'routenex-admin'
+    : 'routenex-admin';
+  return {
+    'Authorization': `Bearer ${token}`,
+    'x-admin-token': token,
+    ...extra,
+  };
+}
+
 export default function Playground() {
   const [prompt, setPrompt] = useState('Why should AI developers use an intelligent router like RouteNex?');
   const [selectedModel, setSelectedModel] = useState('auto');
@@ -32,7 +43,9 @@ export default function Playground() {
   ]);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:3001/v1/admin/combos')
+    fetch('http://127.0.0.1:3001/v1/admin/combos', {
+      headers: getAdminHeaders(),
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && Array.isArray(data.combos)) {
@@ -76,7 +89,7 @@ export default function Playground() {
 
       const res = await fetch('http://127.0.0.1:3001/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(body),
       });
 

@@ -105,11 +105,13 @@ export class RouteNexClient {
     // If local daemon is online, execute live chat/completions with compression telemetry
     if (isOnline) {
       try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default' : 'rn-local-dev-default';
         const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-routenex-compress': 'true',
+            'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
             model: requestedModel,

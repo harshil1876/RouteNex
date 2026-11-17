@@ -112,9 +112,11 @@ export class GeminiProviderAdapter implements IProviderAdapter {
       temperature: request.temperature,
       top_p: request.top_p,
       max_tokens: request.max_tokens,
+      max_completion_tokens: (request as any).max_completion_tokens,
       stream,
       tools: request.tools,
       tool_choice: request.tool_choice,
+      response_format: request.response_format,
     };
   }
 

@@ -412,4 +412,132 @@ describe('Suite 11: Principal QA & Extreme Client Torture Test Suite', () => {
     store.deleteProviderKey('groq');
     expect(store.hasProviderKey('groq')).toBe(false);
   });
+
+  // Test 14: GET /v1/models/:model OpenAI-compatible model retrieval
+  it('Test 14 (P1): GET /v1/models/:model retrieves individual model info and returns 404 for unknown models', async () => {
+    const { app } = createApp(testConfig);
+
+    // 14a. Retrieve registered model
+    const res1 = await app.request('/v1/models/mock/fast');
+    expect(res1.status).toBe(200);
+    const data1 = await res1.json();
+    expect(data1.id).toBe('mock/fast');
+    expect(data1.object).toBe('model');
+
+    // 14b. Retrieve combo model
+    const res2 = await app.request('/v1/models/combo/free-unlimited');
+    expect(res2.status).toBe(200);
+    const data2 = await res2.json();
+    expect(data2.id).toBe('combo/free-unlimited');
+    expect(data2.routenex.provider).toBe('combo');
+
+    // 14c. Unknown model returns 404
+    const res3 = await app.request('/v1/models/nonexistent/model-999');
+    expect(res3.status).toBe(404);
+    const data3 = await res3.json();
+    expect(data3.error.code).toBe('model_not_found');
+  });
+
+  // Test 15: Ollama baseUrl normalization prevents /v1/v1 duplication
+  it('Test 15 (P0): OllamaProviderAdapter handles baseUrl ending in /v1 without double /v1/v1 duplication', async () => {
+    const { OllamaProviderAdapter } = await import('./providers/ollama.js');
+    const adapter1 = new OllamaProviderAdapter('http://localhost:11434');
+    expect((adapter1 as any).baseUrl).toBe('http://localhost:11434/v1');
+
+    const adapter2 = new OllamaProviderAdapter('http://localhost:11434/v1');
+    expect((adapter2 as any).baseUrl).toBe('http://localhost:11434/v1');
+
+    const adapter3 = new OllamaProviderAdapter('http://127.0.0.1:11434/v1///');
+    expect((adapter3 as any).baseUrl).toBe('http://127.0.0.1:11434/v1');
+  });
+
+  // Test 16: VirtualKey allowedModels enforcement
+  it('Test 16 (P0): Enforces VirtualKey allowedModels restriction with 403 model_not_allowed', async () => {
+    const { app, adminStore } = createApp(testConfig);
+    const restrictedKey = adminStore.createVirtualKey('Restricted Key', 60, { allowedModels: ['mock/fast'] });
+
+    // Attempting unallowed model returns 403
+    const resBlocked = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${restrictedKey.key}`,
+      },
+      body: JSON.stringify({
+        model: 'mock/gpt-4',
+        messages: [{ role: 'user', content: 'Hello' }],
+      }),
+    });
+    expect(resBlocked.status).toBe(403);
+    const blockedData = await resBlocked.json();
+    expect(blockedData.error.code).toBe('model_not_allowed');
+
+    // Attempting permitted model succeeds with 200
+    const resAllowed = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${restrictedKey.key}`,
+      },
+      body: JSON.stringify({
+        model: 'mock/fast',
+        messages: [{ role: 'user', content: 'Hello' }],
+      }),
+    });
+    expect(resAllowed.status).toBe(200);
+  });
+
+  // Test 17: VirtualKey spend tracking on chat completions
+  it('Test 17 (P1): Tracks virtual key spend on chat completions and enforces dailyBudgetUsd', async () => {
+    const { app, adminStore } = createApp(testConfig);
+    const budgetKey = adminStore.createVirtualKey('Budget Key', 60, { dailyBudgetUsd: 0.00001 });
+
+    // Record spend to trigger cap
+    adminStore.recordKeySpend(budgetKey.id, 0.05);
+
+    // Subsequent request is rate-limited with 429
+    const res = await app.request('/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${budgetKey.key}`,
+      },
+      body: JSON.stringify({
+        model: 'mock/fast',
+        messages: [{ role: 'user', content: 'Hello' }],
+      }),
+    });
+    expect(res.status).toBe(429);
+    const data = await res.json();
+    expect(data.error.code).toBe('budget_exceeded');
+  });
+
+  // Test 18: SHA-256 pre-hashed timing-safe comparison
+  it('Test 18 (P1): timingSafeEqual functions safely compare different-length strings in constant time', async () => {
+    const { secureTimingSafeEqual } = await import('./storage/crypto.js');
+    const { timingSafeEqualStr } = await import('./utils/security.ts');
+
+    expect(secureTimingSafeEqual('secret-key-123', 'secret-key-123')).toBe(true);
+    expect(secureTimingSafeEqual('short', 'much-longer-string-to-test-length-leak')).toBe(false);
+    expect(secureTimingSafeEqual('', 'token')).toBe(false);
+
+    expect(timingSafeEqualStr('hello', 'hello')).toBe(true);
+    expect(timingSafeEqualStr('hello', 'world-difference')).toBe(false);
+  });
+
+  // Test 19: ChatCompletionRequestSchema preserves forward-compatible fields
+  it('Test 19 (P1): ChatCompletionRequestSchema passes through max_completion_tokens and reasoning_effort', async () => {
+    const { ChatCompletionRequestSchema } = await import('./schemas.js');
+    const parsed = ChatCompletionRequestSchema.parse({
+      model: 'openai/gpt-4o',
+      messages: [{ role: 'user', content: 'Solve this' }],
+      max_completion_tokens: 4096,
+      reasoning_effort: 'medium',
+      extra_vendor_param: 'passed-through',
+    });
+
+    expect(parsed.max_completion_tokens).toBe(4096);
+    expect(parsed.reasoning_effort).toBe('medium');
+    expect((parsed as any).extra_vendor_param).toBe('passed-through');
+  });
 });

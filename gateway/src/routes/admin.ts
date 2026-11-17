@@ -24,6 +24,21 @@ import { AdminStore } from '../storage/admin-store.js';
 import { resolveOAuthCred } from '../providers/oauth-creds.js';
 
 const pkceStore = new Map<string, { verifier: string; providerId: string; createdAt: number }>();
+const MAX_PKCE_ENTRIES = 1000;
+const PKCE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+function prunePkceStore(): void {
+  const now = Date.now();
+  for (const [key, val] of pkceStore.entries()) {
+    if (now - val.createdAt > PKCE_TTL_MS) {
+      pkceStore.delete(key);
+    }
+  }
+  if (pkceStore.size >= MAX_PKCE_ENTRIES) {
+    const oldestKey = pkceStore.keys().next().value;
+    if (oldestKey) pkceStore.delete(oldestKey);
+  }
+}
 import type { AppConfig } from '../config.js';
 import type { RequestStore } from '../storage/sqlite.js';
 import { GroqProviderAdapter } from '../providers/groq.js';
@@ -47,10 +62,9 @@ import type { RoutingEngine } from '../router/engine.js';
 
 function safeCompare(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
-  const bufA = Buffer.from(a, 'utf-8');
-  const bufB = Buffer.from(b, 'utf-8');
-  if (bufA.length !== bufB.length) return false;
-  return crypto.timingSafeEqual(bufA, bufB);
+  const hashA = crypto.createHash('sha256').update(a).digest();
+  const hashB = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(hashA, hashB);
 }
 
 export function createAdminRoutes(
@@ -122,6 +136,10 @@ export function createAdminRoutes(
 
     if (!isValid) {
       globalFailedAttempts++;
+      if (loginAttempts.size >= 5000) {
+        const oldestIp = loginAttempts.keys().next().value;
+        if (oldestIp) loginAttempts.delete(oldestIp);
+      }
       if (!record || now > record.resetTime) {
         loginAttempts.set(ip, { count: 1, resetTime: now + 60000 });
       } else {
@@ -474,6 +492,7 @@ export function createAdminRoutes(
       clientId = process.env[`${providerId.toUpperCase()}_CLIENT_ID`] || 'routenex-local';
     }
 
+    prunePkceStore();
     pkceStore.set(state, { verifier, providerId, createdAt: Date.now() });
 
     const googleScopes = [
@@ -770,6 +789,7 @@ export function createAdminRoutes(
     }
 
     const pkce = state ? pkceStore.get(state) : undefined;
+    if (state) pkceStore.delete(state);
     const isGoogleAuth =
       providerId === 'antigravity' ||
       providerId === 'antigravity-cli' ||

@@ -1,4 +1,4 @@
-import { timingSafeEqual } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 
 /**
  * Validates whether an upstream target URL is safe and not targeting internal/private networks (SSRF).
@@ -68,11 +68,11 @@ export function validateSafeUrl(urlString: string, allowLocalhost: boolean = fal
 
 /**
  * Constant-time string comparison to prevent timing side-channel attacks on tokens and keys.
+ * Pre-hashes inputs with SHA-256 to ensure identical 32-byte buffers.
  */
 export function timingSafeEqualStr(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
-  const bufA = Buffer.from(a, 'utf-8');
-  const bufB = Buffer.from(b, 'utf-8');
-  if (bufA.length !== bufB.length) return false;
-  return timingSafeEqual(bufA, bufB);
+  const hashA = createHash('sha256').update(a).digest();
+  const hashB = createHash('sha256').update(b).digest();
+  return timingSafeEqual(hashA, hashB);
 }

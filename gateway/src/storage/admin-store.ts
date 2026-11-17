@@ -127,6 +127,10 @@ export class AdminStore {
   }
 
   public createSessionToken(): string {
+    if (this.activeSessions.size >= 5000) {
+      const oldest = this.activeSessions.values().next().value;
+      if (oldest) this.activeSessions.delete(oldest);
+    }
     const token = `rn_sess_${nanoid(32)}`;
     this.activeSessions.add(token);
     return token;
@@ -488,6 +492,10 @@ export class AdminStore {
   public recordKeySpend(keyId: string, costUsd: number): void {
     if (!this.keySpendHistory) this.keySpendHistory = new Map();
     if (!keyId || costUsd <= 0) return;
+    if (this.keySpendHistory.size >= 5000 && !this.keySpendHistory.has(keyId)) {
+      const oldestKey = this.keySpendHistory.keys().next().value;
+      if (oldestKey) this.keySpendHistory.delete(oldestKey);
+    }
     const history = this.keySpendHistory.get(keyId) || [];
     history.push({ timestamp: Date.now(), costUsd });
     const cutoff = Date.now() - 24 * 3600 * 1000;

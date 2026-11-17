@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import type { ProviderRegistry } from '../providers/registry.js';
+import { ProviderRegistry } from '../providers/registry.js';
 import type { AdminStore } from '../storage/admin-store.js';
 
 /**
@@ -190,6 +190,68 @@ export function createModelsRoute(registry: ProviderRegistry, adminStore?: Admin
         ...catalog,
       ],
     });
+  });
+
+  // GET /v1/models/:model - OpenAI-compatible retrieve model endpoint
+  router.get('/models/:model{.*}', (c) => {
+    const rawParam = c.req.param('model');
+    const modelId = decodeURIComponent(rawParam).replace(/^\//, '');
+
+    // 1. Check registry static or dynamic catalog
+    const entry = registry.getModel(modelId);
+    if (entry) {
+      return c.json(ProviderRegistry.toModelInfo(entry));
+    }
+
+    // 2. Check Combos
+    const combos = adminStore ? adminStore.getCombos() : [];
+    const foundCombo = combos.find((cb) => cb.slug === modelId || cb.id === modelId || `claude-combo-${cb.slug.replace(/^combo\//, '')}` === modelId);
+    if (foundCombo) {
+      return c.json({
+        id: foundCombo.slug,
+        object: 'model',
+        created: Math.floor(new Date(foundCombo.createdAt).getTime() / 1000),
+        owned_by: 'routenex-combo',
+        routenex: {
+          provider: 'combo',
+          capabilities: { chat: true, streaming: true, tool_calls: true, vision: false, json_mode: true },
+          pricing: { prompt_per_million: 0, completion_per_million: 0, provenance: 'ESTIMATED' as const, updated_at: foundCombo.createdAt },
+          description: foundCombo.description,
+          targets: foundCombo.targets,
+        },
+      });
+    }
+
+    // 3. Check Workers
+    const workers = adminStore ? adminStore.getWorkers() : [];
+    const foundWorker = workers.find((w) => `worker/${w.slug}` === modelId || w.id === modelId || `claude-worker-${w.slug}` === modelId);
+    if (foundWorker) {
+      return c.json({
+        id: `worker/${foundWorker.slug}`,
+        object: 'model',
+        created: Math.floor(new Date(foundWorker.createdAt || Date.now()).getTime() / 1000),
+        owned_by: 'routenex-worker',
+        routenex: {
+          provider: 'nexworker',
+          capabilities: { chat: true, streaming: true, tool_calls: true, vision: false, json_mode: true },
+          pricing: { prompt_per_million: 0, completion_per_million: 0, provenance: 'ESTIMATED' as const, updated_at: foundWorker.updatedAt || new Date().toISOString() },
+          description: foundWorker.role || `${foundWorker.name} Specialist Worker`,
+          targets: [foundWorker.brainModel],
+        },
+      });
+    }
+
+    return c.json(
+      {
+        error: {
+          message: `The model '${modelId}' does not exist or you do not have access to it.`,
+          type: 'invalid_request_error',
+          param: 'model',
+          code: 'model_not_found',
+        },
+      },
+      404
+    );
   });
 
   return router;
