@@ -92,7 +92,11 @@ export default function ProviderDetailView({
     return true;
   });
 
-  const handleToggleProviderEnabled = async () => {
+  const handleToggleProviderEnabled = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const next = !isProviderEnabled;
     setIsProviderEnabled(next);
 
@@ -108,16 +112,12 @@ export default function ProviderDetailView({
     } catch {}
 
     try {
-      await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/state`, {
+      fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/state`, {
         method: 'POST',
         headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ enabled: next }),
-      });
+      }).catch(() => {});
     } catch {}
-
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('routenex:state-changed'));
-    }
   };
 
   // 1. Connections Table State (Empty by default for API-key & OAuth providers until connected)
@@ -156,6 +156,17 @@ export default function ProviderDetailView({
   useEffect(() => {
     let active = true;
     async function syncBackendConfig() {
+      let localDisabled = false;
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('rn_disabled_providers');
+          if (stored) {
+            const arr = JSON.parse(stored);
+            if (Array.isArray(arr) && arr.includes(providerId)) localDisabled = true;
+          }
+        } catch {}
+      }
+
       try {
         const res = await fetch('http://127.0.0.1:3001/v1/admin/config', {
           headers: getAdminHeaders(),
@@ -163,14 +174,11 @@ export default function ProviderDetailView({
         if (res && res.ok && active) {
           const data = await res.json();
           const disabledList: string[] = Array.isArray(data.disabledProviders) ? data.disabledProviders : [];
+          const isServerDisabled = disabledList.includes(providerId);
+
+          setIsProviderEnabled(!localDisabled && !isServerDisabled);
+
           const p = data.providers?.find((item: any) => item.id === providerId);
-
-          if (p && p.isEnabled !== undefined) {
-            setIsProviderEnabled(Boolean(p.isEnabled));
-          } else {
-            setIsProviderEnabled(!disabledList.includes(providerId));
-          }
-
           if (p && p.maskedKeys && p.maskedKeys.length > 0) {
             setAccounts((prev) => {
               if (prev.length > 0) return prev;
@@ -741,13 +749,16 @@ export default function ProviderDetailView({
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-[#111113] border border-[#222226] px-2.5 py-1 rounded-lg">
+          <div
+            onClick={(e) => handleToggleProviderEnabled(e)}
+            className="flex items-center gap-2 bg-[#111113] hover:bg-zinc-800 border border-[#222226] hover:border-zinc-700 px-3 py-1.5 rounded-lg cursor-pointer transition select-none z-10 shadow-xs"
+            title={isProviderEnabled ? 'Click to disable provider' : 'Click to enable provider'}
+          >
             <span className="text-[11px] text-zinc-400 font-sans">Provider:</span>
             <button
               type="button"
-              onClick={handleToggleProviderEnabled}
-              title={isProviderEnabled ? 'Disable Provider' : 'Enable Provider'}
-              className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              aria-label={isProviderEnabled ? 'Disable Provider' : 'Enable Provider'}
+              className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none pointer-events-none ${
                 isProviderEnabled ? 'bg-emerald-500' : 'bg-zinc-800'
               }`}
             >
@@ -1066,7 +1077,7 @@ export default function ProviderDetailView({
                       <button
                         type="button"
                         onClick={() => handleToggleModelEnabled(m.id, m.enabled === false ? true : false)}
-                        className={`px-2 py-0.5 rounded text-[10px] font-mono transition border ${
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono transition border cursor-pointer ${
                           m.enabled !== false
                             ? 'bg-sky-500/10 border-sky-500/30 text-sky-400 hover:bg-sky-500/20'
                             : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'

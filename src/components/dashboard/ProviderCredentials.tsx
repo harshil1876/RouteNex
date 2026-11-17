@@ -148,6 +148,17 @@ export default function ProviderCredentials({
   // Sync configured status from Gateway backend on mount
   useEffect(() => {
     async function loadGatewayConfig() {
+      let localDisabledSet = new Set<string>();
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('rn_disabled_providers');
+          if (stored) {
+            const arr = JSON.parse(stored);
+            if (Array.isArray(arr)) localDisabledSet = new Set(arr);
+          }
+        } catch {}
+      }
+
       try {
         const res = await fetch('http://127.0.0.1:3001/v1/admin/config', {
           headers: getAdminHeaders(),
@@ -155,14 +166,14 @@ export default function ProviderCredentials({
 
         if (res && res.ok) {
           const data = await res.json();
-          const disabledList: string[] = Array.isArray(data.disabledProviders)
+          const backendDisabled: string[] = Array.isArray(data.disabledProviders)
             ? data.disabledProviders
             : [];
-          const disabledSet = new Set(disabledList);
+          const mergedDisabled = new Set([...localDisabledSet, ...backendDisabled]);
 
           if (typeof window !== 'undefined') {
             try {
-              localStorage.setItem('rn_disabled_providers', JSON.stringify(disabledList));
+              localStorage.setItem('rn_disabled_providers', JSON.stringify(Array.from(mergedDisabled)));
             } catch {}
           }
 
@@ -170,9 +181,7 @@ export default function ProviderCredentials({
             setProviders((prev) =>
               prev.map((p) => {
                 const found = data.providers.find((item: any) => item.id === p.id);
-                const isEnabled = found && found.isEnabled !== undefined
-                  ? Boolean(found.isEnabled)
-                  : !disabledSet.has(p.id);
+                const isEnabled = !mergedDisabled.has(p.id);
 
                 if (found) {
                   return {
@@ -352,8 +361,11 @@ export default function ProviderCredentials({
   };
 
   // Toggle active/inactive
-  const handleToggle = async (providerId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleToggle = (providerId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const current = providers.find((p) => p.id === providerId);
     const newEnabled = current ? !current.isEnabled : false;
 
@@ -374,19 +386,14 @@ export default function ProviderCredentials({
       localStorage.setItem('rn_disabled_providers', JSON.stringify(disabledList));
     } catch {}
 
-    // 3. Persist to Gateway AdminStore via API
+    // 3. Persist to Gateway AdminStore via API asynchronously
     try {
-      await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/state`, {
+      fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/state`, {
         method: 'POST',
         headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ enabled: newEnabled }),
-      });
+      }).catch(() => {});
     } catch {}
-
-    // 4. Dispatch event across other components and views
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('routenex:state-changed'));
-    }
   };
 
   // Add custom OpenAI / Anthropic compatible endpoint
@@ -843,20 +850,31 @@ export default function ProviderCredentials({
                   </div>
 
                   {/* Toggle Active/Inactive */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleToggle(p.id, e)}
-                    title={p.isEnabled ? 'Disable Provider' : 'Enable Provider'}
-                    className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      p.isEnabled ? 'bg-emerald-500' : 'bg-zinc-800'
-                    }`}
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggle(p.id, e);
+                    }}
+                    className="flex items-center gap-1.5 p-1 -m-1 rounded-md hover:bg-zinc-800/80 cursor-pointer z-10 transition select-none shrink-0"
+                    title={p.isEnabled ? 'Click to disable provider' : 'Click to enable provider'}
                   >
-                    <span
-                      className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out ${
-                        p.isEnabled ? 'translate-x-3' : 'translate-x-0'
+                    <button
+                      type="button"
+                      aria-label={p.isEnabled ? 'Disable Provider' : 'Enable Provider'}
+                      className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none pointer-events-none ${
+                        p.isEnabled ? 'bg-emerald-500' : 'bg-zinc-800'
                       }`}
-                    />
-                  </button>
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out ${
+                          p.isEnabled ? 'translate-x-3' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                    <span className={`text-[10px] font-mono font-medium ${p.isEnabled ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                      {p.isEnabled ? 'Active' : 'Disabled'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Badges: e.g. Free Tier, OAuth PKCE, ToS Caution */}
