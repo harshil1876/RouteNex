@@ -416,7 +416,7 @@ export default function ProviderDetailView({
               : m
           )
         );
-        fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(provider.id)}/models-state`, {
+        fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/models-state`, {
           method: 'POST',
           headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
@@ -427,7 +427,7 @@ export default function ProviderDetailView({
         return false;
       }
 
-      const targetModel = modelId.startsWith(`${provider.id}/`) ? modelId : `${provider.id}/${modelId}`;
+      const targetModel = modelId.startsWith(`${providerId}/`) ? modelId : `${providerId}/${modelId}`;
       const res = await fetch('http://127.0.0.1:3001/v1/chat/completions', {
         method: 'POST',
         headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
@@ -449,7 +449,7 @@ export default function ProviderDetailView({
         )
       );
 
-      fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(provider.id)}/models-state`, {
+      fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/models-state`, {
         method: 'POST',
         headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
@@ -471,7 +471,7 @@ export default function ProviderDetailView({
   const handleToggleModelEnabled = async (modelId: string, enabled: boolean) => {
     setModels((prev) => prev.map((m) => (m.id === modelId ? { ...m, enabled } : m)));
     try {
-      await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(provider.id)}/models-state`, {
+      await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/models-state`, {
         method: 'POST',
         headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
@@ -484,7 +484,7 @@ export default function ProviderDetailView({
 
   useEffect(() => {
     let active = true;
-    fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(provider.id)}/models-state`, {
+    fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/models-state`, {
       headers: getAdminHeaders(),
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -508,7 +508,7 @@ export default function ProviderDetailView({
     return () => {
       active = false;
     };
-  }, [provider.id]);
+  }, [providerId]);
 
   const handleTestAllModels = async () => {
     setIsTestingAllModels(true);
