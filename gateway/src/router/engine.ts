@@ -105,11 +105,17 @@ export class RoutingEngine {
       getProviderBlockedParams?: (p: string) => string[];
       addProviderBlockedParam?: (p: string, param: string) => void;
       hasProviderKey?: (p: string) => boolean;
+      isProviderEnabled?: (p: string) => boolean;
       [key: string]: any;
     }
   ) {}
 
   public isProviderUsable(provider: string): boolean {
+    if (this.adminStore && typeof this.adminStore.isProviderEnabled === 'function') {
+      if (!this.adminStore.isProviderEnabled(provider)) {
+        return false;
+      }
+    }
     if (provider === 'pollinations' || provider === 'duckduckgo' || provider === 'ollama' || provider === 'mock') {
       return true;
     }

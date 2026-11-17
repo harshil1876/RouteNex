@@ -95,9 +95,20 @@ export default function ProviderCredentials({
     }
   }, [selectedProviderId]);
 
-  // Providers list state initialized from catalog.json
-  const [providers, setProviders] = useState<ProviderItem[]>(() =>
-    (catalogProvidersData as any[]).map((p) => ({
+  // Providers list state initialized from catalog.json and localStorage
+  const [providers, setProviders] = useState<ProviderItem[]>(() => {
+    let disabledSet = new Set<string>();
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('rn_disabled_providers');
+        if (stored) {
+          const arr = JSON.parse(stored);
+          if (Array.isArray(arr)) disabledSet = new Set(arr);
+        }
+      } catch {}
+    }
+
+    return (catalogProvidersData as any[]).map((p) => ({
       ...p,
       isConfigured:
         p.id === 'pollinations' ||
@@ -105,13 +116,13 @@ export default function ProviderCredentials({
         p.id === 'pollinations-noauth' ||
         p.id === 'ddg-noauth' ||
         p.category === 'LOCAL',
-      isEnabled: true,
+      isEnabled: !disabledSet.has(p.id),
       status: 'idle',
       keyCount:
         p.id === 'pollinations' || p.id === 'duckduckgo' || p.category === 'LOCAL' ? 1 : 0,
       maskedKeys: [],
-    }))
-  );
+    }));
+  });
 
   // Filters & Search state (Screenshot 603)
   const [searchProvider, setSearchProvider] = useState('');
@@ -144,19 +155,38 @@ export default function ProviderCredentials({
 
         if (res && res.ok) {
           const data = await res.json();
+          const disabledList: string[] = Array.isArray(data.disabledProviders)
+            ? data.disabledProviders
+            : [];
+          const disabledSet = new Set(disabledList);
+
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('rn_disabled_providers', JSON.stringify(disabledList));
+            } catch {}
+          }
+
           if (Array.isArray(data.providers)) {
             setProviders((prev) =>
               prev.map((p) => {
                 const found = data.providers.find((item: any) => item.id === p.id);
+                const isEnabled = found && found.isEnabled !== undefined
+                  ? Boolean(found.isEnabled)
+                  : !disabledSet.has(p.id);
+
                 if (found) {
                   return {
                     ...p,
                     isConfigured: found.configured,
+                    isEnabled,
                     keyCount: found.keyCount || (found.configured ? 1 : 0),
                     maskedKeys: found.maskedKeys || [],
                   };
                 }
-                return p;
+                return {
+                  ...p,
+                  isEnabled,
+                };
               })
             );
           }
@@ -322,11 +352,41 @@ export default function ProviderCredentials({
   };
 
   // Toggle active/inactive
-  const handleToggle = (providerId: string, e: React.MouseEvent) => {
+  const handleToggle = async (providerId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const current = providers.find((p) => p.id === providerId);
+    const newEnabled = current ? !current.isEnabled : false;
+
+    // 1. Optimistic React state update
     setProviders((prev) =>
-      prev.map((p) => (p.id === providerId ? { ...p, isEnabled: !p.isEnabled } : p))
+      prev.map((p) => (p.id === providerId ? { ...p, isEnabled: newEnabled } : p))
     );
+
+    // 2. Persist to localStorage immediately
+    try {
+      const stored = localStorage.getItem('rn_disabled_providers');
+      let disabledList: string[] = stored ? JSON.parse(stored) : [];
+      if (!newEnabled) {
+        if (!disabledList.includes(providerId)) disabledList.push(providerId);
+      } else {
+        disabledList = disabledList.filter((id) => id !== providerId);
+      }
+      localStorage.setItem('rn_disabled_providers', JSON.stringify(disabledList));
+    } catch {}
+
+    // 3. Persist to Gateway AdminStore via API
+    try {
+      await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/state`, {
+        method: 'POST',
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ enabled: newEnabled }),
+      });
+    } catch {}
+
+    // 4. Dispatch event across other components and views
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+    }
   };
 
   // Add custom OpenAI / Anthropic compatible endpoint

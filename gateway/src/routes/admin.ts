@@ -199,11 +199,14 @@ export function createAdminRoutes(
     const providersList = registry.getAllProviders().map((p) => {
       const keys = adminStore.getAllProviderKeys(p.id);
       const masked = adminStore.getMaskedProviderKeys(p.id);
+      const isEnabled = adminStore.isProviderEnabled(p.id);
       return {
         id: p.id,
         name: p.name,
         configured: p.isConfigured(),
         isConfigured: p.isConfigured(),
+        isEnabled,
+        enabled: isEnabled,
         modelCount: p.models.length,
         keyCount: keys.length > 0 ? keys.length : (p.isConfigured() ? 1 : 0),
         accountsCount: keys.length > 0 ? keys.length : (p.isConfigured() ? 1 : 0),
@@ -234,6 +237,7 @@ export function createAdminRoutes(
         dailyBudgetUsd: vk.dailyBudgetUsd,
       })),
       providers: providersList,
+      disabledProviders: adminStore.getDisabledProviders(),
       lexiPacks: adminStore.getLexiPacks(),
     });
   });
@@ -244,11 +248,14 @@ export function createAdminRoutes(
       const keys = adminStore.getAllProviderKeys(p.id);
       const masked = adminStore.getMaskedProviderKeys(p.id);
       const hasKey = adminStore.hasProviderKey(p.id);
+      const isEnabled = adminStore.isProviderEnabled(p.id);
       return {
         id: p.id,
         name: p.name,
         configured: p.isConfigured() || hasKey,
         isConfigured: p.isConfigured() || hasKey,
+        isEnabled,
+        enabled: isEnabled,
         hasKey: hasKey || p.isConfigured(),
         modelCount: p.models.length,
         keyCount: keys.length > 0 ? keys.length : (p.isConfigured() ? 1 : 0), 
@@ -260,6 +267,7 @@ export function createAdminRoutes(
 
     return c.json({
       providers: providersList,
+      disabledProviders: adminStore.getDisabledProviders(),
       total: providersList.length,
       configuredCount: providersList.filter((p) => p.configured).length,
     });
@@ -336,6 +344,51 @@ export function createAdminRoutes(
       provider: id,
       configured: false,
       message: `Provider '${id}' credentials removed successfully.`,
+    });
+  });
+
+  // 5c. POST /v1/admin/providers/:id/state - Update provider enabled/disabled state
+  router.post('/providers/:id/state', async (c) => {
+    const id = c.req.param('id');
+    const body = await c.req.json().catch(() => ({}));
+    const enabled = body.enabled !== undefined ? Boolean(body.enabled) : true;
+    adminStore.setProviderEnabled(id, enabled);
+    return c.json({
+      success: true,
+      provider: id,
+      isEnabled: enabled,
+      enabled,
+      message: `Provider '${id}' ${enabled ? 'enabled' : 'disabled'} successfully.`,
+    });
+  });
+
+  // 5d. POST /v1/admin/providers/:id/enable - Enable or disable provider
+  router.post('/providers/:id/enable', async (c) => {
+    const id = c.req.param('id');
+    const body = await c.req.json().catch(() => ({}));
+    const enabled = body.enabled !== undefined ? Boolean(body.enabled) : true;
+    adminStore.setProviderEnabled(id, enabled);
+    return c.json({
+      success: true,
+      provider: id,
+      isEnabled: enabled,
+      enabled,
+      message: `Provider '${id}' ${enabled ? 'enabled' : 'disabled'} successfully.`,
+    });
+  });
+
+  // 5e. POST /v1/admin/providers/:id/toggle - Toggle provider enabled state
+  router.post('/providers/:id/toggle', async (c) => {
+    const id = c.req.param('id');
+    const currentlyEnabled = adminStore.isProviderEnabled(id);
+    const newEnabled = !currentlyEnabled;
+    adminStore.setProviderEnabled(id, newEnabled);
+    return c.json({
+      success: true,
+      provider: id,
+      isEnabled: newEnabled,
+      enabled: newEnabled,
+      message: `Provider '${id}' toggled to ${newEnabled ? 'enabled' : 'disabled'}.`,
     });
   });
 

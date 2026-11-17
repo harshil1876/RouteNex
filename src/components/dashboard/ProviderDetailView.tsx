@@ -78,6 +78,48 @@ export default function ProviderDetailView({
     );
   }, [providerId]);
 
+  // Provider Enablement state
+  const [isProviderEnabled, setIsProviderEnabled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('rn_disabled_providers');
+        if (stored) {
+          const arr = JSON.parse(stored);
+          if (Array.isArray(arr) && arr.includes(providerId)) return false;
+        }
+      } catch {}
+    }
+    return true;
+  });
+
+  const handleToggleProviderEnabled = async () => {
+    const next = !isProviderEnabled;
+    setIsProviderEnabled(next);
+
+    try {
+      const stored = localStorage.getItem('rn_disabled_providers');
+      let arr: string[] = stored ? JSON.parse(stored) : [];
+      if (!next) {
+        if (!arr.includes(providerId)) arr.push(providerId);
+      } else {
+        arr = arr.filter((id) => id !== providerId);
+      }
+      localStorage.setItem('rn_disabled_providers', JSON.stringify(arr));
+    } catch {}
+
+    try {
+      await fetch(`http://127.0.0.1:3001/v1/admin/providers/${encodeURIComponent(providerId)}/state`, {
+        method: 'POST',
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ enabled: next }),
+      });
+    } catch {}
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+    }
+  };
+
   // 1. Connections Table State (Empty by default for API-key & OAuth providers until connected)
   const [accounts, setAccounts] = useState<AccountRow[]>(() => {
     if (typeof window !== 'undefined') {
@@ -110,16 +152,25 @@ export default function ProviderDetailView({
     return [];
   });
 
-  // Sync configured accounts from Gateway backend if available
+  // Sync configured accounts & provider enablement from Gateway backend
   useEffect(() => {
+    let active = true;
     async function syncBackendConfig() {
       try {
         const res = await fetch('http://127.0.0.1:3001/v1/admin/config', {
           headers: getAdminHeaders(),
         }).catch(() => null);
-        if (res && res.ok) {
+        if (res && res.ok && active) {
           const data = await res.json();
+          const disabledList: string[] = Array.isArray(data.disabledProviders) ? data.disabledProviders : [];
           const p = data.providers?.find((item: any) => item.id === providerId);
+
+          if (p && p.isEnabled !== undefined) {
+            setIsProviderEnabled(Boolean(p.isEnabled));
+          } else {
+            setIsProviderEnabled(!disabledList.includes(providerId));
+          }
+
           if (p && p.maskedKeys && p.maskedKeys.length > 0) {
             setAccounts((prev) => {
               if (prev.length > 0) return prev;
@@ -140,6 +191,18 @@ export default function ProviderDetailView({
       } catch {}
     }
     syncBackendConfig();
+    const handleStateChange = () => {
+      syncBackendConfig();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('routenex:state-changed', handleStateChange);
+    }
+    return () => {
+      active = false;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('routenex:state-changed', handleStateChange);
+      }
+    };
   }, [providerId]);
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'error' | 'banned' | 'exhausted'>('all');
@@ -667,7 +730,7 @@ export default function ProviderDetailView({
                 <h1 className="text-base font-bold text-zinc-100 font-sans tracking-tight">
                   {providerName}
                 </h1>
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className={`w-2 h-2 rounded-full ${isProviderEnabled ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
                 <span className="text-[10px] text-zinc-500 font-mono">ID: {providerId}</span>
               </div>
               <p className="text-[11px] text-zinc-500 font-sans">
@@ -677,7 +740,28 @@ export default function ProviderDetailView({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-[#111113] border border-[#222226] px-2.5 py-1 rounded-lg">
+            <span className="text-[11px] text-zinc-400 font-sans">Provider:</span>
+            <button
+              type="button"
+              onClick={handleToggleProviderEnabled}
+              title={isProviderEnabled ? 'Disable Provider' : 'Enable Provider'}
+              className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                isProviderEnabled ? 'bg-emerald-500' : 'bg-zinc-800'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out ${
+                  isProviderEnabled ? 'translate-x-3' : 'translate-x-0'
+                }`}
+              />
+            </button>
+            <span className={`text-[10px] font-mono font-medium ${isProviderEnabled ? 'text-emerald-400' : 'text-zinc-500'}`}>
+              {isProviderEnabled ? 'Active' : 'Disabled'}
+            </span>
+          </div>
+
           <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px]">
             AES-256-GCM Encrypted
           </span>

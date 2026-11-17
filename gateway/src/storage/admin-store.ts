@@ -101,6 +101,7 @@ export interface AdminSettings {
   providerKeys: Record<string, string>; // providerId -> AES-256-GCM encrypted string
   providerPools?: Record<string, ProviderPoolEntry>;
   providerBlockedParams?: Record<string, string[]>;
+  disabledProviders?: string[];
   workers?: NexWorker[];
   workerRuns?: WorkerRun[];
   workerBriefs?: WorkerBrief[];
@@ -223,6 +224,7 @@ export class AdminStore {
       defaultStrategy: 'balanced',
       providerKeys: {},
       providerPools: {},
+      disabledProviders: [],
       workers: [...DEFAULT_SPECIALIST_WORKERS],
       workerRuns: [],
       workerBriefs: [],
@@ -371,6 +373,7 @@ export class AdminStore {
           memories: parsed.memories && parsed.memories.length > 0 ? parsed.memories : defaultSettings.memories,
           lexiPacks: parsed.lexiPacks && parsed.lexiPacks.length > 0 ? parsed.lexiPacks : defaultSettings.lexiPacks,
           providerModelsState: parsed.providerModelsState || {},
+          disabledProviders: Array.isArray(parsed.disabledProviders) ? parsed.disabledProviders : [],
         };
 
         // Migration: Encrypt any legacy plaintext provider keys
@@ -771,6 +774,38 @@ export class AdminStore {
     const fromKeys = Object.keys(this.settings.providerKeys || {});
     const fromPools = Object.keys(this.settings.providerPools || {});
     return Array.from(new Set([...fromKeys, ...fromPools]));
+  }
+
+  public isProviderEnabled(provider: string): boolean {
+    const norm = normalizeProviderId(provider);
+    const disabled = this.settings.disabledProviders || [];
+    if (disabled.includes(provider)) return false;
+    if (norm && disabled.includes(norm)) return false;
+    return true;
+  }
+
+  public setProviderEnabled(provider: string, enabled: boolean): boolean {
+    const norm = normalizeProviderId(provider);
+    if (!this.settings.disabledProviders) {
+      this.settings.disabledProviders = [];
+    }
+    const currentList = this.settings.disabledProviders;
+    if (enabled) {
+      this.settings.disabledProviders = currentList.filter(
+        (id) => id !== provider && (!norm || id !== norm)
+      );
+    } else {
+      const set = new Set(currentList);
+      set.add(provider);
+      if (norm) set.add(norm);
+      this.settings.disabledProviders = Array.from(set);
+    }
+    this.save();
+    return enabled;
+  }
+
+  public getDisabledProviders(): string[] {
+    return this.settings.disabledProviders || [];
   }
 
   public setCompression(enabled: boolean): void {

@@ -540,4 +540,77 @@ describe('Suite 11: Principal QA & Extreme Client Torture Test Suite', () => {
     expect(parsed.reasoning_effort).toBe('medium');
     expect((parsed as any).extra_vendor_param).toBe('passed-through');
   });
+
+  // Test 20: Provider Enablement & Persistence Across Gateway Sessions (Closing and Re-opening)
+  it('Test 20 (P0): persists disabled provider state across gateway sessions and routes correctly', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const testDbPath = path.resolve('./test_provider_persistence.json');
+
+    try {
+      if (fs.existsSync(testDbPath)) fs.unlinkSync(testDbPath);
+
+      // Session 1: Create store, disable provider
+      const store1 = new AdminStore(testDbPath, false);
+      expect(store1.isProviderEnabled('groq')).toBe(true);
+      store1.setProviderEnabled('groq', false);
+      expect(store1.isProviderEnabled('groq')).toBe(false);
+      expect(store1.getDisabledProviders()).toContain('groq');
+      await store1.flush();
+
+      // Session 2: Simulate RouteNex restart by re-instantiating AdminStore from disk
+      const store2 = new AdminStore(testDbPath, false);
+      expect(store2.isProviderEnabled('groq')).toBe(false);
+      expect(store2.getDisabledProviders()).toContain('groq');
+
+      // Re-enable
+      store2.setProviderEnabled('groq', true);
+      expect(store2.isProviderEnabled('groq')).toBe(true);
+      await store2.flush();
+
+      // Session 3: Verify re-enabled status persisted to disk
+      const store3 = new AdminStore(testDbPath, false);
+      expect(store3.isProviderEnabled('groq')).toBe(true);
+      expect(store3.getDisabledProviders()).not.toContain('groq');
+
+      // API Level verification
+      const { app, adminStore } = createApp(testConfig);
+      const disableRes = await app.request('/v1/admin/providers/cerebras/state', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({ enabled: false }),
+      });
+      expect(disableRes.status).toBe(200);
+      const disableData = await disableRes.json();
+      expect(disableData.success).toBe(true);
+      expect(disableData.isEnabled).toBe(false);
+
+      // Check GET /v1/admin/config
+      const configRes = await app.request('/v1/admin/config', { headers: adminHeaders });
+      expect(configRes.status).toBe(200);
+      const configData = await configRes.json();
+      expect(configData.disabledProviders).toContain('cerebras');
+      const cerebrasEntry = configData.providers.find((p: any) => p.id === 'cerebras');
+      expect(cerebrasEntry?.isEnabled).toBe(false);
+
+      // Check GET /v1/admin/providers
+      const provRes = await app.request('/v1/admin/providers', { headers: adminHeaders });
+      expect(provRes.status).toBe(200);
+      const provData = await provRes.json();
+      const cerebrasProv = provData.providers.find((p: any) => p.id === 'cerebras');
+      expect(cerebrasProv?.isEnabled).toBe(false);
+
+      // Check toggle endpoint
+      const toggleRes = await app.request('/v1/admin/providers/cerebras/toggle', {
+        method: 'POST',
+        headers: adminHeaders,
+      });
+      expect(toggleRes.status).toBe(200);
+      const toggleData = await toggleRes.json();
+      expect(toggleData.isEnabled).toBe(true);
+      expect(adminStore.isProviderEnabled('cerebras')).toBe(true);
+    } finally {
+      if (fs.existsSync(testDbPath)) fs.unlinkSync(testDbPath);
+    }
+  });
 });
