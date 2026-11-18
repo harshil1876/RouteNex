@@ -16,7 +16,7 @@ export function createHealthRoute(registry: ProviderRegistry, startTime: number 
 
     return c.json({
       status: 'ok',
-      version: '0.2.1',
+      version: '0.2.4',
       uptime_seconds: uptimeSeconds,
       providers: {
         configured,
