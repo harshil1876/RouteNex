@@ -59,4 +59,7 @@ LAUNCH_KIT.md
 *LAUNCH_KIT*
 *launch-kit*
 
+# Pack tarballs
+*.tgz
+
 
