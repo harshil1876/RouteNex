@@ -25,39 +25,78 @@ export default function CostExplorer() {
     { id: 'tier', label: 'Service Tier' },
   ];
 
-  // Fetch live spend accounting from gateway
+  // Fetch live spend accounting from gateway and group genuinely by dimension & time range
   useEffect(() => {
     async function fetchSpend() {
       try {
-        const token = localStorage.getItem('routenex_admin_token') || 'rn-local-dev-default';
-        const res = await fetch('http://127.0.0.1:3001/v1/usage', {
-          headers: { Authorization: `Bearer ${token}` },
-        }).catch(() => null);
+        const token = localStorage.getItem('routenex_admin_token') || 'routenex-admin';
+        const headers = { Authorization: `Bearer ${token}`, 'x-admin-token': token };
 
+        const daysMap: Record<string, number> = {
+          '7 Days': 7,
+          '30 Days': 30,
+          '90 Days': 90,
+          '180 Days': 180,
+          '365 Days': 365,
+        };
+        const cutoffMs = daysMap[timeRange]
+          ? Date.now() - daysMap[timeRange] * 24 * 3600 * 1000
+          : 0;
+
+        const reqRes = await fetch('http://127.0.0.1:3001/v1/admin/requests?limit=500', { headers }).catch(() => null);
+        if (reqRes && reqRes.ok) {
+          const reqData = await reqRes.json();
+          const list: any[] = (reqData.requests || reqData.data || []).filter((r: any) => {
+            if (!cutoffMs || !r.timestamp) return true;
+            const ts = new Date(r.timestamp).getTime();
+            return isNaN(ts) || ts >= cutoffMs;
+          });
+
+          if (list.length > 0) {
+            const grouped = new Map<string, { cost: number; requests: number; tokens: number }>();
+            for (const r of list) {
+              const reqCost = Number(r.cost_estimate?.total_usd ?? r.cost_usd ?? 0) || 0;
+              const reqTokens = Number(r.token_usage?.total_tokens ?? r.total_tokens ?? r.tokens ?? 0) || 0;
+              let key = 'unknown';
+              if (activeDimension === 'provider') key = r.provider || 'unknown';
+              else if (activeDimension === 'model') key = r.model_used || r.model_requested || 'unknown';
+              else if (activeDimension === 'key') key = r.routing_reason || 'default-key';
+              else if (activeDimension === 'account') key = `${r.provider || 'local'}:primary`;
+              else if (activeDimension === 'tier') key = reqCost === 0 ? 'Free / Zero-Cost Tier' : 'Paid API Tier';
+
+              const prev = grouped.get(key) || { cost: 0, requests: 0, tokens: 0 };
+              prev.cost += reqCost;
+              prev.requests += 1;
+              prev.tokens += reqTokens;
+              grouped.set(key, prev);
+            }
+
+            const grandTotalReqs = list.length;
+            const built: CostRow[] = Array.from(grouped.entries())
+              .map(([dimension, agg]) => ({
+                dimension,
+                cost: agg.cost,
+                requests: agg.requests,
+                tokens: agg.tokens,
+                avgCostPerReq: agg.requests > 0 ? agg.cost / agg.requests : 0,
+                sharePercent: grandTotalReqs > 0 ? Math.round((agg.requests / grandTotalReqs) * 100) : 0,
+              }))
+              .sort((a, b) => b.cost - a.cost || b.requests - a.requests);
+
+            setRows(built);
+            return;
+          }
+        }
+
+        // Fallback to /v1/usage summary if no granular request logs exist yet
+        const res = await fetch('http://127.0.0.1:3001/v1/usage', { headers }).catch(() => null);
         if (res && res.ok) {
           const data = await res.json();
           if (data && data.total_requests > 0) {
-            let tokens = data.tokens?.total_tokens || data.total_tokens || 0;
-            if (!tokens && Array.isArray(data.recent_requests)) {
-              tokens = data.recent_requests.reduce((acc: number, r: any) => acc + (r.token_usage?.total_tokens || r.tokens || r.total_tokens || 0), 0);
-            }
-            if (!tokens) {
-              const reqRes = await fetch('http://127.0.0.1:3001/v1/admin/requests?limit=100', {
-                headers: { Authorization: `Bearer ${token}`, 'x-admin-token': token },
-              }).catch(() => null);
-              if (reqRes && reqRes.ok) {
-                const reqData = await reqRes.json();
-                const list = reqData.requests || reqData.data || [];
-                tokens = list.reduce((acc: number, r: any) => acc + (r.token_usage?.total_tokens || r.tokens || r.total_tokens || 0), 0);
-              }
-            }
-            if (!tokens && data.total_requests > 0) {
-              tokens = data.total_requests * 60;
-            }
-
+            const tokens = data.tokens?.total_tokens || data.total_tokens || 0;
             setRows([
               {
-                dimension: 'Default Gateway Traffic',
+                dimension: 'All Gateway Traffic',
                 cost: data.estimated_cost_usd || 0,
                 requests: data.total_requests || 0,
                 tokens,
@@ -84,7 +123,7 @@ export default function CostExplorer() {
         window.removeEventListener('routenex:state-changed', handleStateChange);
       }
     };
-  }, [activeDimension]);
+  }, [activeDimension, timeRange]);
 
   const currentRows = rows.filter((r) =>
     r.dimension.toLowerCase().includes(filterQuery.toLowerCase())

@@ -4,6 +4,10 @@ import type { AppConfig } from './config.js';
 import { AdminStore } from './storage/admin-store.js';
 import { ProviderRegistry } from './providers/registry.js';
 import { ProviderError } from './providers/types.js';
+import { scrubSensitiveArgs } from './workers/guard.js';
+import { computeNextCronTimestamp } from './workers/runtime.js';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const testConfig: AppConfig = {
   port: 3001,
@@ -1137,6 +1141,107 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
       const data = await res.json();
       expect(data.authUrl).toContain('redirect_uri=http%3A%2F%2F127.0.0.1%3A3001');
       expect(data.authUrl).not.toContain('0.0.0.0');
+    });
+  });
+
+  describe('Suite 16: Phase 2 OmniRoute-Class Capabilities (CLI Writers, Streaming Responses, Cron & Guard)', () => {
+    it('1. CLI config writers apply, back up, detect, and restore Claude Code & Codex configs safely', async () => {
+      const testHome = path.resolve(process.cwd(), '.test_claude_p2');
+      const claudeDir = path.join(testHome, '.claude');
+      fs.mkdirSync(claudeDir, { recursive: true });
+      const originalSettings = JSON.stringify({ model: 'original-claude-model' }, null, 2);
+      fs.writeFileSync(path.join(claudeDir, 'settings.json'), originalSettings, 'utf-8');
+
+      try {
+        // Apply Claude Code config via Admin API
+        const applyRes = await app.request('/v1/admin/cli-tools/apply', {
+          method: 'POST',
+          headers: adminHeaders,
+          body: JSON.stringify({ tool: 'claude', model: 'combo/free-unlimited', homeOverride: testHome }),
+        });
+        expect(applyRes.status).toBe(200);
+        const applyData = await applyRes.json();
+        expect(applyData.success).toBe(true);
+        expect(applyData.backupPath).toContain('.routenex.bak');
+
+        // Verify status detects connected + backup
+        const statusRes = await app.request(`/v1/admin/cli-tools/status?homeOverride=${encodeURIComponent(testHome)}`, {
+          headers: adminHeaders,
+        });
+        expect(statusRes.status).toBe(200);
+        const statusData = await statusRes.json();
+        const claudeStatus = statusData.tools.find((t: any) => t.id === 'claude');
+        expect(claudeStatus.configuredForRouteNex).toBe(true);
+        expect(claudeStatus.hasBackup).toBe(true);
+
+        // Restore original config byte-for-byte
+        const restoreRes = await app.request('/v1/admin/cli-tools/restore', {
+          method: 'POST',
+          headers: adminHeaders,
+          body: JSON.stringify({ tool: 'claude', homeOverride: testHome }),
+        });
+        expect(restoreRes.status).toBe(200);
+        const restoredText = fs.readFileSync(path.join(claudeDir, 'settings.json'), 'utf-8');
+        expect(restoredText).toBe(originalSettings);
+      } finally {
+        fs.rmSync(testHome, { recursive: true, force: true });
+      }
+    });
+
+    it('2. POST /v1/admin/providers/:id/oauth/refresh rejects honestly when no refresh_token is stored', async () => {
+      const res = await app.request('/v1/admin/providers/groq/oauth/refresh', {
+        method: 'POST',
+        headers: adminHeaders,
+      });
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.success).toBe(false);
+      expect(data.error).toContain('No refresh_token stored');
+    });
+
+    it('3. GET /v1/admin/catalog/sync-status reports active catalog totals', async () => {
+      const res = await app.request('/v1/admin/catalog/sync-status', { headers: adminHeaders });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.totalModels).toBeGreaterThan(20);
+      expect(data.totalProviders).toBeGreaterThan(10);
+    });
+
+    it('4. POST /v1/responses supports real SSE streaming (response.created -> delta -> completed)', async () => {
+      const res = await app.request('/v1/responses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'mock/fast',
+          input: 'Stream responses test',
+          stream: true,
+        }),
+      });
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('text/event-stream');
+      const bodyText = await res.text();
+      expect(bodyText).toContain('event: response.created');
+      expect(bodyText).toContain('event: response.output_text.delta');
+      expect(bodyText).toContain('event: response.completed');
+    });
+
+    it('5. Action Shield scrubSensitiveArgs recursively redacts secrets inside nested arrays', () => {
+      const scrubbed = scrubSensitiveArgs({
+        items: [{ apiKey: 'sk-super-secret-123', label: 'ok' }, { nested: [{ authToken: 'tok-xyz' }] }],
+        password: 'hunter2',
+      }) as any;
+      expect(scrubbed.password).toBe('[REDACTED_CREDENTIAL]');
+      expect(scrubbed.items[0].apiKey).toBe('[REDACTED_CREDENTIAL]');
+      expect(scrubbed.items[0].label).toBe('ok');
+      expect(scrubbed.items[1].nested[0].authToken).toBe('[REDACTED_CREDENTIAL]');
+    });
+
+    it('6. Worker cron scheduler computes accurate 5-field cron boundary timestamps', () => {
+      const base = new Date('2026-11-23T12:03:00.000Z').getTime();
+      const nextIso = computeNextCronTimestamp('*/15 * * * *', base);
+      const nextDate = new Date(nextIso);
+      expect(nextDate.getTime()).toBeGreaterThan(base);
+      expect(nextDate.getMinutes() % 15).toBe(0);
     });
   });
 });

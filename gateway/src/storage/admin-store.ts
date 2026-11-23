@@ -719,6 +719,51 @@ export class AdminStore {
   }
 
   /**
+   * Stores encrypted OAuth session metadata (refresh token, expiry timestamp, account email)
+   * alongside the active access token for durable token auto-refresh.
+   */
+  public setOAuthSession(
+    provider: string,
+    session: { accessToken: string; refreshToken?: string; expiresAt?: number; email?: string }
+  ): void {
+    this.setProviderKey(provider, session.accessToken);
+    const norm = normalizeProviderId(provider) || provider;
+    const store = (this.settings as any).oauthSessions || ((this.settings as any).oauthSessions = {});
+    const existing = store[norm] || {};
+    store[norm] = {
+      refreshTokenEncrypted: session.refreshToken
+        ? encryptValue(session.refreshToken)
+        : existing.refreshTokenEncrypted,
+      expiresAt: session.expiresAt ?? existing.expiresAt ?? Date.now() + 3600 * 1000,
+      email: session.email || existing.email,
+      updatedAt: new Date().toISOString(),
+    };
+    this.save();
+  }
+
+  /**
+   * Retrieves decrypted OAuth session metadata (including refreshToken and expiry).
+   */
+  public getOAuthSession(provider: string): {
+    accessToken?: string;
+    refreshToken?: string;
+    expiresAt?: number;
+    email?: string;
+  } | null {
+    const norm = normalizeProviderId(provider) || provider;
+    const store = (this.settings as any).oauthSessions || {};
+    const entry = store[norm] || store[provider];
+    const accessToken = this.getProviderKey(provider);
+    if (!entry && !accessToken) return null;
+    return {
+      accessToken,
+      refreshToken: entry?.refreshTokenEncrypted ? decryptValue(entry.refreshTokenEncrypted) : undefined,
+      expiresAt: entry?.expiresAt,
+      email: entry?.email,
+    };
+  }
+
+  /**
    * Adds an additional key to a provider's key pool for multi-account load distribution.
    * Silently ignores masked strings to prevent pool corruption.
    */

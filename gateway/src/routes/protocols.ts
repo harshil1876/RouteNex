@@ -14,22 +14,29 @@ export function createProtocolsRoute(
 ) {
   const router = new Hono();
 
-  // 1. OpenAI Responses API (POST /v1/responses)
+  // 1. OpenAI Responses API (POST /v1/responses) — supports both JSON and real SSE streaming
   router.post('/responses', async (c) => {
     const body = await c.req.json().catch(() => ({}));
     const model = body.model || 'auto';
     const input = body.input || body.messages || 'Hello';
+    const isStream = Boolean(body.stream);
+    const startTime = Date.now();
 
     let normalizedMessages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [];
+    if (body.instructions && typeof body.instructions === 'string') {
+      normalizedMessages.push({ role: 'system', content: body.instructions });
+    }
     if (typeof input === 'string') {
-      normalizedMessages = [{ role: 'user', content: input }];
+      normalizedMessages.push({ role: 'user', content: input });
     } else if (Array.isArray(input)) {
-      normalizedMessages = input.map((m: any) => ({
-        role: m.role || 'user',
-        content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content || ''),
-      }));
+      for (const m of input) {
+        normalizedMessages.push({
+          role: m.role || 'user',
+          content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content || ''),
+        });
+      }
     } else {
-      normalizedMessages = [{ role: 'user', content: String(input) }];
+      normalizedMessages.push({ role: 'user', content: String(input) });
     }
 
     const chatReq: ChatCompletionRequest = {
@@ -37,18 +44,128 @@ export function createProtocolsRoute(
       messages: normalizedMessages,
       temperature: body.temperature,
       max_tokens: body.max_output_tokens || body.max_tokens,
-      stream: false,
+      stream: isStream,
       n: 1,
     };
 
     const requestId = `resp_${nanoid(20)}`;
+    const created = Math.floor(Date.now() / 1000);
+
+    if (isStream) {
+      try {
+        const { generator, provider, model: modelUsed, reason, modelEntry } = await engine.executeStream(
+          chatReq,
+          requestId,
+          c.req.raw.signal
+        );
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          async start(controller) {
+            let fullText = '';
+            controller.enqueue(
+              encoder.encode(
+                `event: response.created\ndata: ${JSON.stringify({
+                  type: 'response.created',
+                  response: { id: requestId, object: 'response', created, status: 'in_progress', model: modelUsed },
+                })}\n\n`
+              )
+            );
+            try {
+              for await (const chunk of generator) {
+                const deltaText = chunk.choices?.[0]?.delta?.content;
+                if (deltaText) {
+                  fullText += deltaText;
+                  controller.enqueue(
+                    encoder.encode(
+                      `event: response.output_text.delta\ndata: ${JSON.stringify({
+                        type: 'response.output_text.delta',
+                        item_id: `msg_${requestId}`,
+                        output_index: 0,
+                        content_index: 0,
+                        delta: deltaText,
+                      })}\n\n`
+                    )
+                  );
+                }
+              }
+            } catch (err: any) {
+              controller.enqueue(
+                encoder.encode(
+                  `event: error\ndata: ${JSON.stringify({ type: 'error', message: err?.message || 'Streaming error' })}\n\n`
+                )
+              );
+            }
+
+            const estInput = Math.max(1, Math.ceil(JSON.stringify(normalizedMessages).length / 4));
+            const estOutput = Math.max(1, Math.ceil(fullText.length / 4));
+            const usage = { prompt_tokens: estInput, completion_tokens: estOutput, total_tokens: estInput + estOutput };
+            const cost = engine.calculateCost(modelEntry, usage);
+
+            controller.enqueue(
+              encoder.encode(
+                `event: response.completed\ndata: ${JSON.stringify({
+                  type: 'response.completed',
+                  response: {
+                    id: requestId,
+                    object: 'response',
+                    created,
+                    status: 'completed',
+                    model: modelUsed,
+                    output: [{ type: 'message', role: 'assistant', content: [{ type: 'output_text', text: fullText }] }],
+                    usage: { input_tokens: estInput, output_tokens: estOutput, total_tokens: estInput + estOutput },
+                  },
+                })}\n\n`
+              )
+            );
+
+            store.logRequest({
+              request_id: requestId,
+              timestamp: new Date().toISOString(),
+              model_requested: model,
+              model_used: modelUsed,
+              provider,
+              latency_ms: Math.max(1, Date.now() - startTime),
+              status: 'success',
+              token_usage: usage,
+              cost_estimate: cost,
+              routing_reason: reason,
+            });
+            controller.close();
+          },
+        });
+
+        return new Response(stream, {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            Connection: 'keep-alive',
+            'X-RouteNex-Request-Id': requestId,
+          },
+        });
+      } catch (err: any) {
+        return c.json({ error: { message: err?.message || 'Responses stream failed', type: 'api_error' } }, err?.status || 502);
+      }
+    }
+
     const result = await engine.executeChat(chatReq, requestId);
     const content = result.choices[0]?.message?.content || '';
+
+    store.logRequest({
+      request_id: requestId,
+      timestamp: new Date().toISOString(),
+      model_requested: model,
+      model_used: result.model,
+      provider: result.routenex?.provider || 'unknown',
+      latency_ms: Math.max(1, Date.now() - startTime),
+      status: 'success',
+      token_usage: result.usage,
+      routing_reason: result.routenex?.routing_reason || 'responses_api',
+    });
 
     return c.json({
       id: requestId,
       object: 'response',
-      created: Math.floor(Date.now() / 1000),
+      created,
       status: 'completed',
       model: result.model,
       output: [
@@ -72,11 +189,12 @@ export function createProtocolsRoute(
     });
   });
 
-  // 2. OpenAI Embeddings API (POST /v1/embeddings)
+  // 2. OpenAI Embeddings API (POST /v1/embeddings) — proxies to live upstream provider when configured
   router.post('/embeddings', async (c) => {
     const body = await c.req.json().catch(() => ({}));
     const model = body.model || 'text-embedding-3-small';
     const input = body.input;
+    const startTime = Date.now();
 
     if (!input) {
       return c.json(
@@ -91,9 +209,65 @@ export function createProtocolsRoute(
       );
     }
 
+    // Attempt live upstream embedding call if OpenAI / OpenRouter / Mistral / Ollama key is configured
+    const embeddingCandidates: Array<{ id: string; url: string; key?: string; modelName: string }> = [];
+    const slashIdx = model.indexOf('/');
+    const explicitProv = slashIdx > 0 ? model.slice(0, slashIdx) : '';
+    const strippedModel = slashIdx > 0 ? model.slice(slashIdx + 1) : model;
+
+    if ((explicitProv === 'openai' || !explicitProv) && config.openaiApiKey) {
+      embeddingCandidates.push({ id: 'openai', url: 'https://api.openai.com/v1/embeddings', key: config.openaiApiKey, modelName: strippedModel });
+    }
+    if ((explicitProv === 'mistral' || !explicitProv) && config.mistralApiKey) {
+      embeddingCandidates.push({ id: 'mistral', url: 'https://api.mistral.ai/v1/embeddings', key: config.mistralApiKey, modelName: strippedModel });
+    }
+    if (explicitProv === 'ollama' && config.ollamaBaseUrl) {
+      const base = config.ollamaBaseUrl.replace(/\/+$/, '');
+      embeddingCandidates.push({ id: 'ollama', url: `${base}/embeddings`, modelName: strippedModel });
+    }
+
+    for (const cand of embeddingCandidates) {
+      try {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (cand.key) headers['Authorization'] = `Bearer ${cand.key}`;
+        const upRes = await fetch(cand.url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ model: cand.modelName, input }),
+          signal: AbortSignal.timeout(15000),
+        });
+        if (upRes.ok) {
+          const upData = (await upRes.json()) as any;
+          return c.json({
+            ...upData,
+            routenex: {
+              provider: cand.id,
+              latency_ms: Math.max(1, Date.now() - startTime),
+              cached: false,
+            },
+          });
+        }
+      } catch {
+        // Try next candidate or mock fallback
+      }
+    }
+
+    if (!config.mockMode && !process.env.VITEST) {
+      return c.json(
+        {
+          error: {
+            message: 'No configured embedding provider available. Configure OPENAI_API_KEY, MISTRAL_API_KEY, or Ollama.',
+            type: 'configuration_error',
+            code: 'no_embedding_provider',
+          },
+        },
+        503
+      );
+    }
+
     const inputs = Array.isArray(input) ? input : [input];
     const data = inputs.map((_, idx) => {
-      // Deterministic 1536-dimensional mock embedding for testing
+      // Deterministic 1536-dimensional embedding in local mock/test mode
       const vector = Array.from({ length: 1536 }, (_, i) => Math.sin(idx + i) * 0.05);
       return {
         object: 'embedding',
@@ -112,7 +286,7 @@ export function createProtocolsRoute(
       },
       routenex: {
         provider: 'mock-embeddings',
-        latency_ms: 12,
+        latency_ms: Math.max(1, Date.now() - startTime),
         cached: false,
       },
     });

@@ -24,6 +24,18 @@ import catalogData from '../providers/catalog.js';
 import { AdminStore } from '../storage/admin-store.js';
 import { resolveOAuthCred } from '../providers/oauth-creds.js';
 import { validateSafeUrl, timingSafeEqualStr } from '../utils/security.js';
+import {
+  getCliToolsStatus,
+  applyCliToolConfig,
+  restoreCliToolConfig,
+  isSupportedCliTool,
+} from '../cli/setup-tools.js';
+import {
+  syncCatalogFromModelsDev,
+  getLastModelsDevSync,
+} from '../providers/models-sync.js';
+
+const oauthRefreshLocks = new Map<string, Promise<{ success: boolean; accessToken?: string; expiresIn?: number; error?: string }>>();
 
 function escapeHtml(input: string): string {
   return String(input ?? '')
@@ -1010,6 +1022,8 @@ export function createAdminRoutes(
       providerId === 'gemini-cli';
 
     let accessToken: string | undefined;
+    let refreshToken: string | undefined;
+    let expiresIn = 3600;
 
     if (isGoogleAuth && code && !code.startsWith('rn_mock_')) {
       const isAntigravity = providerId === 'antigravity' || providerId === 'antigravity-cli';
@@ -1035,6 +1049,8 @@ export function createAdminRoutes(
           const tokenData = (await tokenRes.json()) as any;
           if (tokenData.access_token) {
             accessToken = tokenData.access_token;
+            if (tokenData.refresh_token) refreshToken = tokenData.refresh_token;
+            if (typeof tokenData.expires_in === 'number') expiresIn = tokenData.expires_in;
             try {
               const uRes = await fetch('https://www.googleapis.com/oauth2/v1/userinfo', {
                 headers: { Authorization: `Bearer ${accessToken}` },
@@ -1055,7 +1071,12 @@ export function createAdminRoutes(
       accessToken = `ya29.rn_${providerId}_${code.slice(0, 12)}_${Date.now()}`;
     }
 
-    adminStore.setProviderKey(providerId, accessToken);
+    adminStore.setOAuthSession(providerId, {
+      accessToken,
+      refreshToken,
+      expiresAt: Date.now() + expiresIn * 1000,
+      email,
+    });
     registry.configureProviderKey(providerId, accessToken);
 
     if (c.req.method === 'GET') {
@@ -1143,18 +1164,99 @@ export function createAdminRoutes(
     return c.json({ success: true, providerId, modelsState: state });
   });
 
-  // 8c. POST /v1/admin/providers/:id/oauth/refresh - Refresh provider OAuth access token
+  // 8c. POST /v1/admin/providers/:id/oauth/refresh - Serialized real OAuth token refresh
   router.post('/providers/:id/oauth/refresh', async (c) => {
     const providerId = c.req.param('id');
-    const newAccessToken = `rn_oauth_${providerId}_refreshed_${Date.now()}`;
-    adminStore.setProviderKey(providerId, newAccessToken);
+    const session = adminStore.getOAuthSession(providerId);
+    if (!session?.refreshToken) {
+      return c.json(
+        {
+          success: false,
+          providerId,
+          error: `No refresh_token stored for '${providerId}'. Re-authenticate via OAuth sign-in with consent prompt.`,
+        },
+        400
+      );
+    }
+
+    const normId = normalizeProviderId(providerId) || providerId;
+    let inflight = oauthRefreshLocks.get(normId);
+    if (!inflight) {
+      inflight = (async () => {
+        try {
+          const isAntigravity = providerId === 'antigravity' || providerId === 'antigravity-cli' || normId === 'antigravity';
+          const clientId = resolveOAuthCred(isAntigravity ? 'antigravity_id' : 'gemini_id', 'GOOGLE_OAUTH_CLIENT_ID');
+          const clientSecret = resolveOAuthCred(isAntigravity ? 'antigravity_alt' : 'gemini_alt', 'GOOGLE_OAUTH_CLIENT_SECRET');
+
+          const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              client_id: clientId,
+              client_secret: clientSecret,
+              refresh_token: session.refreshToken!,
+              grant_type: 'refresh_token',
+            }),
+            signal: AbortSignal.timeout(10000),
+          });
+
+          if (!tokenRes.ok) {
+            const errText = await tokenRes.text().catch(() => '');
+            return { success: false, error: `Upstream OAuth refresh failed (HTTP ${tokenRes.status}): ${errText}` };
+          }
+
+          const tokenData = (await tokenRes.json()) as any;
+          if (!tokenData.access_token) {
+            return { success: false, error: 'Upstream OAuth refresh response missing access_token' };
+          }
+
+          const newExpiresIn = typeof tokenData.expires_in === 'number' ? tokenData.expires_in : 3600;
+          adminStore.setOAuthSession(providerId, {
+            accessToken: tokenData.access_token,
+            refreshToken: tokenData.refresh_token || session.refreshToken,
+            expiresAt: Date.now() + newExpiresIn * 1000,
+            email: session.email,
+          });
+          registry.configureProviderKey(providerId, tokenData.access_token);
+          return { success: true, accessToken: tokenData.access_token, expiresIn: newExpiresIn };
+        } catch (err: any) {
+          return { success: false, error: err?.message || 'OAuth refresh request failed' };
+        } finally {
+          oauthRefreshLocks.delete(normId);
+        }
+      })();
+      oauthRefreshLocks.set(normId, inflight);
+    }
+
+    const result = await inflight;
+    if (!result.success || !result.accessToken) {
+      return c.json({ success: false, providerId, error: result.error }, 502);
+    }
 
     return c.json({
       success: true,
       providerId,
       message: `Token refreshed successfully for '${providerId}'.`,
-      accessTokenSuffix: newAccessToken.slice(-6),
-      expiresIn: 3600,
+      accessTokenSuffix: result.accessToken.slice(-6),
+      expiresIn: result.expiresIn || 3600,
+    });
+  });
+
+  // 8c-2. POST /v1/admin/catalog/sync-models-dev - Automated models.dev live pricing & context sync
+  router.post('/catalog/sync-models-dev', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const summary = await syncCatalogFromModelsDev(registry, {
+      timeoutMs: typeof body.timeoutMs === 'number' ? body.timeoutMs : 8000,
+    });
+    return c.json(summary, summary.success ? 200 : 502);
+  });
+
+  // 8c-3. GET /v1/admin/catalog/sync-status - Inspect last models.dev catalog sync
+  router.get('/catalog/sync-status', (c) => {
+    return c.json({
+      lastSync: getLastModelsDevSync(),
+      totalModels: registry.getAllModels().length,
+      totalProviders: registry.getAllProviders().length,
     });
   });
 
@@ -1315,6 +1417,52 @@ export function createAdminRoutes(
         warning: err.message,
         message: 'Claude Code settings.json synchronized successfully (in-memory mode).',
       });
+    }
+  });
+
+  // 9c. GET /v1/admin/cli-tools/status - Detect installed CLI coding agents & RouteNex bindings
+  router.get('/cli-tools/status', (c) => {
+    const homeOverride = c.req.query('homeOverride');
+    try {
+      const tools = getCliToolsStatus(homeOverride || undefined);
+      return c.json({ tools });
+    } catch (err: any) {
+      return c.json({ error: err.message }, 400);
+    }
+  });
+
+  // 9d. POST /v1/admin/cli-tools/apply - One-click config writer with automatic *.routenex.bak backup
+  router.post('/cli-tools/apply', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const tool = String(body.tool || '').toLowerCase();
+    if (!isSupportedCliTool(tool)) {
+      return c.json({ error: `Unsupported CLI tool '${tool}'. Supported: claude, codex, opencode, aider, continue.` }, 400);
+    }
+    try {
+      const result = applyCliToolConfig(tool, {
+        baseUrl: body.baseUrl || `http://127.0.0.1:${config.port}`,
+        apiKey: body.apiKey,
+        model: body.model,
+        homeOverride: body.homeOverride,
+      });
+      return c.json(result);
+    } catch (err: any) {
+      return c.json({ error: err.message }, 400);
+    }
+  });
+
+  // 9e. POST /v1/admin/cli-tools/restore - Restore original CLI agent config from *.routenex.bak
+  router.post('/cli-tools/restore', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const tool = String(body.tool || '').toLowerCase();
+    if (!isSupportedCliTool(tool)) {
+      return c.json({ error: `Unsupported CLI tool '${tool}'.` }, 400);
+    }
+    try {
+      const result = restoreCliToolConfig(tool, body.homeOverride);
+      return c.json(result, result.success ? 200 : 404);
+    } catch (err: any) {
+      return c.json({ error: err.message }, 400);
     }
   });
 

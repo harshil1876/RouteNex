@@ -10,8 +10,21 @@ import type { NexWorker, ActionShieldDecision, WorkerTool, WorkerRiskTier } from
 
 const SENSITIVE_KEY_REGEX = /(key|token|secret|password|auth|bearer|credential|cert)/i;
 
+function scrubValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => scrubValue(item));
+  }
+  if (value && typeof value === 'object') {
+    return scrubSensitiveArgs(value as Record<string, unknown>);
+  }
+  if (typeof value === 'string' && value.length > 2000) {
+    return `${value.slice(0, 1000)}... [Truncated ${value.length - 1000} chars]`;
+  }
+  return value;
+}
+
 /**
- * Recursively scrubs credentials or sensitive tokens from tool payload arguments before logging or storing.
+ * Recursively scrubs credentials or sensitive tokens from tool payload arguments (including nested arrays) before logging or storing.
  */
 export function scrubSensitiveArgs(args: Record<string, unknown>): Record<string, unknown> {
   if (!args || typeof args !== 'object') return {};
@@ -20,13 +33,8 @@ export function scrubSensitiveArgs(args: Record<string, unknown>): Record<string
   for (const [key, value] of Object.entries(args)) {
     if (SENSITIVE_KEY_REGEX.test(key)) {
       clean[key] = '[REDACTED_CREDENTIAL]';
-    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-      clean[key] = scrubSensitiveArgs(value as Record<string, unknown>);
-    } else if (typeof value === 'string' && value.length > 2000) {
-      // Truncate giant payloads to prevent log bloat
-      clean[key] = `${value.slice(0, 1000)}... [Truncated ${value.length - 1000} chars]`;
     } else {
-      clean[key] = value;
+      clean[key] = scrubValue(value);
     }
   }
   return clean;

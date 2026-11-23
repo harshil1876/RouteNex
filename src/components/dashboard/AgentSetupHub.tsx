@@ -40,6 +40,67 @@ export default function AgentSetupHub() {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [syncMessage, setSyncMessage] = useState('');
 
+  // Live 1-Click CLI Agent Installer & Backup State
+  const [cliTools, setCliTools] = useState<Array<{
+    id: string;
+    name: string;
+    configPath: string;
+    exists: boolean;
+    configuredForRouteNex: boolean;
+    hasBackup: boolean;
+  }>>([]);
+  const [cliActionMsg, setCliActionMsg] = useState<string | null>(null);
+  const [busyTool, setBusyTool] = useState<string | null>(null);
+
+  const fetchCliToolsStatus = () => {
+    fetch('http://127.0.0.1:3001/v1/admin/cli-tools/status', { headers: getAdminHeaders() })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.tools)) setCliTools(data.tools);
+      })
+      .catch(() => {});
+  };
+
+  const handleApplyCliTool = async (toolId: string) => {
+    setBusyTool(toolId);
+    setCliActionMsg(null);
+    try {
+      const res = await fetch('http://127.0.0.1:3001/v1/admin/cli-tools/apply', {
+        method: 'POST',
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ tool: toolId, apiKey: claudeAuthToken, model: claudePrimaryModel }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setCliActionMsg(res.ok ? `✓ ${data.message}` : `Error: ${data.error || 'Failed to apply config'}`);
+      fetchCliToolsStatus();
+    } catch {
+      setCliActionMsg('Error: Gateway unreachable.');
+    } finally {
+      setBusyTool(null);
+      setTimeout(() => setCliActionMsg(null), 5000);
+    }
+  };
+
+  const handleRestoreCliTool = async (toolId: string) => {
+    setBusyTool(toolId);
+    setCliActionMsg(null);
+    try {
+      const res = await fetch('http://127.0.0.1:3001/v1/admin/cli-tools/restore', {
+        method: 'POST',
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ tool: toolId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setCliActionMsg(res.ok ? `✓ ${data.message}` : `Error: ${data.error || 'No backup found'}`);
+      fetchCliToolsStatus();
+    } catch {
+      setCliActionMsg('Error: Gateway unreachable.');
+    } finally {
+      setBusyTool(null);
+      setTimeout(() => setCliActionMsg(null), 5000);
+    }
+  };
+
   useEffect(() => {
     // 1. Fetch live combos
     fetch('http://127.0.0.1:3001/v1/admin/combos', {
@@ -83,7 +144,8 @@ export default function AgentSetupHub() {
           setAvailableCombos((prev) => Array.from(new Set([...prev, ...ids])));
         }
       })
-      .catch(() => {});
+    // 4. Detect local CLI coding agents for 1-click apply/restore
+    fetchCliToolsStatus();
   }, []);
 
   const copyToClipboard = (text: string, id: string) => {
@@ -176,6 +238,69 @@ export default function AgentSetupHub() {
           </span>
         </div>
       </div>
+
+      {/* One-Click CLI Config Writer & Backup Panel */}
+      {cliTools.length > 0 && (
+        <div className="rounded-xl border border-[#222226] bg-[#111113] p-5 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h4 className="text-sm font-semibold text-zinc-100">One-Click Local CLI Config Writers</h4>
+              <p className="text-xs text-zinc-400">
+                Automatically backs up existing config (<code className="font-mono text-zinc-300">*.routenex.bak</code>) and injects RouteNex gateway settings.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={fetchCliToolsStatus}
+              className="px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-[#222226] text-xs font-mono text-zinc-300"
+            >
+              ↻ Re-Scan
+            </button>
+          </div>
+          {cliActionMsg && (
+            <div className={`px-3 py-2 rounded-lg text-xs font-mono border ${cliActionMsg.startsWith('✓') ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border-red-500/30 text-red-300'}`}>
+              {cliActionMsg}
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {cliTools.map((t) => (
+              <div key={t.id} className="p-3.5 rounded-lg bg-[#09090b] border border-[#222226] flex flex-col justify-between gap-3">
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-zinc-100">{t.name}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${t.configuredForRouteNex ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : t.exists ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' : 'bg-zinc-800 text-zinc-400'}`}>
+                      {t.configuredForRouteNex ? 'Connected' : t.exists ? 'Detected' : 'Not Configured'}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-[10px] font-mono text-zinc-500 truncate" title={t.configPath}>
+                    {t.configPath}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={busyTool === t.id}
+                    onClick={() => handleApplyCliTool(t.id)}
+                    className="flex-1 px-2.5 py-1.5 rounded-md bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-zinc-950 font-semibold text-[11px] transition"
+                  >
+                    {busyTool === t.id ? 'Writing...' : t.configuredForRouteNex ? 'Re-Apply' : '1-Click Apply'}
+                  </button>
+                  {t.hasBackup && (
+                    <button
+                      type="button"
+                      disabled={busyTool === t.id}
+                      onClick={() => handleRestoreCliTool(t.id)}
+                      className="px-2.5 py-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-[#222226] text-zinc-300 text-[11px] font-mono"
+                    >
+                      Restore
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Agent Selector Pills */}
       <div className="flex space-x-2 overflow-x-auto pb-1 text-xs font-sans">

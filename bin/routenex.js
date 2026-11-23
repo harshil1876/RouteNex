@@ -24,8 +24,10 @@ const pkg = JSON.parse(
 
 const args = process.argv.slice(2);
 const launcherModulePath = path.resolve(__dirname, '../gateway/dist/cli/launcher.js');
+const setupToolsModulePath = path.resolve(__dirname, '../gateway/dist/cli/setup-tools.js');
 const serverModulePath = path.resolve(__dirname, '../gateway/dist/server.js');
 const launcherModuleUrl = pathToFileURL(launcherModulePath).href;
+const setupToolsModuleUrl = pathToFileURL(setupToolsModulePath).href;
 const serverModuleUrl = pathToFileURL(serverModulePath).href;
 
 // 1. Stdout-clean MCP stdio mode (do not pollute stdout with banners)
@@ -122,6 +124,51 @@ if (args.includes('--mcp')) {
   console.log(`  ANTHROPIC_BASE_URL = http://127.0.0.1:3001`);
   console.log(`  CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = 1`);
   process.exit(0);
+} else if (args[0] === 'setup') {
+  // 4b. One-Click CLI Agent Config Writer with Automatic Backup
+  if (!fs.existsSync(setupToolsModulePath)) {
+    console.error('\x1b[31mError: Gateway build not found. Run "npm run build" first.\x1b[0m');
+    process.exit(1);
+  }
+  const { getCliToolsStatus, applyCliToolConfig, isSupportedCliTool } = await import(setupToolsModuleUrl);
+  const target = (args[1] || 'status').toLowerCase();
+  if (target === 'status') {
+    const statuses = getCliToolsStatus();
+    console.log('\nRouteNex CLI Agent Integration Status:\n');
+    for (const s of statuses) {
+      const badge = s.configuredForRouteNex ? '\x1b[32m[CONNECTED]\x1b[0m' : s.exists ? '\x1b[33m[INSTALLED]\x1b[0m' : '\x1b[90m[NOT FOUND]\x1b[0m';
+      console.log(`  ${badge} ${s.name.padEnd(30)} ${s.configPath}${s.hasBackup ? ' (backup available)' : ''}`);
+    }
+    console.log('\nApply with: routenex setup <claude|codex|opencode|aider|continue>\n');
+    process.exit(0);
+  }
+  if (!isSupportedCliTool(target)) {
+    console.error(`\x1b[31mUnsupported tool '${target}'.\x1b[0m Supported: claude, codex, opencode, aider, continue, status`);
+    process.exit(1);
+  }
+  const modelIdx = args.indexOf('--model');
+  const model = modelIdx !== -1 && args[modelIdx + 1] ? args[modelIdx + 1] : 'combo/free-unlimited';
+  const result = applyCliToolConfig(target, { model });
+  console.log(`\x1b[32m✓ ${result.message}\x1b[0m`);
+  process.exit(0);
+} else if (args[0] === 'restore') {
+  if (!fs.existsSync(setupToolsModulePath)) {
+    console.error('\x1b[31mError: Gateway build not found. Run "npm run build" first.\x1b[0m');
+    process.exit(1);
+  }
+  const { restoreCliToolConfig, isSupportedCliTool } = await import(setupToolsModuleUrl);
+  const target = (args[1] || '').toLowerCase();
+  if (!isSupportedCliTool(target)) {
+    console.error(`\x1b[31mUsage: routenex restore <claude|codex|opencode|aider|continue>\x1b[0m`);
+    process.exit(1);
+  }
+  const result = restoreCliToolConfig(target);
+  if (!result.success) {
+    console.error(`\x1b[31m${result.message}\x1b[0m`);
+    process.exit(1);
+  }
+  console.log(`\x1b[32m✓ ${result.message}\x1b[0m`);
+  process.exit(0);
 } else if (args[0] === 'login') {
   // 5. Open Source Local Login / Browser Launcher
   const { loginLocal } = await import(launcherModuleUrl);
@@ -154,6 +201,8 @@ Usage:
   routenex auth login <provider>                    Connect OAuth provider in Chrome/Edge
   routenex cloud login [url]                        Sign in to RouteNex Cloud Edition (Supabase)
   routenex run <agent> [--model <slug>]             Spawn agent with RouteNex injected per-process
+  routenex setup <tool|status> [--model <slug>]     1-click config writer (claude, codex, opencode, aider, continue)
+  routenex restore <tool>                           Restore backed-up agent config (*.routenex.bak)
   routenex configure <tool>                         Interactive config guide (claude, cursor, cline, aider)
   routenex connect <remote-url> [token]             Drive remote RouteNex instance with scoped token
   routenex --mcp                                    Launch built-in MCP server in stdio mode

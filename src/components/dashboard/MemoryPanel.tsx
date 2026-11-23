@@ -198,67 +198,126 @@ export default function MemoryPanel() {
         ))}
       </div>
 
-      {/* Search Input */}
-      <div className="flex items-center gap-3">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search memories via FTS5 semantic full-text index..."
-          className="flex-1 bg-[#141824] border border-[#222738] rounded-lg px-3 py-2 text-xs text-white placeholder-[#5a647d] font-mono focus:outline-none focus:border-purple-500"
-        />
-        <button
-          type="button"
-          onClick={() => {
-            fetchMemories();
-          }}
-          className="px-3 py-2 rounded-lg bg-[#181d2c] hover:bg-[#20273c] border border-[#262f44] text-xs font-mono text-[#8f96a3] hover:text-white"
-        >
-          ↻ Refresh
-        </button>
-      </div>
-
-      {/* Memories List */}
-      <div className="space-y-3">
-        {filtered.length === 0 ? (
-          <div className="p-8 text-center text-xs font-mono text-[#7d8597] border border-dashed border-[#222738] rounded-xl">
-            No memories found. Click &ldquo;+ Add Memory&rdquo; to persist contextual recall.
+      {activeTab === 'memories' && (
+        <>
+          {/* Search Input */}
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search memories via FTS5 semantic full-text index..."
+              className="flex-1 bg-[#141824] border border-[#222738] rounded-lg px-3 py-2 text-xs text-white placeholder-[#5a647d] font-mono focus:outline-none focus:border-purple-500"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                fetchMemories();
+              }}
+              className="px-3 py-2 rounded-lg bg-[#181d2c] hover:bg-[#20273c] border border-[#262f44] text-xs font-mono text-[#8f96a3] hover:text-white"
+            >
+              ↻ Refresh
+            </button>
           </div>
-        ) : (
-          filtered.map((m) => (
-            <div key={m.id} className="p-4 rounded-xl bg-[#121622] border border-[#222738] space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-white font-mono">{m.topic}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-[#7d8597] font-mono">{m.lastAccessed || 'Saved'}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 font-mono">
-                    {m.tokens} tokens
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteMemory(m.id)}
-                    className="text-[#7d8597] hover:text-rose-400 text-xs px-1.5 py-0.5 rounded hover:bg-[#1a2030] transition-colors"
-                    title="Delete Memory"
-                  >
-                    ✕
-                  </button>
+
+          {/* Memories List */}
+          <div className="space-y-3">
+            {filtered.length === 0 ? (
+              <div className="p-8 text-center text-xs font-mono text-[#7d8597] border border-dashed border-[#222738] rounded-xl">
+                No memories found. Click &ldquo;+ Add Memory&rdquo; to persist contextual recall.
+              </div>
+            ) : (
+              filtered.map((m) => (
+                <div key={m.id} className="p-4 rounded-xl bg-[#121622] border border-[#222738] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-white font-mono">{m.topic}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-[#7d8597] font-mono">{m.lastAccessed || 'Saved'}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 font-mono">
+                        {m.tokens} tokens
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteMemory(m.id)}
+                        className="text-[#7d8597] hover:text-rose-400 text-xs px-1.5 py-0.5 rounded hover:bg-[#1a2030] transition-colors"
+                        title="Delete Memory"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-[#a0a8be] leading-relaxed">{m.content}</p>
+                  <div className="flex gap-1.5 pt-1">
+                    {(m.tags || ['general']).map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[10px] px-1.5 py-0.5 rounded bg-[#181d2c] border border-[#262f44] text-[#8e97ae] font-mono"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <p className="text-xs text-[#a0a8be] leading-relaxed">{m.content}</p>
-              <div className="flex gap-1.5 pt-1">
-                {(m.tags || ['general']).map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-[#181d2c] border border-[#262f44] text-[#8e97ae] font-mono"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+
+      {activeTab === 'engine' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-5 rounded-xl bg-[#121622] border border-[#222738] space-y-2">
+            <h3 className="text-xs font-mono font-semibold text-white uppercase">Indexing & Recall Engine</h3>
+            <p className="text-xs text-[#8f96a3] leading-relaxed">
+              Memories are indexed locally with zero external vector database dependency. Relevant facts are retrieved in sub-millisecond latency and injected cleanly before prompt dispatch.
+            </p>
+            <div className="pt-2 space-y-1.5 text-xs font-mono text-zinc-300">
+              <div>• Storage Backend: <span className="text-emerald-400">Encrypted Local AdminStore + SQLite WAL</span></div>
+              <div>• Total Indexed Entries: <span className="text-sky-400">{memories.length}</span></div>
+              <div>• Recall Mode: <span className="text-purple-400">{memoryEnabled ? 'Active Injection' : 'Paused (Read-Only)'}</span></div>
             </div>
-          ))
-        )}
-      </div>
+          </div>
+          <div className="p-5 rounded-xl bg-[#121622] border border-[#222738] space-y-2">
+            <h3 className="text-xs font-mono font-semibold text-white uppercase">Token Footprint</h3>
+            <div className="pt-2 space-y-1.5 text-xs font-mono text-zinc-300">
+              <div>• Total Memory Tokens: <span className="text-white">{memories.reduce((sum, m) => sum + (m.tokens || 0), 0)}</span></div>
+              <div>• Avg Tokens / Memory: <span className="text-white">{memories.length ? Math.round(memories.reduce((sum, m) => sum + (m.tokens || 0), 0) / memories.length) : 0}</span></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'playground' && (
+        <div className="p-5 rounded-xl bg-[#121622] border border-[#222738] space-y-4">
+          <div>
+            <h3 className="text-xs font-mono font-semibold text-white uppercase">Memory Recall Simulator</h3>
+            <p className="text-xs text-[#8f96a3] mt-1">
+              Enter a sample prompt to inspect which persisted memories will be retrieved and injected.
+            </p>
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="e.g. TypeScript routing architecture..."
+            className="w-full bg-[#141824] border border-[#222738] rounded-lg px-3 py-2 text-xs text-white placeholder-[#5a647d] font-mono focus:outline-none focus:border-purple-500"
+          />
+          <div className="space-y-2">
+            <div className="text-[11px] font-mono text-zinc-400">Matched Context Candidates ({filtered.length}):</div>
+            {filtered.length === 0 ? (
+              <div className="text-xs font-mono text-zinc-500 p-4 rounded-lg border border-dashed border-[#222738]">
+                No matching memories for this query.
+              </div>
+            ) : (
+              filtered.map((m) => (
+                <div key={m.id} className="p-3 rounded-lg bg-[#0d1018] border border-purple-500/20 text-xs text-zinc-200 font-mono">
+                  <span className="text-purple-400">[{m.topic}]</span> {m.content}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Add Modal */}
       {showAddModal && (

@@ -76,6 +76,12 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
     estimatedCostUsd: number;
   }>({ totalRequests: 0, totalTokens: 0, estimatedCostUsd: 0 });
 
+  // Guided 3-Step First-Run Onboarding Checklist
+  const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('routenex_onboarding_dismissed') === 'true';
+  });
+
   // Route Simulator State
   const [simModel, setSimModel] = useState('auto:nitro');
   const [simPrompt, setSimPrompt] = useState('Analyze system latency bottlenecks under 10k concurrent streams.');
@@ -534,6 +540,63 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
                   Monitor live request routing, token optimization, and provider health.
                 </p>
               </div>
+
+              {/* Guided 3-Step Quick-Start Onboarding Checklist */}
+              {!onboardingDismissed && (
+                <div className="p-5 rounded-xl bg-[#111113] border border-[#222226] space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider font-mono text-sky-400">Quick-Start Guide</span>
+                      <h2 className="text-sm font-semibold text-zinc-100 mt-0.5">Get Started with RouteNex in 60 Seconds</h2>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOnboardingDismissed(true);
+                        if (typeof window !== 'undefined') localStorage.setItem('routenex_onboarding_dismissed', 'true');
+                      }}
+                      className="text-xs text-zinc-500 hover:text-zinc-200 font-mono"
+                    >
+                      Dismiss ✕
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveItem('providers');
+                        setProvidersSubView('providers');
+                      }}
+                      className="text-left p-3.5 rounded-lg bg-[#09090b] border border-[#222226] hover:border-sky-500/40 transition space-y-1"
+                    >
+                      <div className="text-xs font-semibold text-zinc-100">1. Connect a Provider (or Free Tier)</div>
+                      <p className="text-[11px] text-zinc-400">Add Groq, OpenRouter, Gemini, or use zero-key Pollinations / OpenCode immediately.</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveItem('providers');
+                        setProvidersSubView('playground');
+                      }}
+                      className="text-left p-3.5 rounded-lg bg-[#09090b] border border-[#222226] hover:border-sky-500/40 transition space-y-1"
+                    >
+                      <div className="text-xs font-semibold text-zinc-100">2. Send a Live Test Prompt</div>
+                      <p className="text-[11px] text-zinc-400">Verify sub-2ms routing and automatic combo failover inside the Playground.</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveItem('agents');
+                        setAgentsSubView('connectors');
+                      }}
+                      className="text-left p-3.5 rounded-lg bg-[#09090b] border border-[#222226] hover:border-sky-500/40 transition space-y-1"
+                    >
+                      <div className="text-xs font-semibold text-zinc-100">3. 1-Click Connect Coding Agent</div>
+                      <p className="text-[11px] text-zinc-400">Auto-configure Claude Code, Codex CLI, OpenCode, or Aider with safe backups.</p>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* NexFlow Live Pipeline Canvas */}
               <NexFlowCanvas onNavigateTab={(tab) => setActiveItem(tab as StudioNavItemId)} />
