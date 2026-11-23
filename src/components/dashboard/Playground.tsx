@@ -5,7 +5,7 @@ interface CompletionResult {
   modelUsed: string;
   provider: string;
   latencyMs: number;
-  tokens: { prompt: number; completion: number; total: number };
+  tokens: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
   routingReason: string;
   fallbackAttempts: number;
   cacheHit?: boolean;

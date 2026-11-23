@@ -44,7 +44,7 @@ export async function syncCatalogFromModelsDev(
 
   try {
     const res = await fetch(url, {
-      headers: { Accept: 'application/json', 'User-Agent': 'RouteNex-Gateway/0.2.4' },
+      headers: { Accept: 'application/json', 'User-Agent': 'RouteNex-Gateway/0.3.0' },
       signal: AbortSignal.timeout(timeoutMs),
     });
 

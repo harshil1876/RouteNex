@@ -86,6 +86,14 @@ export function normalizeDiscoveryModel(model: string): string {
 export class RoutingEngine {
   private readonly lastKnownGoodProviders = new Map<string, string>();
   private readonly sessionAffinity = new Map<string, { provider: string; modelId: string; timestamp: number }>();
+  private readonly providerTelemetry = new Map<string, {
+    ewmaLatencyMs: number;
+    requests: number;
+    successes: number;
+    lastUpdated: number;
+  }>();
+  private static readonly SESSION_AFFINITY_MAX = 2000;
+  private static readonly SESSION_AFFINITY_TTL_MS = 10 * 60 * 1000;
 
   private setLastKnownGood(key: string, provider: string): void {
     if (this.lastKnownGoodProviders.size >= 1000) {
@@ -93,6 +101,67 @@ export class RoutingEngine {
       if (oldest) this.lastKnownGoodProviders.delete(oldest);
     }
     this.lastKnownGoodProviders.set(key, provider);
+  }
+
+  private setSessionAffinity(sessionKey: string, provider: string, modelId: string): void {
+    if (this.sessionAffinity.size >= RoutingEngine.SESSION_AFFINITY_MAX && !this.sessionAffinity.has(sessionKey)) {
+      const oldest = this.sessionAffinity.keys().next().value;
+      if (oldest) this.sessionAffinity.delete(oldest);
+    }
+    this.sessionAffinity.set(sessionKey, { provider, modelId, timestamp: Date.now() });
+  }
+
+  public recordProviderTelemetry(provider: string, latencyMs: number, success: boolean): void {
+    const prev = this.providerTelemetry.get(provider);
+    const alpha = 0.25;
+    if (!prev) {
+      this.providerTelemetry.set(provider, {
+        ewmaLatencyMs: Math.max(1, latencyMs),
+        requests: 1,
+        successes: success ? 1 : 0,
+        lastUpdated: Date.now(),
+      });
+    } else {
+      prev.ewmaLatencyMs = Number((alpha * Math.max(1, latencyMs) + (1 - alpha) * prev.ewmaLatencyMs).toFixed(1));
+      prev.requests += 1;
+      if (success) prev.successes += 1;
+      prev.lastUpdated = Date.now();
+    }
+  }
+
+  public getProviderHealthSnapshot(): Array<{
+    provider: string;
+    ewma_latency_ms: number;
+    requests: number;
+    success_rate: number;
+    circuit_state: string;
+    last_updated: string;
+  }> {
+    const providers = new Set<string>([
+      ...this.providerTelemetry.keys(),
+      ...this.registry.getAllProviders().map((p) => p.id),
+    ]);
+    const list: Array<{
+      provider: string;
+      ewma_latency_ms: number;
+      requests: number;
+      success_rate: number;
+      circuit_state: string;
+      last_updated: string;
+    }> = [];
+    for (const p of providers) {
+      const stats = this.providerTelemetry.get(p);
+      if (!stats && p !== 'mock' && p !== 'pollinations' && !this.isProviderUsable(p)) continue;
+      list.push({
+        provider: p,
+        ewma_latency_ms: stats ? stats.ewmaLatencyMs : 0,
+        requests: stats ? stats.requests : 0,
+        success_rate: stats && stats.requests > 0 ? Number(((stats.successes / stats.requests) * 100).toFixed(2)) : 100,
+        circuit_state: this.circuitBreaker.getState(p),
+        last_updated: stats ? new Date(stats.lastUpdated).toISOString() : new Date().toISOString(),
+      });
+    }
+    return list.sort((a, b) => b.requests - a.requests || a.ewma_latency_ms - b.ewma_latency_ms);
   }
 
   constructor(
@@ -374,8 +443,13 @@ export class RoutingEngine {
           continue;
         }
       }
-      if (isZdrTag && !zdrProviders.has(model.provider)) {
-        candidates.push({ model, eligible: false, rejectionReason: 'Provider not verified for Zero Data Retention (:zdr)' });
+      const enforceZdr = isZdrTag || pref?.zdr === true || pref?.data_collection === 'deny';
+      if (enforceZdr && !zdrProviders.has(model.provider)) {
+        candidates.push({
+          model,
+          eligible: false,
+          rejectionReason: 'Provider not verified for strict Zero Data Retention (ZDR / data_collection: deny)',
+        });
         continue;
       }
       if (model.tos_status === 'caution' && !allowCaution && !allowCautionFallback) {
@@ -445,6 +519,8 @@ export class RoutingEngine {
         return m.id === 'mock/fast' ? 20 : m.provider === 'mock' ? 200 : m.provider === 'groq' ? 150 : 500;
       }
       if (m.provider === 'mock') return 99999;
+      const liveEwma = this.providerTelemetry.get(m.provider)?.ewmaLatencyMs;
+      if (typeof liveEwma === 'number' && liveEwma > 0) return liveEwma;
       if (m.provider === 'groq') return 150;
       if (m.provider === 'pollinations') return 250;
       return 500;
@@ -526,6 +602,31 @@ export class RoutingEngine {
       reasonCode = 'BALANCED';
     }
 
+    // Apply explicit OpenRouter-compatible `provider.order` preference if specified
+    if (pref?.order && pref.order.length > 0) {
+      const orderRank = new Map<string, number>();
+      pref.order.forEach((p, idx) => orderRank.set(p.toLowerCase(), idx));
+      eligible.sort((a, b) => {
+        const ra = orderRank.get(a.model.provider.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+        const rb = orderRank.get(b.model.provider.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+        return ra - rb;
+      });
+    }
+
+    // Prompt-Cache Stickiness: pin multi-turn session follow-ups to the warm provider within TTL
+    const reqSessionId = (request as any).sessionId || (request as any).session_id;
+    if (reqSessionId && (!pref?.order || pref.order.length === 0)) {
+      const affinity = this.sessionAffinity.get(reqSessionId);
+      if (affinity && Date.now() - affinity.timestamp <= RoutingEngine.SESSION_AFFINITY_TTL_MS) {
+        const warmIdx = eligible.findIndex((c) => c.model.provider === affinity.provider);
+        if (warmIdx > 0) {
+          const [warm] = eligible.splice(warmIdx, 1);
+          eligible.unshift(warm);
+          reasonCode = 'CACHE_AFFINITY';
+        }
+      }
+    }
+
     // If allowCautionFallback is active and allowCaution is not explicitly enabled,
     // ensure caution models are pinned strictly to the tail end of the candidate list
     // so they are only used as last-resort fallbacks if all official providers fail.
@@ -553,7 +654,8 @@ export class RoutingEngine {
     });
 
     const primary = eligible[0].model;
-    const fallbackChain = eligible.slice(1).map((c) => c.model);
+    const allowFallbacks = pref?.allow_fallbacks !== false;
+    const fallbackChain = allowFallbacks ? eligible.slice(1).map((c) => c.model) : [];
 
     return {
       primary,
@@ -651,14 +753,11 @@ export class RoutingEngine {
 
         const sessId = (request as any).sessionId || (request as any).session_id;
         if (sessId) {
-          this.sessionAffinity.set(sessId, {
-            provider: targetModel.provider,
-            modelId: targetModel.id,
-            timestamp: Date.now(),
-          });
+          this.setSessionAffinity(sessId, targetModel.provider, targetModel.id);
         }
 
-        const latencyMs = Date.now() - startTime;
+        const latencyMs = Math.max(1, Date.now() - startTime);
+        this.recordProviderTelemetry(targetModel.provider, latencyMs, true);
         const costEstimate = this.calculateCost(targetModel, response.usage);
 
         response.routenex = {

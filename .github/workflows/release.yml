@@ -28,11 +28,11 @@ jobs:
           npm ci
           npm --prefix gateway ci
 
-      - name: Run Test Suite
-        run: npm run test:api
-
       - name: Build Astro Frontend & Gateway Backend
         run: npm run build
+
+      - name: Run Test Suite
+        run: npm run test:api
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

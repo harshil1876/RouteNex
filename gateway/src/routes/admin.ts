@@ -34,6 +34,10 @@ import {
   syncCatalogFromModelsDev,
   getLastModelsDevSync,
 } from '../providers/models-sync.js';
+import {
+  getBroadcastConfig,
+  updateBroadcastConfig,
+} from '../observability/broadcast.js';
 
 const oauthRefreshLocks = new Map<string, Promise<{ success: boolean; accessToken?: string; expiresIn?: number; error?: string }>>();
 
@@ -294,7 +298,7 @@ export function createAdminRoutes(
 
     return c.json({
       edition: 'RouteNex Open Source',
-      version: '0.2.4',
+      version: '0.3.0',
       host: config.host,
       port: config.port,
       compressionEnabled: settings.compressionEnabled,
@@ -1258,6 +1262,21 @@ export function createAdminRoutes(
       totalModels: registry.getAllModels().length,
       totalProviders: registry.getAllProviders().length,
     });
+  });
+
+  // 8c-4. GET /v1/admin/observability/broadcast - Inspect OpenTelemetry / Langfuse / Webhook Broadcast config
+  router.get('/observability/broadcast', (c) => {
+    return c.json({ broadcast: getBroadcastConfig() });
+  });
+
+  // 8c-5. POST /v1/admin/observability/broadcast - Update Broadcast telemetry sinks (SSRF-validated)
+  router.post('/observability/broadcast', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const result = updateBroadcastConfig(body);
+    if (!result.ok) {
+      return c.json({ success: false, error: result.error }, 400);
+    }
+    return c.json({ success: true, broadcast: getBroadcastConfig() });
   });
 
   // 8d. GET /v1/admin/providers/:id/oauth/status - Check OAuth completion status for polling

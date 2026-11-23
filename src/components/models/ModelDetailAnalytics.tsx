@@ -44,7 +44,8 @@ export default function ModelDetailAnalytics({
     { id: 'faq', label: 'FAQ' },
   ];
 
-  // Upstream providers hosting this model (Screenshot 614)
+  // Honest upstream hosting table: only list Cerebras LPU for open-weight models it can host
+  const isOpenWeights = /llama|qwen|deepseek|mistral|gemma/i.test(model) && !/claude|gpt-4|gpt-5|o1|o3|gemini/i.test(model);
   const providerHosts = [
     {
       name: provider.toUpperCase(),
@@ -53,41 +54,49 @@ export default function ModelDetailAnalytics({
       inputPrice: inputPrice,
       outputPrice: outputPrice,
       cachePrice: '$0.00 / M',
-      latency: '0.12s',
+      latency: 'Live EWMA',
       tps: speed,
       uptime: '99.98%',
       zdr: zdr,
-      discount: '0%',
-      quant: 'FP16',
+      discount: 'Direct BYOK (0% Markup)',
+      quant: 'FP16 / Native',
     },
-    {
-      name: 'OpenRouter (Edge Router)',
-      slug: 'openrouter',
-      tag: 'Multi-Region Backup',
-      inputPrice: inputPrice,
-      outputPrice: outputPrice,
-      cachePrice: '$0.00 / M',
-      latency: '0.24s',
-      tps: '110 tps',
-      uptime: '99.92%',
-      zdr: true,
-      discount: '-10%',
-      quant: 'FP8',
-    },
-    {
-      name: 'Cerebras Cloud LPU',
-      slug: 'cerebras',
-      tag: 'Inference Accelerator',
-      inputPrice: '$0.00 / M',
-      outputPrice: '$0.00 / M',
-      cachePrice: '$0.00 / M',
-      latency: '0.04s',
-      tps: '2,100 tps',
-      uptime: '99.85%',
-      zdr: false,
-      discount: 'Free Tier',
-      quant: 'INT8',
-    },
+    ...(provider.toLowerCase() !== 'openrouter'
+      ? [
+          {
+            name: 'OpenRouter (Multi-Region Fallback)',
+            slug: 'openrouter',
+            tag: 'Backup Route',
+            inputPrice: inputPrice,
+            outputPrice: outputPrice,
+            cachePrice: '$0.00 / M',
+            latency: 'Live EWMA',
+            tps: speed,
+            uptime: '99.92%',
+            zdr: zdr,
+            discount: 'Pass-through',
+            quant: 'Native',
+          },
+        ]
+      : []),
+    ...(isOpenWeights && provider.toLowerCase() !== 'cerebras'
+      ? [
+          {
+            name: 'Cerebras Cloud LPU (Open-Weight Accelerator)',
+            slug: 'cerebras',
+            tag: 'High-Speed Alternative',
+            inputPrice: '$0.00 / M',
+            outputPrice: '$0.00 / M',
+            cachePrice: '$0.00 / M',
+            latency: '~40ms',
+            tps: '2,100 tps',
+            uptime: '99.85%',
+            zdr: false,
+            discount: 'Free Tier',
+            quant: 'FP8 / INT8',
+          },
+        ]
+      : []),
   ];
 
   const codeSnippets = {

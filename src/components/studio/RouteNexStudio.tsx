@@ -483,34 +483,31 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
                   onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
                   className="w-7 h-7 rounded-full bg-sky-500/20 border border-sky-500/40 text-sky-400 font-semibold text-xs flex items-center justify-center hover:scale-105 transition"
                 >
-                  H
+                  W
                 </button>
 
                 {avatarMenuOpen && (
                   <div className="absolute right-0 top-full mt-1.5 w-48 rounded-xl bg-[#111113] border border-[#222226] p-1.5 shadow-xl z-50 text-xs font-sans">
                     <div className="px-2.5 py-1.5 border-b border-[#222226] mb-1">
-                      <span className="font-semibold text-zinc-100 block">Harshil Patel</span>
-                      <span className="text-[11px] text-zinc-400">RouteNex Cloud Pro</span>
+                      <span className="font-semibold text-zinc-100 block">{activeWorkspace}</span>
+                      <span className="text-[11px] text-zinc-400">RouteNex Studio</span>
                     </div>
-                    <a href="/settings/profile" className="block px-2.5 py-1.5 rounded hover:bg-zinc-800 text-zinc-300">
-                      Profile
-                    </a>
-                    <a href="/settings/preferences" className="block px-2.5 py-1.5 rounded hover:bg-zinc-800 text-zinc-300">
-                      Preferences
-                    </a>
-                    <a href="/settings/credits" className="block px-2.5 py-1.5 rounded hover:bg-zinc-800 text-zinc-300">
-                      Credits & Billing
-                    </a>
-                    <a href="/settings/byok" className="block px-2.5 py-1.5 rounded hover:bg-zinc-800 text-zinc-300">
-                      BYOK Keys
-                    </a>
-                    <a href="/settings/guardrails" className="block px-2.5 py-1.5 rounded hover:bg-zinc-800 text-zinc-300">
-                      Guardrails
-                    </a>
+                    <button type="button" onClick={() => { setActiveItem('costs'); setAvatarMenuOpen(false); }} className="w-full text-left block px-2.5 py-1.5 rounded hover:bg-zinc-800 text-zinc-300">
+                      Credits &amp; Quotas
+                    </button>
+                    <button type="button" onClick={() => { setActiveItem('providers'); setAvatarMenuOpen(false); }} className="w-full text-left block px-2.5 py-1.5 rounded hover:bg-zinc-800 text-zinc-300">
+                      BYOK Providers
+                    </button>
+                    <button type="button" onClick={() => { setActiveItem('keys'); setAvatarMenuOpen(false); }} className="w-full text-left block px-2.5 py-1.5 rounded hover:bg-zinc-800 text-zinc-300">
+                      API Keys
+                    </button>
+                    <button type="button" onClick={() => { setActiveItem('settings'); setAvatarMenuOpen(false); }} className="w-full text-left block px-2.5 py-1.5 rounded hover:bg-zinc-800 text-zinc-300">
+                      Guardrails &amp; Settings
+                    </button>
                     <div className="pt-1 mt-1 border-t border-[#222226]">
-                      <a href="/login" className="block px-2.5 py-1.5 rounded hover:bg-zinc-800 text-red-400">
-                        Sign Out
-                      </a>
+                      <button type="button" onClick={() => { setAvatarMenuOpen(false); handleLock(); }} className="w-full text-left block px-2.5 py-1.5 rounded hover:bg-zinc-800 text-red-400">
+                        Lock Session
+                      </button>
                     </div>
                   </div>
                 )}

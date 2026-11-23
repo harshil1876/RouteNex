@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { emitBroadcastEvent } from '../observability/broadcast.js';
 
 export interface RequestLogEntry {
   request_id: string;
@@ -174,13 +175,15 @@ export class RequestStore {
         }
       }
 
-      // 2. Write bounded JSON snapshot
+      // 2. Write bounded JSON snapshot atomically via temp file + rename
       const dir = path.dirname(this.filePath);
       if (!fs.existsSync(dir) && dir !== '.') {
         fs.mkdirSync(dir, { recursive: true });
       }
 
-      fs.writeFileSync(this.filePath, JSON.stringify(this.records, null, 2), 'utf-8');
+      const tmpFile = `${this.filePath}.${process.pid}.tmp`;
+      fs.writeFileSync(tmpFile, JSON.stringify(this.records, null, 2), 'utf-8');
+      fs.renameSync(tmpFile, this.filePath);
       this.buffer = [];
     } catch {
       // Silently prevent logging write errors from breaking requests
@@ -188,9 +191,27 @@ export class RequestStore {
   }
 
   /**
-   * Records a request execution into the store with strict ring-buffer limits (max 5,000).
+   * Records a request execution into the store with strict ring-buffer limits (max 5,000)
+   * and emits a non-blocking Broadcast telemetry event if OTLP/Langfuse/Webhook is enabled.
    */
   public logRequest(entry: RequestLogEntry): void {
+    // Emit non-blocking observability broadcast regardless of local disk persistence toggle
+    emitBroadcastEvent({
+      requestId: entry.request_id,
+      timestamp: entry.timestamp,
+      modelRequested: entry.model_requested,
+      modelUsed: entry.model_used,
+      provider: entry.provider,
+      latencyMs: entry.latency_ms,
+      status: entry.status,
+      promptTokens: entry.token_usage?.prompt_tokens,
+      completionTokens: entry.token_usage?.completion_tokens,
+      totalTokens: entry.token_usage?.total_tokens,
+      costUsd: entry.cost_estimate?.total_usd ?? null,
+      routingReason: entry.routing_reason,
+      promptPreview: entry.prompt_preview,
+    }).catch(() => {});
+
     if (!this.enabled) return;
 
     this.records.push(entry);

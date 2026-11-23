@@ -37,6 +37,9 @@ export const ProviderPreferencesSchema = z.object({
   ]).optional(),
   ignore: z.array(z.string()).optional(),
   only: z.array(z.string()).optional(),
+  quantizations: z.array(z.string()).optional(),
+  zdr: z.boolean().optional(),
+  data_collection: z.enum(['allow', 'deny']).optional(),
   max_price: z.object({
     prompt: z.number().optional(),
     completion: z.number().optional(),

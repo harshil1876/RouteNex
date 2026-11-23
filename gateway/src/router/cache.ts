@@ -47,10 +47,11 @@ export class ResponseCache {
   }
 
   /**
-   * Computes a deterministic SHA-256 cache key from request payload.
+   * Computes a deterministic SHA-256 cache key from request payload + tenant/org isolation scope.
    */
-  private computeKey(req: ChatCompletionRequest): string {
+  private computeKey(req: ChatCompletionRequest, tenantId?: string): string {
     const payload = JSON.stringify({
+      tenant: tenantId ?? (req as any).org_id ?? (req as any).user ?? 'default',
       model: req.model,
       messages: req.messages,
       temperature: req.temperature ?? 1.0,
@@ -60,18 +61,17 @@ export class ResponseCache {
       tools: req.tools ?? null,
       tool_choice: req.tool_choice ?? null,
       response_format: req.response_format ?? null,
-      user: (req as any).user ?? null,
     });
     return createHash('sha256').update(payload).digest('hex');
   }
 
   /**
-   * Retrieves a cached completion if available and unexpired.
+   * Retrieves a cached completion if available and unexpired (strictly tenant-isolated).
    */
-  get(req: ChatCompletionRequest): ChatCompletionResponse | undefined {
+  get(req: ChatCompletionRequest, tenantId?: string): ChatCompletionResponse | undefined {
     if (!this.enabled) return undefined;
 
-    const key = this.computeKey(req);
+    const key = this.computeKey(req, tenantId);
     const entry = this.store.get(key);
 
     if (!entry) {
@@ -101,9 +101,9 @@ export class ResponseCache {
   }
 
   /**
-   * Stores a completion response in cache.
+   * Stores a completion response in cache (strictly tenant-isolated).
    */
-  set(req: ChatCompletionRequest, res: ChatCompletionResponse, customTtlSeconds?: number): void {
+  set(req: ChatCompletionRequest, res: ChatCompletionResponse, customTtlSeconds?: number, tenantId?: string): void {
     if (!this.enabled) return;
 
     // Do not cache error responses or streaming partials
@@ -115,7 +115,7 @@ export class ResponseCache {
       if (firstKey) this.store.delete(firstKey);
     }
 
-    const key = this.computeKey(req);
+    const key = this.computeKey(req, tenantId);
     const ttl = customTtlSeconds ? customTtlSeconds * 1000 : this.ttlMs;
     const tokens = res.usage?.total_tokens ?? 0;
     const costUsd = res.routenex?.cost_estimate?.total_usd ?? 0;

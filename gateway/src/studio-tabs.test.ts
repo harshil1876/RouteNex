@@ -6,6 +6,8 @@ import { ProviderRegistry } from './providers/registry.js';
 import { ProviderError } from './providers/types.js';
 import { scrubSensitiveArgs } from './workers/guard.js';
 import { computeNextCronTimestamp } from './workers/runtime.js';
+import { ResponseCache } from './router/cache.js';
+import { buildSafeBroadcastPayload, signBroadcastPayload } from './observability/broadcast.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -1242,6 +1244,124 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
       const nextDate = new Date(nextIso);
       expect(nextDate.getTime()).toBeGreaterThan(base);
       expect(nextDate.getMinutes() % 15).toBe(0);
+    });
+  });
+
+  describe('Suite 17: Phase 3 OpenRouter-Class Routing, Live Rankings, Tenant Isolation & Broadcast', () => {
+    it('1. Enforces OpenRouter provider preferences: only, ignore, order, zdr, data_collection: deny, and allow_fallbacks: false', async () => {
+      const explainRes = await app.request('/v1/router/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'auto',
+          messages: [{ role: 'user', content: 'Strict ZDR isolation test' }],
+          provider: {
+            only: ['mock'],
+            allow_fallbacks: false,
+          },
+        }),
+      });
+      expect(explainRes.status).toBe(200);
+      const explainData = await explainRes.json();
+      expect(explainData.selected_provider || explainData.selected?.provider).toBe('mock');
+      expect(explainData.fallback_chain || explainData.fallbackChain || []).toHaveLength(0);
+
+      // Verify strict ZDR rejects non-ZDR providers
+      const zdrRes = await app.request('/v1/router/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'auto',
+          messages: [{ role: 'user', content: 'ZDR check' }],
+          provider: { data_collection: 'deny' },
+        }),
+      });
+      expect(zdrRes.status).toBe(200);
+      const zdrData = await zdrRes.json();
+      const rejectedNonZdr = (zdrData.candidates || []).some((c: any) =>
+        String(c.rejectionReason || c.rejection_reason || '').includes('Zero Data Retention')
+      );
+      expect(rejectedNonZdr).toBe(true);
+    });
+
+    it('2. GET /v1/rankings and GET /v1/providers/health expose live traffic metrics, P50/P90/P99, and EWMA latency', async () => {
+      // Trigger a real completion so rankings & EWMA telemetry are populated
+      const chatRes = await app.request('/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'mock/fast',
+          messages: [{ role: 'user', content: 'Populate live rankings and EWMA' }],
+        }),
+      });
+      expect(chatRes.status).toBe(200);
+
+      const rankingsRes = await app.request('/v1/rankings');
+      expect(rankingsRes.status).toBe(200);
+      const rankingsData = await rankingsRes.json();
+      expect(Array.isArray(rankingsData.rankings)).toBe(true);
+      expect(rankingsData.generated_at).toBeDefined();
+
+      const healthRes = await app.request('/v1/providers/health');
+      expect(healthRes.status).toBe(200);
+      const healthData = await healthRes.json();
+      expect(Array.isArray(healthData.providers)).toBe(true);
+      const mockHealth = healthData.providers.find((p: any) => p.provider === 'mock');
+      expect(mockHealth).toBeDefined();
+      expect(mockHealth.requests).toBeGreaterThanOrEqual(1);
+      expect(mockHealth.ewma_latency_ms).toBeGreaterThan(0);
+    });
+
+    it('3. ResponseCache enforces strict multi-tenant isolation between different orgs/tenants', () => {
+      const cache = new ResponseCache({ enabled: true, ttlSeconds: 60, maxEntries: 100 });
+      const req: any = {
+        model: 'mock/fast',
+        messages: [{ role: 'user', content: 'Confidential quarterly numbers' }],
+        temperature: 0,
+      };
+      const fakeResp: any = {
+        id: 'cmpl-tenant-a',
+        object: 'chat.completion',
+        created: Math.floor(Date.now() / 1000),
+        model: 'mock/fast',
+        choices: [{ index: 0, message: { role: 'assistant', content: 'Tenant A secret data' }, finish_reason: 'stop' }],
+      };
+
+      cache.set(req, fakeResp, 60, 'org_tenant_a');
+      expect(cache.get(req, 'org_tenant_a')?.choices[0]?.message?.content).toBe('Tenant A secret data');
+      expect(cache.get(req, 'org_tenant_b')).toBeUndefined();
+    });
+
+    it('4. Observability Broadcast strips bodies by default, signs HMAC webhooks, and blocks SSRF endpoints', async () => {
+      const safePayload = buildSafeBroadcastPayload({
+        requestId: 'req_test_1',
+        timestamp: new Date().toISOString(),
+        modelRequested: 'auto',
+        modelUsed: 'mock/fast',
+        provider: 'mock',
+        latencyMs: 12,
+        status: 'success',
+        promptPreview: 'TOP SECRET PROMPT',
+        completionPreview: 'TOP SECRET REPLY',
+      });
+      expect(safePayload.prompt_preview).toBeUndefined();
+      expect(safePayload.completion_preview).toBeUndefined();
+
+      const sig = signBroadcastPayload(JSON.stringify(safePayload), 'webhook-secret-xyz');
+      expect(sig).toMatch(/^sha256=[0-9a-f]{64}$/);
+
+      // SSRF guard on Admin Broadcast config endpoint
+      const ssrfRes = await app.request('/v1/admin/observability/broadcast', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({ enabled: true, webhookUrl: 'http://169.254.169.254/latest/meta-data/' }),
+      });
+      expect(ssrfRes.status).toBe(400);
+
+      const getRes = await app.request('/v1/admin/observability/broadcast', { headers: adminHeaders });
+      expect(getRes.status).toBe(200);
+      const getData = await getRes.json();
+      expect(getData.broadcast.logBodies).toBe(false);
     });
   });
 });

@@ -6,14 +6,14 @@
 
 [![npm version](https://img.shields.io/npm/v/routenex.svg?color=blue)](https://www.npmjs.com/package/routenex)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
-[![Tests Passing](https://img.shields.io/badge/Tests-143%2F143%20Passing-emerald.svg)](https://github.com/harshil1876/RouteNex)
+[![Tests Passing](https://img.shields.io/badge/Tests-238%2F238%20Passing-emerald.svg)](https://github.com/harshil1876/RouteNex)
 [![Free Tokens](https://img.shields.io/badge/Free%20Tokens-~1.62B%2Fmonth-purple.svg)](https://github.com/harshil1876/RouteNex)
 [![Overhead](https://img.shields.io/badge/Overhead-%3C2ms%20Latency-brightgreen.svg)](https://github.com/harshil1876/RouteNex)
 [![OpenAI Compatible](https://img.shields.io/badge/API-OpenAI%20%26%20Anthropic%20Compatible-black.svg)](https://github.com/harshil1876/RouteNex)
 [![MCP Protocol](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20(MCP)-orange.svg)](https://github.com/harshil1876/RouteNex)
 
 > **One API. Your provider keys. Zero proxy markups.**  
-> Aggregate over **1.6 Billion free tokens per month**, survive provider rate limits with **3-layer resilience**, compress prompt bloat by **30–55%** with LexiPack, and connect **Cursor, Claude Code, Cline, or any OpenAI client** in 30 seconds.
+> Aggregate **279+ providers** and over **1.6 Billion free tokens per month**, survive rate limits with **3-layer streaming failover**, enforce **OpenRouter-compatible ZDR & provider preferences**, stream telemetry via **OpenTelemetry & Langfuse Broadcast**, compress prompt bloat by **30–55%** with LexiPack, and connect **Claude Code, Codex CLI, OpenCode, Cursor, Cline, Aider, or Continue** with one command.
 
 ---
 
@@ -71,7 +71,7 @@ npx routenex
  | |_) / _ \| | | | __/ _ \  \| |/ _ \ \/ /
  |  _ < (_) | |_| | ||  __/ |\  |  __/>  < 
  |_| \_\___/ \__,_|\__\___|_| \_|\___/_/\_\
- Open-Source AI Gateway • MIT/Apache-2.0 • v0.2.0
+ Open-Source AI Gateway • MIT/Apache-2.0 • v0.3.0
 
 ┌────────────────────────────────────────────────────────────────────────┐
 │  ✨ RouteNex Open-Source Local Gateway Console                         │
@@ -141,10 +141,25 @@ curl http://127.0.0.1:3001/v1/chat/completions \
 
 ## 🤖 Coding Agent Integrations
 
-Connect RouteNex to your favorite coding tools in seconds.
+Connect RouteNex to your favorite coding agents in **one command** — RouteNex automatically detects your config, creates a safe `*.routenex.bak` backup, and writes the gateway settings:
 
-### 1. Claude Code
-Launch Claude Code with RouteNex injected per-process with zero modification to your shell profile:
+```bash
+# Check installation & connection status across all supported CLI agents
+npx routenex setup status
+
+# One-click auto-configure (creates *.routenex.bak before writing)
+npx routenex setup claude --model combo/free-unlimited
+npx routenex setup codex --model combo/coding-power
+npx routenex setup opencode --model combo/free-unlimited
+npx routenex setup aider --model combo/coding-power
+npx routenex setup continue --model combo/free-unlimited
+
+# Restore original config at any time
+npx routenex restore claude
+```
+
+### 1. Claude Code (Full Native Anthropic `/v1/messages` + `/v1/messages/count_tokens` + Streaming Tool Calls)
+Launch Claude Code with RouteNex injected per-process or auto-configured via `routenex setup claude`:
 ```bash
 npx routenex run claude --model auto
 ```
@@ -512,16 +527,51 @@ sudo systemctl enable --now routenex
 
 ---
 
+## 🌐 Global Platform Capabilities (v0.3.0)
+
+RouteNex v0.3.0 delivers full parity with cloud routing platforms while staying **100% open-source, self-hostable, and zero-markup**:
+
+### OpenRouter-Compatible Routing Preferences & Strict ZDR
+Pass fine-grained routing controls directly in any OpenAI-compatible request:
+```json
+{
+  "model": "auto",
+  "messages": [{"role": "user", "content": "Audit this deployment manifest"}],
+  "session_id": "conv_abc123",
+  "provider": {
+    "only": ["anthropic", "openai", "groq"],
+    "ignore": ["pollinations"],
+    "order": ["groq", "anthropic"],
+    "data_collection": "deny",
+    "zdr": true,
+    "allow_fallbacks": false,
+    "max_price": { "prompt": 3.0, "completion": 15.0 }
+  }
+}
+```
+* **Strict Zero Data Retention (`zdr: true` / `data_collection: "deny"`)**: Filters out non-ZDR hosts deterministically and reports exact rejection reasons in `/v1/router/explain`.
+* **Live EWMA Latency & Prompt-Cache Stickiness**: Continuously scores upstream providers via exponential weighted moving averages and pins multi-turn sessions (`session_id`) to warm providers within a 10-minute cache window.
+* **Streaming Combo Failover**: Awaits initial SSE chunks before streaming begins so 401/403/404/429/503 failures immediately fail over to the next model in your Combo.
+* **Full Protocol Parity**: OpenAI `/v1/chat/completions`, Streaming `/v1/responses` (SSE), Live Upstream `/v1/embeddings`, Native Anthropic `/v1/messages` + `/v1/messages/count_tokens` + parallel streaming tool calls, and MCP stdio/HTTP.
+
+### Observability Broadcast (OpenTelemetry, Langfuse & Signed Webhooks) & Live Rankings
+* **Zero-Code Broadcast (`GET/POST /v1/admin/observability/broadcast`)**: Automatically exports generation telemetry and nested **NexWorker + Action Shield** trace spans to **OTLP HTTP** (`OTEL_EXPORTER_OTLP_ENDPOINT`), **Langfuse** (`LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY`), or **HMAC-SHA256 signed webhooks**. Prompt/completion bodies are **never exported by default** (`logBodies: false`).
+* **Automated `models.dev` Pricing & Capability Sync (`POST /v1/admin/catalog/sync-models-dev`)**: Pulls live context limits, pricing, vision, and tool-calling metadata directly into your local catalog.
+* **Live Traffic Rankings & Provider Health (`GET /v1/rankings`, `GET /v1/providers/health`)**: Real-time P50/P90/P99 latency, token volume share, success rate, and circuit breaker states.
+* **Real OAuth 2.0 PKCE (RFC 7636 S256) & Serialized Token Refresh**: Encrypted `refresh_token` persistence with concurrency-safe token refresh (`POST /v1/admin/providers/:id/oauth/refresh`).
+
+---
+
 ## 🔒 Security & Anti-Crash Hardening
 
-RouteNex is engineered with strict production defense-in-depth:
+RouteNex v0.3.0 is engineered with strict production defense-in-depth:
 
-* **OWASP Security Headers**: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block`.
-* **SSRF Protection**: Strictly blocks private loopbacks and cloud metadata endpoints (`169.254.169.254`, AWS/GCP instance metadata).
-* **10MB Request Body Guard**: Rejects oversized payloads with HTTP 413 to prevent memory exhaustion under DDoS.
-* **Timing-Safe Key Comparison**: Uses `crypto.timingSafeEqual` to prevent side-channel timing attacks on authentication tokens.
-* **Brute-Force Protection**: Enforces rate limiting on admin authentication endpoints (HTTP 429 after 10 failed guesses).
-* **Zero Secret Leakage**: API keys are masked in API outputs and never written to stdout or logs.
+* **Zero Hardcoded Backdoors & 24h Session TTL**: Configuring `ROUTENEX_ADMIN_PASSWORD` or `setAdminToken()` strictly disables default dev credentials; logout (`DELETE /v1/admin/auth/session`) immediately revokes server tokens.
+* **Authenticated Secret Protection**: OAuth status, refresh, and CLI-token endpoints strictly require admin authentication; all HTML callbacks escape user input and restrict `postMessage` to same-origin without leaking raw tokens.
+* **IPv6 & Cloud Metadata SSRF Defense**: Blocks IPv4 private subnets, CGNAT (`100.64.0.0/10`), cloud metadata (`169.254.169.254`), bracketed IPv6 (`[::1]`, `[fe80::*]`, `[fc00::*]`), and IPv4-mapped IPv6 (`[::ffff:169.254.169.254]`).
+* **Shell-Free Browser Launching & Path Containment**: Uses `spawn(..., { shell: false })` with protocol allowlisting and strictly confines CLI config writers to the user's home directory.
+* **Multi-Tenant Cache Isolation & Durable Virtual Key Enforcement**: Enforces per-key `rateLimitRpm`, `spendLimitUsd`, `dailyBudgetUsd`, and `rolling5hBudgetUsd` with tenant-isolated response caching.
+* **Timing-Safe Auth & Proxy-Aware Rate Limiting**: Uses `crypto.timingSafeEqual` across all token checks, enforces 10MB payload limits, and only trusts `X-Forwarded-For` when `ROUTENEX_TRUST_PROXY=true`.
 
 ---
 
@@ -560,7 +610,7 @@ We welcome community contributions, bug fixes, and new provider adapters!
 2. Review our [Contributing Guidelines](CONTRIBUTING.md).
 3. Run tests before submitting a PR:
    ```bash
-   npm run test:api   # 73 Vitest integration tests
+   npm run test:api   # 238 Vitest integration & security tests
    npm run build      # Static Astro and Gateway build
    ```
 4. Open a Pull Request following our [PR Template](.github/PULL_REQUEST_TEMPLATE.md).
