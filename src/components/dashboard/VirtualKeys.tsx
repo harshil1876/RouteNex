@@ -42,11 +42,22 @@ export default function VirtualKeys() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const getAdminHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'routenex-admin' : 'routenex-admin';
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      'x-admin-token': token,
+    };
+  };
+
   // Poll current keys and combos from gateway
   useEffect(() => {
     async function loadData() {
       try {
-        const configRes = await fetch('http://127.0.0.1:3001/v1/admin/config');
+        const configRes = await fetch('http://127.0.0.1:3001/v1/admin/config', {
+          headers: getAdminHeaders(),
+        });
         if (configRes.ok) {
           const data = await configRes.json();
           if (data.virtualKeys) {
@@ -80,7 +91,7 @@ export default function VirtualKeys() {
     try {
       const res = await fetch('http://127.0.0.1:3001/v1/admin/keys', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminHeaders(),
         body: JSON.stringify(payload),
       });
       if (res.ok) {
@@ -100,30 +111,12 @@ export default function VirtualKeys() {
         setNewKeyName('');
         setNewRolling5hBudget('');
         setNewDailyBudget('');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+        }
       }
     } catch {
-      // Offline fallback simulation
-      const mockKey = `rn-local-${Math.random().toString(36).slice(2, 10)}${Date.now()}`;
-      setKeys((prev) => [
-        {
-          id: `vk_${Date.now()}`,
-          name: newKeyName.trim(),
-          keyMasked: `${mockKey.slice(0, 12)}...${mockKey.slice(-4)}`,
-          keyFull: mockKey,
-          createdAt: new Date().toISOString(),
-          rateLimitRpm: newKeyRpm,
-          defaultCombo: newDefaultCombo || undefined,
-          rolling5hBudgetUsd: newRolling5hBudget ? Number(newRolling5hBudget) : undefined,
-          dailyBudgetUsd: newDailyBudget ? Number(newDailyBudget) : undefined,
-        },
-        ...prev,
-      ]);
-      setNewKeyName('');
-      setNewRolling5hBudget('');
-      setNewDailyBudget('');
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('routenex:state-changed'));
-      }
+      // Gateway offline
     } finally {
       setIsGenerating(false);
     }
@@ -131,9 +124,14 @@ export default function VirtualKeys() {
 
   const handleDelete = async (id: string) => {
     try {
-      await fetch(`http://127.0.0.1:3001/v1/admin/keys/${id}`, { method: 'DELETE' });
+      const res = await fetch(`http://127.0.0.1:3001/v1/admin/keys/${id}`, {
+        method: 'DELETE',
+        headers: getAdminHeaders(),
+      });
+      if (res.ok) {
+        setKeys((prev) => prev.filter((k) => k.id !== id));
+      }
     } catch {}
-    setKeys((prev) => prev.filter((k) => k.id !== id));
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('routenex:state-changed'));
     }

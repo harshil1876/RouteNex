@@ -94,7 +94,7 @@ export function createApp(appConfig: AppConfig = config) {
     cors({
       origin: '*',
       allowHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-admin-token', 'anthropic-api-key', 'x-auth-token'],
-      allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       exposeHeaders: ['Retry-After'],
     })
   );

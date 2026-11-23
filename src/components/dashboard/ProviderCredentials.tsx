@@ -422,12 +422,40 @@ export default function ProviderCredentials({
     } catch {}
   };
 
-  // Add custom OpenAI / Anthropic compatible endpoint
-  const handleSaveCustomProvider = (e: React.FormEvent) => {
+  // Add custom OpenAI / Anthropic compatible endpoint (persisted to gateway)
+  const handleSaveCustomProvider = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customName.trim() || !customBaseUrl.trim()) return;
 
     const id = `custom-${customName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'routenex-admin' : 'routenex-admin';
+
+    try {
+      const res = await fetch('http://127.0.0.1:3001/v1/admin/providers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'x-admin-token': token,
+        },
+        body: JSON.stringify({
+          provider: id,
+          apiKey: customApiKey.trim() || undefined,
+          baseUrl: customBaseUrl.trim(),
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setNotification({ message: `Failed to save custom provider: ${err.error || `HTTP ${res.status}`}`, type: 'error' });
+        setTimeout(() => setNotification(null), 4000);
+        return;
+      }
+    } catch {
+      setNotification({ message: 'Gateway unreachable: could not persist custom provider.', type: 'error' });
+      setTimeout(() => setNotification(null), 4000);
+      return;
+    }
+
     const newProvider: ProviderItem = {
       id,
       name: customName.trim(),
@@ -439,7 +467,7 @@ export default function ProviderCredentials({
       modalities: ['text', 'tools'],
       isConfigured: true,
       isEnabled: true,
-      keyCount: 1,
+      keyCount: customApiKey.trim() ? 1 : 0,
       status: 'idle',
       models: [
         {
@@ -453,7 +481,7 @@ export default function ProviderCredentials({
 
     setProviders((prev) => [newProvider, ...prev]);
     setNotification({
-      message: `Added custom ${customModal?.type === 'anthropic' ? 'Anthropic' : 'OpenAI'} compatible provider '${customName}'.`,
+      message: `Saved custom ${customModal?.type === 'anthropic' ? 'Anthropic' : 'OpenAI'} compatible provider '${customName}' to encrypted keystore.`,
       type: 'success',
     });
     setCustomModal(null);
@@ -463,28 +491,64 @@ export default function ProviderCredentials({
     setTimeout(() => setNotification(null), 3500);
   };
 
-  // Import from file / text
-  const handleImportKeys = (e: React.FormEvent) => {
+  // Import from file / text (actually persists parsed keys to gateway AES-256-GCM keystore)
+  const handleImportKeys = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!importText.trim()) return;
 
-    let count = 0;
-    const lines = importText.split('\n');
-    for (const line of lines) {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('routenex_admin_token') || 'routenex-admin' : 'routenex-admin';
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      'x-admin-token': token,
+    };
+
+    const entries: Array<{ provider: string; apiKey: string }> = [];
+    for (const line of importText.split('\n')) {
       const trimmed = line.trim();
       if (!trimmed || trimmed.startsWith('#')) continue;
-      const parts = trimmed.split('=');
-      if (parts.length >= 2) {
-        count++;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx > 0) {
+        const rawKeyName = trimmed.slice(0, eqIdx).trim().toLowerCase();
+        const secretVal = trimmed.slice(eqIdx + 1).trim().replace(/^['"]|['"]$/g, '');
+        if (!secretVal) continue;
+        const providerSlug = rawKeyName
+          .replace(/_api_key$/, '')
+          .replace(/_key$/, '')
+          .replace(/_/g, '-');
+        if (providerSlug) entries.push({ provider: providerSlug, apiKey: secretVal });
       }
     }
 
+    if (entries.length === 0) {
+      setNotification({ message: 'No valid KEY=value lines found to import.', type: 'error' });
+      setTimeout(() => setNotification(null), 3500);
+      return;
+    }
+
+    let saved = 0;
+    for (const entry of entries) {
+      try {
+        const res = await fetch('http://127.0.0.1:3001/v1/admin/providers', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ provider: entry.provider, apiKey: entry.apiKey }),
+        });
+        if (res.ok) saved++;
+      } catch {}
+    }
+
     setNotification({
-      message: `Parsed & imported ${count || 1} API keys into encrypted AES-256 keystore.`,
-      type: 'success',
+      message: saved > 0
+        ? `Encrypted and saved ${saved} of ${entries.length} API keys into AES-256 keystore.`
+        : 'Failed to import keys: gateway rejected or unreachable.',
+      type: saved > 0 ? 'success' : 'error',
     });
-    setImportOpen(false);
-    setImportText('');
+    if (saved > 0) {
+      setImportOpen(false);
+      setImportText('');
+      window.dispatchEvent(new CustomEvent('routenex:state-changed'));
+    }
     setTimeout(() => setNotification(null), 4000);
   };
 

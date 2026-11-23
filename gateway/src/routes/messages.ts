@@ -513,17 +513,32 @@ export function createMessagesRoute(
 
         let blockIndex = 0;
         let textBlockStarted = false;
-        let activeToolCallIndex: number | null = null;
+        const toolCallBlockMap = new Map<number, number>();
         let hasToolCalls = false;
-        let outputTokens = 0;
+        let outputChars = 0;
+        let reportedPromptTokens: number | undefined;
+        let reportedCompletionTokens: number | undefined;
+        const estimatedInputTokens = Math.max(
+          1,
+          Math.ceil(JSON.stringify({ system, messages: rawMessages, tools: rawTools }).length / 4)
+        );
+        const streamStartTime = Date.now();
 
         try {
           for await (const chunk of generator) {
-            const delta = chunk.choices[0]?.delta;
+            if ((chunk as any).usage) {
+              if (typeof (chunk as any).usage.prompt_tokens === 'number') {
+                reportedPromptTokens = (chunk as any).usage.prompt_tokens;
+              }
+              if (typeof (chunk as any).usage.completion_tokens === 'number') {
+                reportedCompletionTokens = (chunk as any).usage.completion_tokens;
+              }
+            }
+            const delta = chunk.choices[0]?.delta as any;
             const token = delta?.content;
 
             if (token) {
-              outputTokens++;
+              outputChars += token.length;
               if (!textBlockStarted) {
                 controller.enqueue(
                   encoder.encode(
@@ -558,19 +573,16 @@ export function createMessagesRoute(
                   blockIndex++;
                 }
 
-                if (tc.id || tc.function?.name) {
-                  if (activeToolCallIndex !== null) {
-                    controller.enqueue(
-                      encoder.encode(`event: content_block_stop\ndata: ${JSON.stringify({ type: 'content_block_stop', index: blockIndex })}\n\n`)
-                    );
-                    blockIndex++;
-                  }
-                  activeToolCallIndex = blockIndex;
+                const openAiTcIdx = typeof tc.index === 'number' ? tc.index : 0;
+                let targetBlockIdx = toolCallBlockMap.get(openAiTcIdx);
+                if (targetBlockIdx === undefined) {
+                  targetBlockIdx = blockIndex++;
+                  toolCallBlockMap.set(openAiTcIdx, targetBlockIdx);
                   controller.enqueue(
                     encoder.encode(
                       `event: content_block_start\ndata: ${JSON.stringify({
                         type: 'content_block_start',
-                        index: blockIndex,
+                        index: targetBlockIdx,
                         content_block: {
                           type: 'tool_use',
                           id: tc.id || `toolu_${nanoid(16)}`,
@@ -583,12 +595,12 @@ export function createMessagesRoute(
                 }
 
                 if (tc.function?.arguments) {
-                  outputTokens++;
+                  outputChars += tc.function.arguments.length;
                   controller.enqueue(
                     encoder.encode(
                       `event: content_block_delta\ndata: ${JSON.stringify({
                         type: 'content_block_delta',
-                        index: blockIndex,
+                        index: targetBlockIdx,
                         delta: {
                           type: 'input_json_delta',
                           partial_json: tc.function.arguments,
@@ -611,13 +623,20 @@ export function createMessagesRoute(
           );
         }
 
-        // Close any active blocks
-        if (textBlockStarted || activeToolCallIndex !== null) {
+        // Close any active blocks cleanly
+        if (textBlockStarted) {
           controller.enqueue(
             encoder.encode(`event: content_block_stop\ndata: ${JSON.stringify({ type: 'content_block_stop', index: blockIndex })}\n\n`)
           );
         }
+        for (const tcBlockIdx of toolCallBlockMap.values()) {
+          controller.enqueue(
+            encoder.encode(`event: content_block_stop\ndata: ${JSON.stringify({ type: 'content_block_stop', index: tcBlockIdx })}\n\n`)
+          );
+        }
 
+        const finalInputTokens = reportedPromptTokens ?? estimatedInputTokens;
+        const finalOutputTokens = reportedCompletionTokens ?? Math.max(1, Math.ceil(outputChars / 4));
         const stopReason = hasToolCalls ? 'tool_use' : 'end_turn';
 
         // Event 4: message_delta
@@ -626,7 +645,7 @@ export function createMessagesRoute(
             `event: message_delta\ndata: ${JSON.stringify({
               type: 'message_delta',
               delta: { stop_reason: stopReason, stop_sequence: null },
-              usage: { output_tokens: Math.max(1, outputTokens) },
+              usage: { output_tokens: finalOutputTokens },
             })}\n\n`
           )
         );
@@ -634,11 +653,28 @@ export function createMessagesRoute(
         // Event 5: message_stop
         controller.enqueue(encoder.encode(`event: message_stop\ndata: ${JSON.stringify({ type: 'message_stop' })}\n\n`));
 
-        // Record virtual key spend for completed stream
-        const streamCost = engine.calculateCost(modelEntry, { prompt_tokens: 15, completion_tokens: Math.max(1, outputTokens), total_tokens: 15 + Math.max(1, outputTokens) });
+        // Record accurate virtual key spend & log request into telemetry store
+        const streamUsage = {
+          prompt_tokens: finalInputTokens,
+          completion_tokens: finalOutputTokens,
+          total_tokens: finalInputTokens + finalOutputTokens,
+        };
+        const streamCost = engine.calculateCost(modelEntry, streamUsage);
         if (virtualKey?.id && typeof streamCost?.total_usd === 'number' && adminStore) {
           adminStore.recordKeySpend(virtualKey.id, streamCost.total_usd);
         }
+        store.logRequest({
+          request_id: requestId,
+          timestamp: new Date().toISOString(),
+          model_requested: model,
+          model_used: modelUsed,
+          provider,
+          latency_ms: Math.max(1, Date.now() - streamStartTime),
+          status: 'success',
+          token_usage: streamUsage,
+          cost_estimate: streamCost,
+          routing_reason: reason,
+        });
 
         controller.close();
       },

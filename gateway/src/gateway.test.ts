@@ -790,8 +790,10 @@ describe('Open Source Admin API & Virtual Keys', () => {
     expect(startBody.authUrl).toContain('accounts.google.com');
     expect(startBody.authUrl).toContain('code_challenge=');
 
-    // 2. Check status before completion
-    const preStatusRes = await app.request('/v1/admin/providers/antigravity-cli/oauth/status');
+    // 2. Check status before completion (requires admin auth)
+    const preStatusRes = await app.request('/v1/admin/providers/antigravity-cli/oauth/status', {
+      headers: { 'x-admin-token': 'routenex-admin' },
+    });
     expect(preStatusRes.status).toBe(200);
     const preStatus = await preStatusRes.json();
     expect(preStatus.providerId).toBe('antigravity-cli');
@@ -806,15 +808,19 @@ describe('Open Source Admin API & Virtual Keys', () => {
     const cbBody = await cbRes.json();
     expect(cbBody.success).toBe(true);
 
-    // 4. Check status after completion
-    const postStatusRes = await app.request('/v1/admin/providers/antigravity-cli/oauth/status');
+    // 4. Check status after completion (requires admin auth)
+    const postStatusRes = await app.request('/v1/admin/providers/antigravity-cli/oauth/status', {
+      headers: { 'x-admin-token': 'routenex-admin' },
+    });
     expect(postStatusRes.status).toBe(200);
     const postStatus = await postStatusRes.json();
     expect(postStatus.authenticated).toBe(true);
     expect(postStatus.token).toContain('ya29.rn_antigravity-cli_');
 
-    // 5. Check cli-token endpoint
-    const cliRes = await app.request('/v1/admin/providers/antigravity-cli/cli-token');
+    // 5. Check cli-token endpoint (requires admin auth)
+    const cliRes = await app.request('/v1/admin/providers/antigravity-cli/cli-token', {
+      headers: { 'x-admin-token': 'routenex-admin' },
+    });
     expect(cliRes.status).toBe(200);
     const cliBody = await cliRes.json();
     expect(cliBody.found).toBe(true);

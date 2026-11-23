@@ -130,12 +130,13 @@ export default function RequestLog() {
     }
   };
 
-  // Fetch live requests from gateway database
+  // Fetch live requests from gateway database (honors Live Recording / Paused toggle)
   useEffect(() => {
     fetchLiveRequests();
+    if (!isRecording) return;
     const interval = setInterval(fetchLiveRequests, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isRecording]);
 
   const handleSendTestPulse = async () => {
     setIsSendingPulse(true);

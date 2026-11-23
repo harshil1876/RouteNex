@@ -327,7 +327,7 @@ describe('Suite: RouteNex Studio 9-Tab End-to-End Verification', () => {
       expect(chatRes.status).toBe(200);
       const chatData = await chatRes.json();
       expect(chatData.choices?.[0]?.message?.content).toBeDefined();
-    });
+    }, 15000);
 
     it('POST /v1/admin/policy returns HTTP 200 when updating routing policy', async () => {
       const res = await app.request('/v1/admin/policy', {

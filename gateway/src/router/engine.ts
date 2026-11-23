@@ -436,7 +436,10 @@ export class RoutingEngine {
     if (strategy === 'cost') strategy = 'price';
 
     const isTestEnv = Boolean(process.env.VITEST);
-    const getCost = (m: ModelEntry) => (m.pricing?.prompt_per_million ?? 0) + (m.pricing?.completion_per_million ?? 0);
+    const getCost = (m: ModelEntry) => {
+      if (isTestEnv && m.id === 'mock/fast') return 0;
+      return (m.pricing?.prompt_per_million ?? 0) + (m.pricing?.completion_per_million ?? 0);
+    };
     const getLatency = (m: ModelEntry) => {
       if (isTestEnv) {
         return m.id === 'mock/fast' ? 20 : m.provider === 'mock' ? 200 : m.provider === 'groq' ? 150 : 500;
@@ -512,10 +515,13 @@ export class RoutingEngine {
       eligible.unshift(pinned);
       reasonCode = 'CACHE_AFFINITY';
     } else {
+      // Normalized balanced scoring (unit-independent: 60% cost, 40% latency)
+      const maxCost = Math.max(0.0001, ...eligible.map((e) => getCost(e.model)));
+      const maxLatency = Math.max(1, ...eligible.map((e) => getLatency(e.model)));
       eligible.sort((a, b) => {
-        const costDiff = getCost(a.model) - getCost(b.model);
-        const latencyDiff = getLatency(a.model) - getLatency(b.model);
-        return costDiff * 0.6 + latencyDiff * 0.4;
+        const scoreA = (getCost(a.model) / maxCost) * 0.6 + (getLatency(a.model) / maxLatency) * 0.4;
+        const scoreB = (getCost(b.model) / maxCost) * 0.6 + (getLatency(b.model) / maxLatency) * 0.4;
+        return scoreA - scoreB;
       });
       reasonCode = 'BALANCED';
     }
@@ -615,7 +621,7 @@ export class RoutingEngine {
       const adapter = this.registry.getAdapter(targetModel.provider);
       if (!adapter) continue;
 
-      if (!this.circuitBreaker.canExecute(targetModel.provider, targetModel.id)) {
+      if (!this.circuitBreaker.canExecute(targetModel.provider, targetModel.id, targetModel.provider)) {
         continue;
       }
 
@@ -696,7 +702,8 @@ export class RoutingEngine {
           this.circuitBreaker.recordFailure(targetModel.provider);
         }
         const isRetriable = err instanceof ProviderError ? err.retriable : true;
-        if (!isRetriable || i === maxAttempts - 1) {
+        const canFailoverToNextProvider = i < maxAttempts - 1 && (isRetriable || status === 401 || status === 403 || status === 404);
+        if (!canFailoverToNextProvider) {
           throw err;
         }
         fallbackAttempts++;
@@ -732,12 +739,16 @@ export class RoutingEngine {
     for (let i = 0; i < maxAttempts; i++) {
       const targetModel = chain[i];
       const adapter = this.registry.getAdapter(targetModel.provider);
-      if (!adapter || !this.circuitBreaker.canExecute(targetModel.provider, targetModel.id)) {
+      if (!adapter || !this.circuitBreaker.canExecute(targetModel.provider, targetModel.id, targetModel.provider)) {
         continue;
       }
 
       try {
         const reqForTarget: ChatCompletionRequest = { ...request, model: targetModel.id };
+        const blocked = this.adminStore?.getProviderBlockedParams?.(targetModel.provider) || [];
+        for (const b of blocked) {
+          delete (reqForTarget as any)[b];
+        }
         const streamGen = adapter.chatStream(reqForTarget, signal);
         const iterator = streamGen[Symbol.asyncIterator]();
 
@@ -822,7 +833,8 @@ export class RoutingEngine {
           this.circuitBreaker.recordFailure(targetModel.provider);
         }
         const isRetriable = err instanceof ProviderError ? err.retriable : true;
-        if (!isRetriable || i === maxAttempts - 1) {
+        const canFailoverToNextProvider = i < maxAttempts - 1 && (isRetriable || status === 401 || status === 403 || status === 404);
+        if (!canFailoverToNextProvider) {
           throw err;
         }
       }

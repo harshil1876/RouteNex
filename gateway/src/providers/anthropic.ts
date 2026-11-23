@@ -95,13 +95,14 @@ export class AnthropicProviderAdapter implements IProviderAdapter {
   }
 
   /**
-   * Translates OpenAI chat messages to Anthropic's expected system + messages format.
+   * Translates OpenAI chat messages (including tools, tool_calls, and tool results)
+   * to Anthropic's native Messages API format.
    */
   private translatePayload(request: ChatCompletionRequest, stream: boolean) {
     let systemPrompt: string | undefined = undefined;
     const anthropicMessages: Array<{ role: 'user' | 'assistant'; content: string | any[] }> = [];
 
-    for (const msg of request.messages) {
+    for (const msg of request.messages as any[]) {
       const contentStr = typeof msg.content === 'string'
         ? msg.content
         : Array.isArray(msg.content)
@@ -109,6 +110,39 @@ export class AnthropicProviderAdapter implements IProviderAdapter {
           : '';
       if (msg.role === 'system') {
         systemPrompt = systemPrompt ? `${systemPrompt}\n\n${contentStr}` : contentStr;
+      } else if (msg.role === 'tool') {
+        anthropicMessages.push({
+          role: 'user',
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: msg.tool_call_id || `toolu_${Date.now()}`,
+              content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content ?? ''),
+            },
+          ],
+        });
+      } else if (msg.role === 'assistant' && Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0) {
+        const blocks: any[] = [];
+        if (contentStr.trim()) {
+          blocks.push({ type: 'text', text: contentStr });
+        }
+        for (const tc of msg.tool_calls) {
+          let parsedInput: any = {};
+          try {
+            parsedInput = typeof tc.function?.arguments === 'string'
+              ? JSON.parse(tc.function.arguments)
+              : (tc.function?.arguments || {});
+          } catch {
+            parsedInput = { raw: tc.function?.arguments || '' };
+          }
+          blocks.push({
+            type: 'tool_use',
+            id: tc.id || `toolu_${Date.now()}`,
+            name: tc.function?.name || 'tool',
+            input: parsedInput,
+          });
+        }
+        anthropicMessages.push({ role: 'assistant', content: blocks });
       } else if (msg.role === 'user' || msg.role === 'assistant') {
         anthropicMessages.push({
           role: msg.role,
@@ -122,6 +156,23 @@ export class AnthropicProviderAdapter implements IProviderAdapter {
       anthropicMessages.push({ role: 'user', content: 'Hello' });
     }
 
+    const anthropicTools = Array.isArray(request.tools) && request.tools.length > 0
+      ? request.tools.map((t: any) => ({
+          name: t.function?.name || t.name,
+          description: t.function?.description || t.description || '',
+          input_schema: t.function?.parameters || t.input_schema || { type: 'object', properties: {} },
+        }))
+      : undefined;
+
+    let anthropicToolChoice: any = undefined;
+    if (request.tool_choice) {
+      if (request.tool_choice === 'auto') anthropicToolChoice = { type: 'auto' };
+      else if (request.tool_choice === 'required') anthropicToolChoice = { type: 'any' };
+      else if (typeof request.tool_choice === 'object' && (request.tool_choice as any).function?.name) {
+        anthropicToolChoice = { type: 'tool', name: (request.tool_choice as any).function.name };
+      }
+    }
+
     return {
       model: this.resolveModelName(request.model),
       system: systemPrompt,
@@ -129,6 +180,8 @@ export class AnthropicProviderAdapter implements IProviderAdapter {
       max_tokens: request.max_tokens || 4096,
       temperature: request.temperature,
       top_p: request.top_p,
+      ...(anthropicTools ? { tools: anthropicTools } : {}),
+      ...(anthropicToolChoice ? { tool_choice: anthropicToolChoice } : {}),
       stream,
     };
   }
@@ -165,12 +218,27 @@ export class AnthropicProviderAdapter implements IProviderAdapter {
 
       const data = (await response.json()) as any;
 
-      // Extract text content from Anthropic content blocks
+      // Extract text content and tool_use blocks from Anthropic content blocks
       const textContent = Array.isArray(data.content)
         ? data.content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join('')
         : '';
 
-      const finishReason = data.stop_reason === 'end_turn'
+      const toolCalls = Array.isArray(data.content)
+        ? data.content
+            .filter((c: any) => c.type === 'tool_use')
+            .map((c: any) => ({
+              id: c.id || `call_${Date.now()}`,
+              type: 'function' as const,
+              function: {
+                name: c.name,
+                arguments: typeof c.input === 'string' ? c.input : JSON.stringify(c.input || {}),
+              },
+            }))
+        : [];
+
+      const finishReason = data.stop_reason === 'tool_use' || toolCalls.length > 0
+        ? 'tool_calls'
+        : data.stop_reason === 'end_turn'
         ? 'stop'
         : data.stop_reason === 'max_tokens'
         ? 'length'
@@ -186,7 +254,8 @@ export class AnthropicProviderAdapter implements IProviderAdapter {
             index: 0,
             message: {
               role: 'assistant',
-              content: textContent,
+              content: textContent || (toolCalls.length > 0 ? null : ''),
+              ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : {}),
             },
             finish_reason: finishReason,
           },

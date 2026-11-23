@@ -336,11 +336,21 @@ export class ProviderRegistry {
   }
 
   /**
-   * Returns available model entries.
+   * Returns available model entries (deduplicated by model ID across alias adapter keys).
    */
   getAllModels(configuredOnly = false): ModelEntry[] {
     const list = configuredOnly ? this.getConfiguredAdapters() : Array.from(this.adapters.values());
-    return list.flatMap((a) => a.models);
+    const seen = new Set<string>();
+    const result: ModelEntry[] = [];
+    for (const adapter of list) {
+      for (const m of adapter.models) {
+        if (!seen.has(m.id)) {
+          seen.add(m.id);
+          result.push(m);
+        }
+      }
+    }
+    return result;
   }
 
   /**

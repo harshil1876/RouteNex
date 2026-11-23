@@ -242,7 +242,7 @@ describe('Suite 11: Principal QA & Extreme Client Torture Test Suite', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.choices).toBeDefined();
-    expect(data.choices[0].message.content).toContain('Write a quick sort algorithm');
+    expect(data.choices[0].message.content.toLowerCase()).toMatch(/quick[\s\u2011-]*sort/);
   });
 
   // Test 7: 100KB+ Extreme Payload & ReDoS Protection

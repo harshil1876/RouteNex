@@ -36,10 +36,11 @@ export function createRateLimitMiddleware(
       return next();
     }
 
-    const forwarded = c.req.header('x-forwarded-for');
+    const trustProxy = process.env.ROUTENEX_TRUST_PROXY === 'true';
+    const forwarded = trustProxy ? c.req.header('x-forwarded-for') : undefined;
     const ip =
       forwarded?.split(',')[0].trim() ||
-      c.req.header('x-real-ip') ||
+      (trustProxy ? c.req.header('x-real-ip') : undefined) ||
       '127.0.0.1';
 
     const now = Date.now();

@@ -3,6 +3,8 @@ import crypto from 'node:crypto';
 import { createApp } from './server.js';
 import { AdminStore } from './storage/admin-store.js';
 import { encryptValue, decryptValue } from './storage/crypto.js';
+import { validateSafeUrl } from './utils/security.js';
+import { PromptCompressor } from './router/compression.js';
 import type { AppConfig } from './config.js';
 
 const testConfig: AppConfig = {
@@ -162,5 +164,57 @@ describe('Suite 4: Security, Encryption & Hardened Keystore', () => {
     expect(data.authUrl).toContain('code_challenge_method=S256');
     expect(data.authUrl).toContain('code_challenge=');
     expect(data.authUrl).toContain('response_type=code');
+  });
+
+  // 8. Phase 1 Hardening: Bracketed IPv6 & CGNAT SSRF blocking
+  it('SSRF Guard: blocks IPv6 loopback, link-local, unique-local, IPv4-mapped metadata, and CGNAT', () => {
+    expect(validateSafeUrl('http://[::1]:3001/v1').safe).toBe(false);
+    expect(validateSafeUrl('http://[fe80::1]/').safe).toBe(false);
+    expect(validateSafeUrl('http://[fc00::1]/').safe).toBe(false);
+    expect(validateSafeUrl('http://[::ffff:169.254.169.254]/latest/meta-data/').safe).toBe(false);
+    expect(validateSafeUrl('http://100.64.0.1/internal').safe).toBe(false);
+    expect(validateSafeUrl('https://api.openai.com/v1').safe).toBe(true);
+  });
+
+  // 9. Phase 1 Hardening: /oauth/status and /cli-token require admin auth
+  it('Secret Protection: rejects unauthenticated /oauth/status and /cli-token with 401', async () => {
+    const { app } = createApp(testConfig);
+    const statusRes = await app.request('/v1/admin/providers/antigravity-cli/oauth/status');
+    expect(statusRes.status).toBe(401);
+
+    const cliTokenRes = await app.request('/v1/admin/providers/routenex/cli-token');
+    expect(cliTokenRes.status).toBe(401);
+  });
+
+  // 10. Phase 1 Hardening: Custom ROUTENEX_ADMIN_PASSWORD disables default routenex-admin backdoor
+  it('Admin Backdoor Removed: rejects routenex-admin when custom ROUTENEX_ADMIN_PASSWORD is set', async () => {
+    const prev = process.env.ROUTENEX_ADMIN_PASSWORD;
+    process.env.ROUTENEX_ADMIN_PASSWORD = 'super-strong-prod-password-999';
+    try {
+      const { app } = createApp(testConfig);
+      const backdoorRes = await app.request('/v1/admin/config', {
+        headers: { 'x-admin-token': 'routenex-admin' },
+      });
+      expect(backdoorRes.status).toBe(401);
+
+      const validRes = await app.request('/v1/admin/config', {
+        headers: { 'x-admin-token': 'super-strong-prod-password-999' },
+      });
+      expect(validRes.status).toBe(200);
+    } finally {
+      if (prev === undefined) delete process.env.ROUTENEX_ADMIN_PASSWORD;
+      else process.env.ROUTENEX_ADMIN_PASSWORD = prev;
+    }
+  });
+
+  // 11. Phase 1 Hardening: PromptCompressor preserves $&, $$, $1 inside code blocks verbatim
+  it('PromptCompressor: preserves special regex replacement tokens ($&, $$, $1) in code blocks', () => {
+    const codeMsg = 'Check this:\n```js\nconst out = str.replace(/foo/, "$& $$ $1");\n```';
+    const result = PromptCompressor.compressMessages(
+      [{ role: 'user', content: codeMsg }],
+      { stage4LexiPack: true }
+    );
+    const content = typeof result.messages[0].content === 'string' ? result.messages[0].content : '';
+    expect(content).toContain('"$& $$ $1"');
   });
 });

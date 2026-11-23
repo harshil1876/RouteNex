@@ -261,9 +261,9 @@ export class PromptCompressor {
 
   private static restoreGuards(text: string, guards: string[]): string {
     let restored = text;
-    // Restore in reverse order to preserve indexing
+    // Restore in reverse order using function replacer so $&, $$, $1, $' in code blocks are preserved verbatim
     for (let i = guards.length - 1; i >= 0; i--) {
-      restored = restored.replaceAll(`__RN_GUARD_${i}__`, guards[i]);
+      restored = restored.replaceAll(`__RN_GUARD_${i}__`, () => guards[i]);
     }
     return restored;
   }

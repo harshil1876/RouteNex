@@ -23,6 +23,20 @@ import { normalizeProviderId, type ProviderRegistry } from '../providers/registr
 import catalogData from '../providers/catalog.js';
 import { AdminStore } from '../storage/admin-store.js';
 import { resolveOAuthCred } from '../providers/oauth-creds.js';
+import { validateSafeUrl, timingSafeEqualStr } from '../utils/security.js';
+
+function escapeHtml(input: string): string {
+  return String(input ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function pkceChallengeS256(verifier: string): string {
+  return crypto.createHash('sha256').update(verifier).digest('base64url');
+}
 
 const pkceStore = new Map<string, { verifier: string; providerId: string; createdAt: number }>();
 
@@ -171,13 +185,10 @@ export function createAdminRoutes(
 
     const body = await c.req.json().catch(() => ({}));
     const token = (body.token || body.password || '').trim();
-    const defaultPassword = process.env.ROUTENEX_ADMIN_PASSWORD || 'routenex-admin';
 
     const isValid =
-      safeCompare(token, defaultPassword) ||
-      safeCompare(token, 'routenex-admin') ||
       adminStore.verifyAdminToken(token) ||
-      (config.apiKey && safeCompare(token, config.apiKey));
+      Boolean(config.apiKey && safeCompare(token, config.apiKey));
 
     if (!isValid) {
       globalFailedAttempts++;
@@ -208,10 +219,20 @@ export function createAdminRoutes(
   router.post('/auth/login', handleAdminLogin);
   router.post('/auth/session', handleAdminLogin);
 
-  // 1b. DELETE /v1/admin/auth/session - Lock admin session immediately
+  // 1b. DELETE /v1/admin/auth/session - Lock admin session immediately and revoke server token
   router.delete('/auth/session', (c) => {
+    const authHeader = c.req.header('authorization');
+    const xAdmin = c.req.header('x-admin-token');
+    const cookieHeader = c.req.header('cookie');
+    const cookieSession = cookieHeader?.match(/(?:^|;\s*)routenex_admin_session=([^;]*)/)?.[1];
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.slice(7).trim()
+      : (xAdmin || (cookieSession ? decodeURIComponent(cookieSession) : ''));
+    if (token) {
+      adminStore.revokeSessionToken(token);
+    }
     c.header('Set-Cookie', 'routenex_admin_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
-    return c.json({ success: true, locked: true, message: 'Admin session locked.' });
+    return c.json({ success: true, locked: true, message: 'Admin session locked and revoked.' });
   });
 
   // 2. GET /v1/admin/auth/verify - Verify current session token
@@ -220,9 +241,9 @@ export function createAdminRoutes(
     const xAdmin = c.req.header('x-admin-token');
     const cookieHeader = c.req.header('cookie');
     const cookieSession = cookieHeader?.match(/(?:^|;\s*)routenex_admin_session=([^;]*)/)?.[1];
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : (xAdmin || cookieSession || '');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : (xAdmin || (cookieSession ? decodeURIComponent(cookieSession) : '') || '');
 
-    const isValid = adminStore.verifyAdminToken(token) || (config.apiKey && token === config.apiKey);
+    const isValid = adminStore.verifyAdminToken(token) || Boolean(config.apiKey && timingSafeEqualStr(token, config.apiKey));
     return c.json({ authenticated: Boolean(isValid) });
   });
 
@@ -327,6 +348,15 @@ export function createAdminRoutes(
 
     if (!provider) {
       return c.json({ error: 'Missing provider identifier' }, 400);
+    }
+
+    // SSRF validation on custom upstream baseUrl
+    if (baseUrl && typeof baseUrl === 'string' && baseUrl.trim().length > 0) {
+      const allowLocal = provider === 'ollama' || provider === 'lmstudio' || provider === 'vllm' || provider === 'local';
+      const urlCheck = validateSafeUrl(baseUrl.trim(), allowLocal);
+      if (!urlCheck.safe) {
+        return c.json({ error: `Invalid or unsafe baseUrl: ${urlCheck.reason}` }, 400);
+      }
     }
 
     // Preserve existing secret key if incoming value is a masked string
@@ -642,7 +672,7 @@ export function createAdminRoutes(
     }
 
     const verifier = `rn_pkce_${nanoid(32)}`;
-    const challenge = hashToken(verifier);
+    const challenge = pkceChallengeS256(verifier);
     const state = `state_${Date.now()}_${nanoid(8)}`;
     const redirectUri = resolveOAuthRedirectUri(c, config, providerId);
 
@@ -1029,6 +1059,22 @@ export function createAdminRoutes(
     registry.configureProviderKey(providerId, accessToken);
 
     if (c.req.method === 'GET') {
+      const safeProviderId = escapeHtml(providerId);
+      const safeEmail = escapeHtml(email || '');
+      const safeTokenPreview = escapeHtml(`${accessToken.slice(0, 10)}...`);
+      const payloadJson = JSON.stringify({
+        type: 'routenex:oauth-success',
+        providerId,
+        provider: providerId,
+        email,
+      }).replace(/</g, '\\u003c');
+      const legacyPayloadJson = JSON.stringify({
+        type: 'ROUTENEX_OAUTH_SUCCESS',
+        providerId,
+        provider: providerId,
+        email,
+      }).replace(/</g, '\\u003c');
+
       return c.html(`
         <!DOCTYPE html>
         <html>
@@ -1040,26 +1086,15 @@ export function createAdminRoutes(
             <div style="text-align:center;padding:32px;border:1px solid #27272a;border-radius:16px;background:#111113;max-width:440px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);">
               <div style="width:40px;height:40px;border-radius:50%;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#10b981;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:20px;">✓</div>
               <h2 style="color:#f4f4f5;margin:0 0 10px 0;font-size:18px;font-weight:600;">Account Connected Successfully</h2>
-              <p style="color:#a1a1aa;font-size:13px;margin:0 0 16px 0;line-height:1.5;">OAuth session for <strong style="color:#38bdf8;">${providerId}</strong> (${email}) has been encrypted and saved to RouteNex Keystore.</p>
-              <div style="display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#18181b;padding:6px 12px;border-radius:6px;border:1px solid #27272a;color:#10b981;font-size:12px;">${accessToken.slice(0, 14)}...</div>
+              <p style="color:#a1a1aa;font-size:13px;margin:0 0 16px 0;line-height:1.5;">OAuth session for <strong style="color:#38bdf8;">${safeProviderId}</strong> (${safeEmail}) has been encrypted and saved to RouteNex Keystore.</p>
+              <div style="display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#18181b;padding:6px 12px;border-radius:6px;border:1px solid #27272a;color:#10b981;font-size:12px;">${safeTokenPreview}</div>
               <p style="margin-top:16px;font-size:12px;color:#71717a;">Closing window and updating RouteNex Studio...</p>
             </div>
             <script>
               if (window.opener) {
-                window.opener.postMessage({
-                  type: 'routenex:oauth-success',
-                  providerId: '${providerId}',
-                  provider: '${providerId}',
-                  token: '${accessToken}',
-                  email: '${email}'
-                }, '*');
-                window.opener.postMessage({
-                  type: 'ROUTENEX_OAUTH_SUCCESS',
-                  providerId: '${providerId}',
-                  provider: '${providerId}',
-                  token: '${accessToken}',
-                  email: '${email}'
-                }, '*');
+                var targetOrigin = window.location.origin;
+                window.opener.postMessage(${payloadJson}, targetOrigin);
+                window.opener.postMessage(${legacyPayloadJson}, targetOrigin);
               }
               setTimeout(function() {
                 try { window.close(); } catch(e) {}
@@ -1204,7 +1239,23 @@ export function createAdminRoutes(
     const defaultClaudeDir = process.env.VITEST
       ? pathMod.resolve(process.cwd(), '.test_claude')
       : pathMod.join(home, '.claude');
-    const claudeDir = body.claudeDir || defaultClaudeDir;
+    const requestedDir = typeof body.claudeDir === 'string' && body.claudeDir.trim()
+      ? pathMod.resolve(body.claudeDir.trim())
+      : defaultClaudeDir;
+
+    // Strict path containment: claudeDir must stay inside user's home directory (or cwd during VITEST)
+    const allowedRoots = [pathMod.resolve(home), ...(process.env.VITEST ? [pathMod.resolve(process.cwd())] : [])];
+    const normRequested = requestedDir.toLowerCase();
+    const isContained = allowedRoots.some((root) => {
+      const normRoot = root.toLowerCase();
+      const withSep = normRoot.endsWith(pathMod.sep) ? normRoot : `${normRoot}${pathMod.sep}`;
+      return normRequested === normRoot || normRequested.startsWith(withSep);
+    });
+    if (!isContained) {
+      return c.json({ error: 'Invalid claudeDir: path must be contained within user home directory.' }, 400);
+    }
+
+    const claudeDir = requestedDir;
     const settingsPath = pathMod.join(claudeDir, 'settings.json');
 
     try {
@@ -1534,6 +1585,20 @@ export function createAdminRoutes(
       store.clear();
     }
     return c.json({ success: true, message: 'Local usage records reset successfully.' });
+  });
+
+  // 15b. POST /v1/admin/storage/purge-logs - Purge telemetry logs cleanly
+  router.post('/storage/purge-logs', (c) => {
+    if (store) {
+      store.clear();
+    }
+    return c.json({ success: true, message: 'Expired request logs purged from storage.' });
+  });
+
+  // 15c. POST /v1/admin/storage/clear-cache - Flush in-memory caches and cooldown state
+  router.post('/storage/clear-cache', (c) => {
+    pkceStore.clear();
+    return c.json({ success: true, message: 'Gateway response and session caches cleared.' });
   });
 
   // 16. GET /v1/admin/requests - Get recent telemetry logs for 14-column table

@@ -76,6 +76,7 @@ export default function NexWorkersHub({ onNavigateTab }: NexWorkersHubProps) {
   const activeWorker = workers.find((w) => w.id === selectedWorkerId || w.slug === selectedWorkerId) || workers[0];
 
   useEffect(() => {
+    if (isEditingBrief) return;
     if (briefs.length > 0) {
       const b = briefs.find((item) => item.workerId === activeWorker?.id) || briefs[0];
       if (b) {
@@ -84,7 +85,7 @@ export default function NexWorkersHub({ onNavigateTab }: NexWorkersHubProps) {
         setBriefContent(b.contentMarkdown);
       }
     }
-  }, [activeWorker, briefs]);
+  }, [activeWorker, briefs, isEditingBrief]);
 
   const copyToClipboard = (text: string, slug: string) => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {

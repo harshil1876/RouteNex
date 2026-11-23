@@ -68,36 +68,58 @@ export default function StorageSettings() {
       };
 
       if (action.includes('VACUUM')) {
-        const res = await fetch('http://127.0.0.1:3001/v1/admin/storage/vacuum', { method: 'POST', headers }).catch(() => null);
-        if (res && res.ok) {
+        const res = await fetch('http://127.0.0.1:3001/v1/admin/storage/vacuum', { method: 'POST', headers });
+        if (res.ok) {
           const data = await res.json();
           setStatusMessage(`✓ ${data.message || 'VACUUM completed successfully.'}`);
+          await fetchStats();
         } else {
-          setStatusMessage('✓ SQLite VACUUM completed successfully.');
+          setStatusMessage(`Error: VACUUM failed (HTTP ${res.status}).`);
         }
-        await fetchStats();
       } else if (action.includes('Reset')) {
-        await fetch('http://127.0.0.1:3001/v1/admin/storage/reset', { method: 'POST', headers }).catch(() => null);
-        setStatusMessage('✓ All local usage records have been reset.');
-        await fetchStats();
+        const res = await fetch('http://127.0.0.1:3001/v1/admin/storage/reset', { method: 'POST', headers });
+        if (res.ok) {
+          setStatusMessage('✓ All local usage records have been reset.');
+          await fetchStats();
+        } else {
+          setStatusMessage(`Error: Reset failed (HTTP ${res.status}).`);
+        }
+      } else if (action.includes('Clear Cache')) {
+        const res = await fetch('http://127.0.0.1:3001/v1/admin/storage/clear-cache', { method: 'POST', headers });
+        if (res.ok) {
+          const data = await res.json();
+          setStatusMessage(`✓ ${data.message || 'Gateway caches cleared.'}`);
+        } else {
+          setStatusMessage(`Error: Clear cache failed (HTTP ${res.status}).`);
+        }
+      } else if (action.includes('Purge')) {
+        const res = await fetch('http://127.0.0.1:3001/v1/admin/storage/purge-logs', { method: 'POST', headers });
+        if (res.ok) {
+          const data = await res.json();
+          setStatusMessage(`✓ ${data.message || 'Logs purged successfully.'}`);
+          await fetchStats();
+        } else {
+          setStatusMessage(`Error: Purge failed (HTTP ${res.status}).`);
+        }
       } else if (action.includes('Export') || action.includes('Backup')) {
-        const res = await fetch('http://127.0.0.1:3001/v1/admin/storage/export', { method: 'GET', headers }).catch(() => null);
-        if (res && res.ok) {
+        const res = await fetch('http://127.0.0.1:3001/v1/admin/storage/export', { method: 'GET', headers });
+        if (res.ok) {
           const blob = await res.blob();
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
           a.download = `routenex-export-${new Date().toISOString().slice(0, 10)}.json`;
           a.click();
+          window.URL.revokeObjectURL(url);
           setStatusMessage('✓ Database export downloaded successfully.');
         } else {
-          setStatusMessage('✓ Backup snapshot completed.');
+          setStatusMessage(`Error: Export failed (HTTP ${res.status}).`);
         }
       } else {
-        setStatusMessage(`✓ ${action} completed successfully.`);
+        setStatusMessage(`Action '${action}' is not yet configured on the local gateway.`);
       }
-    } catch {
-      setStatusMessage(`✓ ${action} completed.`);
+    } catch (err: any) {
+      setStatusMessage(`Error: Gateway unreachable (${err?.message || 'network error'}).`);
     }
     setTimeout(() => setStatusMessage(null), 4000);
   };

@@ -54,8 +54,13 @@ export class ResponseCache {
       model: req.model,
       messages: req.messages,
       temperature: req.temperature ?? 1.0,
+      max_tokens: req.max_tokens ?? null,
+      top_p: req.top_p ?? null,
+      stop: req.stop ?? null,
       tools: req.tools ?? null,
+      tool_choice: req.tool_choice ?? null,
       response_format: req.response_format ?? null,
+      user: (req as any).user ?? null,
     });
     return createHash('sha256').update(payload).digest('hex');
   }

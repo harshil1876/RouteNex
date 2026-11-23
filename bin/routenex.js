@@ -199,6 +199,12 @@ Server Options:
     host = args[hostIdx + 1];
   }
 
+  let apiKey = process.env.ROUTENEX_API_KEY;
+  const apiKeyIdx = args.indexOf('--api-key');
+  if (apiKeyIdx !== -1 && args[apiKeyIdx + 1]) {
+    apiKey = args[apiKeyIdx + 1];
+  }
+
   if (!fs.existsSync(serverModulePath)) {
     console.error('\x1b[31mError: Gateway build not found. Please run "npm run build" first.\x1b[0m');
     process.exit(1);
@@ -209,7 +215,7 @@ Server Options:
   const serverInstance = startServer({
     port,
     host,
-    apiKey: process.env.ROUTENEX_API_KEY,
+    apiKey,
     mockMode: true,
     groqApiKey: process.env.GROQ_API_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY,

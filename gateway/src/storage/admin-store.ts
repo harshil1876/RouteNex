@@ -117,8 +117,11 @@ export class AdminStore {
   private settings: AdminSettings;
   private isMemoryOnly: boolean;
   private writeQueue: Promise<void> = Promise.resolve();
-  private activeSessions = new Set<string>();
+  private activeSessions = new Map<string, number>();
+  private static readonly SESSION_TTL_MS = 24 * 60 * 60 * 1000;
   private keySpendHistory = new Map<string, Array<{ timestamp: number; costUsd: number }>>();
+  private keyRateWindow = new Map<string, number[]>();
+  private customAdminTokenSet = false;
   public initialSetupToken?: string;
 
   constructor(filePath = './routenex_admin.json', memoryOnly = false) {
@@ -128,18 +131,31 @@ export class AdminStore {
     this.ensureAdminToken();
   }
 
+  public setAdminToken(token: string): void {
+    if (!token || !token.trim()) return;
+    this.settings.adminTokenHash = hashToken(token.trim());
+    this.customAdminTokenSet = true;
+    this.save();
+  }
+
   public createSessionToken(): string {
+    const now = Date.now();
+    // Prune expired sessions
+    for (const [tok, exp] of this.activeSessions.entries()) {
+      if (now > exp) this.activeSessions.delete(tok);
+    }
     if (this.activeSessions.size >= 5000) {
-      const oldest = this.activeSessions.values().next().value;
+      const oldest = this.activeSessions.keys().next().value;
       if (oldest) this.activeSessions.delete(oldest);
     }
     const token = `rn_sess_${nanoid(32)}`;
-    this.activeSessions.add(token);
+    this.activeSessions.set(token, now + AdminStore.SESSION_TTL_MS);
     return token;
   }
 
   public revokeSessionToken(token: string): boolean {
-    return this.activeSessions.delete(token);
+    if (!token) return false;
+    return this.activeSessions.delete(token.trim());
   }
 
   public static isMaskedKey(key: string): boolean {
@@ -466,13 +482,20 @@ export class AdminStore {
     const trimmed = candidate.trim();
     if (!trimmed) return false;
 
-    // 1. Check active session tokens
-    if (this.activeSessions.has(trimmed)) return true;
+    // 1. Check active session tokens (with TTL enforcement)
+    const sessionExpiry = this.activeSessions.get(trimmed);
+    if (sessionExpiry !== undefined) {
+      if (Date.now() <= sessionExpiry) return true;
+      this.activeSessions.delete(trimmed);
+    }
 
-    // 2. Check default or configured admin password
-    const defaultPassword = process.env.ROUTENEX_ADMIN_PASSWORD || 'routenex-admin';
-    if (secureTimingSafeEqual(trimmed, defaultPassword) || secureTimingSafeEqual(trimmed, 'routenex-admin')) {
-      return true;
+    // 2. Check configured ROUTENEX_ADMIN_PASSWORD (when set, 'routenex-admin' default backdoor is strictly disabled)
+    const envPassword = process.env.ROUTENEX_ADMIN_PASSWORD?.trim();
+    if (envPassword) {
+      if (secureTimingSafeEqual(trimmed, envPassword)) return true;
+    } else if (!this.customAdminTokenSet) {
+      // Only allow local-dev default password when no custom password or setAdminToken() was configured
+      if (secureTimingSafeEqual(trimmed, 'routenex-admin')) return true;
     }
 
     // 3. Check admin token hash if initialized
@@ -505,14 +528,47 @@ export class AdminStore {
     const cutoff = Date.now() - 24 * 3600 * 1000;
     const pruned = history.filter((h) => h.timestamp >= cutoff);
     this.keySpendHistory.set(keyId, pruned);
+
+    // Durably persist cumulative spend onto the virtual key so restarts don't reset lifetime budgets
+    const vk = this.settings.virtualKeys.find((k) => k.id === keyId);
+    if (vk) {
+      (vk as any).spentUsd = Number((((vk as any).spentUsd || 0) + costUsd).toFixed(6));
+      this.save();
+    }
   }
 
   public checkKeyBudget(vk: VirtualKey, estimatedCostUsd = 0): { allowed: boolean; reason?: string } {
     if (!this.keySpendHistory) this.keySpendHistory = new Map();
+    if (!this.keyRateWindow) this.keyRateWindow = new Map();
     const history = this.keySpendHistory.get(vk.id) || [];
     const now = Date.now();
     const cutoff5h = now - 5 * 3600 * 1000;
     const cutoff24h = now - 24 * 3600 * 1000;
+
+    // 1. Per-key RPM enforcement
+    if (typeof vk.rateLimitRpm === 'number' && vk.rateLimitRpm > 0) {
+      const win = (this.keyRateWindow.get(vk.id) || []).filter((ts) => ts >= now - 60_000);
+      if (win.length >= vk.rateLimitRpm) {
+        this.keyRateWindow.set(vk.id, win);
+        return {
+          allowed: false,
+          reason: `Virtual key '${vk.name}' exceeded rate limit (${vk.rateLimitRpm} RPM)`,
+        };
+      }
+      win.push(now);
+      this.keyRateWindow.set(vk.id, win);
+    }
+
+    // 2. Lifetime spendLimitUsd enforcement
+    const cumulativeSpend = Number((vk as any).spentUsd || 0);
+    if (typeof vk.spendLimitUsd === 'number' && vk.spendLimitUsd > 0) {
+      if (cumulativeSpend + estimatedCostUsd > vk.spendLimitUsd) {
+        return {
+          allowed: false,
+          reason: `Virtual key '${vk.name}' exceeded lifetime spend limit ($${cumulativeSpend.toFixed(4)} / $${vk.spendLimitUsd})`,
+        };
+      }
+    }
 
     const spend5h = history.filter((h) => h.timestamp >= cutoff5h).reduce((sum, h) => sum + h.costUsd, 0);
     const spend24h = history.filter((h) => h.timestamp >= cutoff24h).reduce((sum, h) => sum + h.costUsd, 0);
@@ -539,7 +595,7 @@ export class AdminStore {
   }
 
   public isValidKey(key: string, expectedApiKey?: string): boolean {
-    if (expectedApiKey && key === expectedApiKey) return true;
+    if (expectedApiKey && secureTimingSafeEqual(key, expectedApiKey)) return true;
     const hash = hashToken(key);
     return this.settings.virtualKeys.some((vk) => vk.keyHash === hash || (vk as any).key === key);
   }

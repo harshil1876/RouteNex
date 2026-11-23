@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import type { ApiError } from '../schemas.js';
 import type { AdminStore } from '../storage/admin-store.js';
+import { timingSafeEqualStr } from '../utils/security.js';
 
 function parseCookie(cookieHeader: string | undefined, name: string): string | undefined {
   if (!cookieHeader) return undefined;
@@ -25,14 +26,16 @@ export function createAuthMiddleware(expectedApiKey?: string, adminStore?: Admin
       return next();
     }
 
-    // 2. Open Admin Authentication & OAuth endpoints
+    // 2. Open Admin Authentication & Browser OAuth Redirect endpoints only
+    // Note: /oauth/status, /oauth/refresh, and /cli-token strictly require admin auth to prevent secret exfiltration
     const isAdminOpenRoute =
       path === '/v1/admin/auth/login' ||
       path === '/v1/admin/auth/session' ||
       path === '/v1/admin/auth/status' ||
       path === '/v1/admin/auth/verify' ||
-      path.includes('/oauth/') ||
-      path.includes('/cli-token');
+      path.endsWith('/oauth/authorize') ||
+      path.endsWith('/oauth/callback') ||
+      path.endsWith('/oauth/start');
 
     if (isAdminOpenRoute) {
       return next();
@@ -49,7 +52,7 @@ export function createAuthMiddleware(expectedApiKey?: string, adminStore?: Admin
         ? authHeader.slice(7).trim()
         : (xAdminToken || cookieSession || '');
 
-      const isMasterKey = Boolean(expectedApiKey && token === expectedApiKey);
+      const isMasterKey = Boolean(expectedApiKey && timingSafeEqualStr(token, expectedApiKey));
       const isAdminToken = adminStore ? adminStore.verifyAdminToken(token) : false;
 
       if (!isMasterKey && !isAdminToken) {
@@ -106,7 +109,7 @@ export function createAuthMiddleware(expectedApiKey?: string, adminStore?: Admin
       return c.json(errorPayload, 401);
     }
 
-    const isMasterKey = token === expectedApiKey;
+    const isMasterKey = Boolean(expectedApiKey && timingSafeEqualStr(token, expectedApiKey));
     const isVirtualKey = adminStore ? adminStore.isValidKey(token, expectedApiKey) : false;
 
     if (!isMasterKey && !isVirtualKey) {

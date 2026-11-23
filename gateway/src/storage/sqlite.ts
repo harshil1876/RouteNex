@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 
 export interface RequestLogEntry {
   request_id: string;
@@ -75,9 +76,9 @@ export class RequestStore {
 
   private initSqlite(dbPath: string): void {
     try {
-      // Attempt to load Node built-in SQLite engine
-      // @ts-ignore
-      const sqliteModule = require('node:sqlite');
+      // Load Node built-in SQLite engine cleanly in ESM via createRequire
+      const esmRequire = createRequire(import.meta.url);
+      const sqliteModule = esmRequire('node:sqlite');
       if (sqliteModule && sqliteModule.DatabaseSync) {
         const sqliteFile = dbPath.endsWith('.json') ? dbPath.replace(/\.json$/, '.db') : dbPath;
         const dir = path.dirname(sqliteFile);
@@ -267,9 +268,14 @@ export class RequestStore {
     this.flush();
     if (this.sqliteDb) {
       try {
+        let freedPages = 0;
+        try {
+          const row = this.sqliteDb.prepare('PRAGMA freelist_count;').get() as any;
+          freedPages = Number(row?.freelist_count ?? 0);
+        } catch {}
         this.sqliteDb.exec('PRAGMA optimize;');
         this.sqliteDb.exec('VACUUM;');
-        return { success: true, freedPages: 12, message: 'SQLite VACUUM and PRAGMA optimize executed successfully.' };
+        return { success: true, freedPages, message: 'SQLite VACUUM and PRAGMA optimize executed successfully.' };
       } catch (err: any) {
         return { success: false, freedPages: 0, message: err.message };
       }
@@ -285,7 +291,12 @@ export class RequestStore {
     this.buffer = [];
     if (this.sqliteDb) {
       try {
-        this.sqliteDb.exec('DELETE FROM requests;');
+        this.sqliteDb.exec('DELETE FROM request_logs;');
+      } catch {}
+    }
+    if (this.enabled) {
+      try {
+        fs.writeFileSync(this.filePath, '[]', 'utf-8');
       } catch {}
     }
   }

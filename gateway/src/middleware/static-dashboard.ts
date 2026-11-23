@@ -73,10 +73,11 @@ export function mountStaticDashboard(app: Hono, staticRoot: string): void {
       }
     }
 
-    // Security check: strictly prevent directory traversal (case-insensitive for Windows)
+    // Security check: strictly prevent directory traversal and sibling prefix matches
     const normFile = path.normalize(filePath).toLowerCase();
     const normRoot = path.normalize(staticRoot).toLowerCase();
-    if (normFile.startsWith(normRoot) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    const normRootWithSep = normRoot.endsWith(path.sep) ? normRoot : `${normRoot}${path.sep}`;
+    if ((normFile === normRoot || normFile.startsWith(normRootWithSep)) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       const ext = path.extname(filePath).toLowerCase();
       const contentType = MIME_TYPES[ext] || 'application/octet-stream';
       const fileBytes = fs.readFileSync(filePath);

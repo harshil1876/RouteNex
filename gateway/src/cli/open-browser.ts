@@ -1,33 +1,51 @@
-import { exec } from 'node:child_process';
+import { spawn } from 'node:child_process';
 
 /**
  * Cross-platform helper to launch the default web browser (Chrome, Edge, Safari, Firefox).
+ * Strictly validates URL protocol and uses spawn() without a shell to prevent OS command injection.
  * Gracefully ignores errors in headless / CI environments.
  */
 export function openBrowser(url: string): Promise<boolean> {
   return new Promise((resolve) => {
-    let command: string;
+    let safeHref: string;
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        resolve(false);
+        return;
+      }
+      safeHref = parsed.href;
+    } catch {
+      resolve(false);
+      return;
+    }
+
     const platform = process.platform;
+    let bin: string;
+    let args: string[];
 
     if (platform === 'win32') {
-      // Windows: use 'start "" "<url>"' to handle spaces and query parameters properly
-      command = `cmd /c start "" "${url}"`;
+      // Safe Windows URL opener without cmd.exe shell interpolation
+      bin = 'rundll32.exe';
+      args = ['url.dll,FileProtocolHandler', safeHref];
     } else if (platform === 'darwin') {
-      // macOS
-      command = `open "${url}"`;
+      bin = 'open';
+      args = [safeHref];
     } else {
-      // Linux / Unix / BSD
-      command = `xdg-open "${url}"`;
+      bin = 'xdg-open';
+      args = [safeHref];
     }
 
     try {
-      exec(command, { windowsHide: true }, (error) => {
-        if (error) {
-          resolve(false);
-        } else {
-          resolve(true);
-        }
+      const child = spawn(bin, args, {
+        detached: true,
+        stdio: 'ignore',
+        shell: false,
+        windowsHide: true,
       });
+      child.on('error', () => resolve(false));
+      child.unref();
+      resolve(true);
     } catch {
       resolve(false);
     }

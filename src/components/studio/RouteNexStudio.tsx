@@ -1,28 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import StudioNavRail, { type StudioNavItemId } from './StudioNavRail';
 import NexFlowCanvas from './NexFlowCanvas';
-import LexiPackStudio from './LexiPackStudio';
-import RequestLog from '../dashboard/RequestLog';
-import ProviderCredentials from '../dashboard/ProviderCredentials';
-import VirtualKeys from '../dashboard/VirtualKeys';
-import ModelAliases from '../dashboard/ModelAliases';
-import DoctorPanel from '../dashboard/DoctorPanel';
-import Combos from '../dashboard/Combos';
-import AgentSetupHub from '../dashboard/AgentSetupHub';
-import NexWorkersHub from './NexWorkersHub';
-import FreeTierGauges from '../dashboard/FreeTierGauges';
-import CompressionStudio from '../dashboard/CompressionStudio';
-import Playground from '../dashboard/Playground';
-import RadialTopology from '../dashboard/RadialTopology';
-import EndpointsPanel from '../dashboard/EndpointsPanel';
-import QuotaTracker from '../dashboard/QuotaTracker';
-import UsageAnalytics from '../dashboard/UsageAnalytics';
-import CostExplorer from '../dashboard/CostExplorer';
-import MemoryPanel from '../dashboard/MemoryPanel';
-import StorageSettings from '../dashboard/StorageSettings';
-import ModelCatalogExplorer from '../models/ModelCatalogExplorer';
 import RouteNexLogo from '../common/RouteNexLogo';
 import { RouteNexClient } from '../../utils/gateway-client';
+
+// Lazy-loaded Studio panels to keep initial bundle lean
+const LexiPackStudio = lazy(() => import('./LexiPackStudio'));
+const RequestLog = lazy(() => import('../dashboard/RequestLog'));
+const ProviderCredentials = lazy(() => import('../dashboard/ProviderCredentials'));
+const VirtualKeys = lazy(() => import('../dashboard/VirtualKeys'));
+const ModelAliases = lazy(() => import('../dashboard/ModelAliases'));
+const Combos = lazy(() => import('../dashboard/Combos'));
+const AgentSetupHub = lazy(() => import('../dashboard/AgentSetupHub'));
+const NexWorkersHub = lazy(() => import('./NexWorkersHub'));
+const FreeTierGauges = lazy(() => import('../dashboard/FreeTierGauges'));
+const CompressionStudio = lazy(() => import('../dashboard/CompressionStudio'));
+const Playground = lazy(() => import('../dashboard/Playground'));
+const QuotaTracker = lazy(() => import('../dashboard/QuotaTracker'));
+const CostExplorer = lazy(() => import('../dashboard/CostExplorer'));
+const MemoryPanel = lazy(() => import('../dashboard/MemoryPanel'));
+const StorageSettings = lazy(() => import('../dashboard/StorageSettings'));
+const ModelCatalogExplorer = lazy(() => import('../models/ModelCatalogExplorer'));
 
 interface RouteNexStudioProps {
   mode?: 'oss' | 'cloud';
@@ -69,9 +67,14 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
   // Command Palette Search (Ctrl+K)
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [commandSearch, setCommandSearch] = useState('');
+  const [selectedCommandIdx, setSelectedCommandIdx] = useState(0);
 
-  // Live Recent Requests Feed (Starts empty on fresh state)
-  const [recentRequests, setRecentRequests] = useState<any[]>([]);
+  // Live Usage Metrics for Overview Cards
+  const [usageStats, setUsageStats] = useState<{
+    totalRequests: number;
+    totalTokens: number;
+    estimatedCostUsd: number;
+  }>({ totalRequests: 0, totalTokens: 0, estimatedCostUsd: 0 });
 
   // Route Simulator State
   const [simModel, setSimModel] = useState('auto:nitro');
@@ -86,6 +89,20 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
 
       client.isGatewayOnline().then((online) => setIsGatewayConnected(online));
 
+      // Hydrate live usage stats for Overview cards
+      fetch('http://127.0.0.1:3001/v1/usage')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data) {
+            setUsageStats({
+              totalRequests: Number(data.total_requests || 0),
+              totalTokens: Number(data.total_tokens?.total_tokens ?? data.total_tokens ?? 0),
+              estimatedCostUsd: Number(data.estimated_cost_usd || 0),
+            });
+          }
+        })
+        .catch(() => {});
+
       if (mode === 'oss') {
         const isSessionUnlocked = sessionStorage.getItem('routenex_unlocked') === 'true';
         setIsUnlocked(isSessionUnlocked);
@@ -93,10 +110,10 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
         setIsUnlocked(true);
       }
 
-      // Check URL query parameters
+      // Check & validate URL query parameters
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab') as StudioNavItemId | null;
-      if (tabParam) setActiveItem(tabParam);
+      if (tabParam && TAB_TITLES[tabParam]) setActiveItem(tabParam);
 
       if (params.get('auto_token')) {
         params.delete('auto_token');
@@ -104,11 +121,18 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
         window.history.replaceState({}, '', `${window.location.pathname}${newQuery}`);
       }
 
-      // Global keyboard shortcut Ctrl+K / Cmd+K
+      // Global keyboard shortcut Ctrl+K / Cmd+K and Escape
       const handleKeyDown = (e: KeyboardEvent) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
           e.preventDefault();
-          setCommandPaletteOpen((prev) => !prev);
+          setCommandPaletteOpen((prev) => {
+            if (prev) setCommandSearch('');
+            setSelectedCommandIdx(0);
+            return !prev;
+          });
+        } else if (e.key === 'Escape') {
+          setCommandPaletteOpen(false);
+          setCommandSearch('');
         }
       };
       window.addEventListener('keydown', handleKeyDown);
@@ -306,7 +330,7 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-300 flex flex-col md:flex-row font-sans selection:bg-sky-500/20 selection:text-white">
+    <div className="dark min-h-screen bg-[#09090b] text-zinc-300 flex flex-col md:flex-row font-sans selection:bg-sky-500/20 selection:text-white">
       {/* 1. Left Navigation Rail (OpenRouter 36px Single-Line Style) */}
       <StudioNavRail
         activeItem={activeItem}
@@ -490,7 +514,14 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-5 sm:p-8 max-w-7xl w-full mx-auto space-y-8 font-sans">
+        <main id="main-content" className="flex-1 p-5 sm:p-8 max-w-7xl w-full mx-auto space-y-8 font-sans">
+          <Suspense
+            fallback={
+              <div className="p-8 rounded-xl bg-[#111113] border border-[#222226] text-xs font-mono text-zinc-400 animate-pulse">
+                Loading Studio panel...
+              </div>
+            }
+          >
           {/* TAB 1: OVERVIEW */}
           {activeItem === 'overview' && (
             <div className="space-y-8">
@@ -517,10 +548,10 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
                   <div className="p-5 rounded-xl bg-[#111113] border border-[#222226] space-y-2">
                     <span className="text-xs text-zinc-400 font-medium block">Spend</span>
                     <div className="text-2xl font-bold text-zinc-100 font-mono">
-                      $0.00
+                      ${usageStats.estimatedCostUsd.toFixed(4)}
                     </div>
                     <span className="text-xs text-zinc-500 font-sans block">
-                      No spend this week
+                      {usageStats.estimatedCostUsd > 0 ? 'Live gateway estimated spend' : 'No spend recorded yet'}
                     </span>
                   </div>
 
@@ -528,10 +559,10 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
                   <div className="p-5 rounded-xl bg-[#111113] border border-[#222226] space-y-2">
                     <span className="text-xs text-zinc-400 font-medium block">Requests</span>
                     <div className="text-2xl font-bold text-zinc-100 font-mono">
-                      0
+                      {usageStats.totalRequests.toLocaleString()}
                     </div>
                     <span className="text-xs text-zinc-500 font-sans block">
-                      No requests this week
+                      {usageStats.totalRequests > 0 ? 'Total routed completions' : 'No requests recorded yet'}
                     </span>
                   </div>
 
@@ -539,10 +570,10 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
                   <div className="p-5 rounded-xl bg-[#111113] border border-[#222226] space-y-2">
                     <span className="text-xs text-zinc-400 font-medium block">Tokens</span>
                     <div className="text-2xl font-bold text-zinc-100 font-mono">
-                      0
+                      {usageStats.totalTokens.toLocaleString()}
                     </div>
                     <span className="text-xs text-zinc-500 font-sans block">
-                      No tokens this week
+                      {usageStats.totalTokens > 0 ? 'Total processed tokens' : 'No tokens recorded yet'}
                     </span>
                   </div>
                 </div>
@@ -941,13 +972,23 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
               <StorageSettings />
             </div>
           )}
+          </Suspense>
         </main>
       </div>
 
       {/* Global Command Palette (Ctrl+K) */}
       {commandPaletteOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-start justify-center p-4 pt-20">
-          <div className="w-full max-w-lg rounded-xl bg-[#111113] border border-[#222226] shadow-2xl overflow-hidden font-sans text-xs">
+        <div
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-start justify-center p-4 pt-20"
+          onClick={() => {
+            setCommandPaletteOpen(false);
+            setCommandSearch('');
+          }}
+        >
+          <div
+            className="w-full max-w-lg rounded-xl bg-[#111113] border border-[#222226] shadow-2xl overflow-hidden font-sans text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-3.5 border-b border-[#222226] flex items-center gap-2.5">
               <svg className="w-4 h-4 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8" />
@@ -956,14 +997,41 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
               <input
                 type="text"
                 value={commandSearch}
-                onChange={(e) => setCommandSearch(e.target.value)}
+                onChange={(e) => {
+                  setCommandSearch(e.target.value);
+                  setSelectedCommandIdx(0);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setSelectedCommandIdx((prev) =>
+                      filteredCommands.length > 0 ? (prev + 1) % filteredCommands.length : 0
+                    );
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setSelectedCommandIdx((prev) =>
+                      filteredCommands.length > 0 ? (prev - 1 + filteredCommands.length) % filteredCommands.length : 0
+                    );
+                  } else if (e.key === 'Enter' && filteredCommands[selectedCommandIdx]) {
+                    e.preventDefault();
+                    filteredCommands[selectedCommandIdx].action();
+                    setCommandPaletteOpen(false);
+                    setCommandSearch('');
+                  } else if (e.key === 'Escape') {
+                    setCommandPaletteOpen(false);
+                    setCommandSearch('');
+                  }
+                }}
                 placeholder="Search RouteNex Studio navigation and tools..."
                 className="w-full bg-transparent text-zinc-100 placeholder-zinc-500 focus:outline-none text-sm font-sans"
                 autoFocus
               />
               <button
                 type="button"
-                onClick={() => setCommandPaletteOpen(false)}
+                onClick={() => {
+                  setCommandPaletteOpen(false);
+                  setCommandSearch('');
+                }}
                 className="text-zinc-500 hover:text-white font-mono text-[11px]"
               >
                 ESC
@@ -971,20 +1039,32 @@ export default function RouteNexStudio({ mode = 'oss' }: RouteNexStudioProps) {
             </div>
 
             <div className="p-2 max-h-72 overflow-y-auto space-y-1">
-              {filteredCommands.map((cmd, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => {
-                    cmd.action();
-                    setCommandPaletteOpen(false);
-                  }}
-                  className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-zinc-800 text-zinc-300 hover:text-white transition flex items-center justify-between text-xs"
-                >
-                  <span>{cmd.label}</span>
-                  <span className="text-[11px] text-zinc-500 font-mono">Jump ↵</span>
-                </button>
-              ))}
+              {filteredCommands.length === 0 ? (
+                <div className="px-3 py-6 text-center text-zinc-500 text-xs">
+                  No matching Studio commands for &ldquo;{commandSearch}&rdquo;
+                </div>
+              ) : (
+                filteredCommands.map((cmd, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onMouseEnter={() => setSelectedCommandIdx(i)}
+                    onClick={() => {
+                      cmd.action();
+                      setCommandPaletteOpen(false);
+                      setCommandSearch('');
+                    }}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg transition flex items-center justify-between text-xs ${
+                      i === selectedCommandIdx
+                        ? 'bg-zinc-800 text-white'
+                        : 'hover:bg-zinc-800/70 text-zinc-300 hover:text-white'
+                    }`}
+                  >
+                    <span>{cmd.label}</span>
+                    <span className="text-[11px] text-zinc-500 font-mono">Jump ↵</span>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </div>
