@@ -36,4 +36,5 @@ jobs:
         run: npm run test:api
 
       - name: Build Astro frontend
+        if: matrix.node-version == '22.x'
         run: npx astro build
